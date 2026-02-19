@@ -1,65 +1,97 @@
-import Image from "next/image";
+'use client';
+
+import { FocusView } from '@/components/focus-view';
+import { ProjectSelect } from '@/components/project-select';
+import { QueueView } from '@/components/queue-view';
+import { ArchiveView } from '@/components/archive-view';
+import { NavMenu } from '@/components/nav-menu';
+import { AddTaskModal } from '@/components/add-task-modal';
+import { ViewSelector } from '@/components/view-selector';
+import { ShortcutsHelp } from '@/components/shortcuts-help';
+import { GlobalShortcuts } from '@/components/global-shortcuts';
+import { useMonocleStore } from '@/lib/store';
+import { SettingsView } from '@/components/settings-view';
+import { StatsView } from '@/components/stats-view';
+import { LogoSmall } from '@/components/logo';
+import { ProjectManager } from '@/components/project-manager';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 export default function Home() {
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal } = useMonocleStore();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
+      {/* Background Gradient */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
+
+      {/* Header - Fixed to top or just top of flow? Design looks standard. */}
+      <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all">
+        {/* Left: Hamburger + Logo */}
+        <div className="flex items-center gap-3">
+          <NavMenu />
+          <LogoSmall className="hidden sm:flex" />
+          <LogoSmall className="sm:hidden" showText={false} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+
+        {/* Center: Add + View Selector */}
+        {/* Mobile: Static flow. Desktop: Absolute center. */}
+        <div className="flex items-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:justify-center pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2">
+            <AddTaskModal
+              open={activeModal === 'add-task'}
+              onOpenChange={(val) => setActiveModal(val ? 'add-task' : null)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <ProjectManager
+              open={activeModal === 'project-manager'}
+              onOpenChange={(val) => setActiveModal(val ? 'project-manager' : null)}
+            />
+
+            {/* Add Task Button - Icon Only on Mobile */}
+            <Button
+              onClick={() => setActiveModal('add-task')}
+              size="sm"
+              className="rounded-full shadow-sm bg-primary/90 hover:bg-primary px-3 sm:px-4 shrink-0 transition-transform active:scale-95"
+            >
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Task</span>
+            </Button>
+
+            <div className="w-px h-6 bg-border mx-1 sm:mx-2" />
+            <ViewSelector />
+          </div>
         </div>
-      </main>
-    </div>
+
+
+        {/* Right: Project Dropdown */}
+        <div className="flex items-center">
+          <ProjectSelect />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center">
+        {view === 'focus' ? (
+          <FocusView />
+        ) : view === 'queue' ? (
+          <QueueView variant="fullscreen" mode="active" />
+        ) : (
+          <QueueView variant="fullscreen" mode="drafts" />
+        )}
+      </div>
+
+      {/* Sheets / Overlays */}
+      <QueueView variant="sheet" />
+      <ArchiveView />
+      <ShortcutsHelp />
+      <GlobalShortcuts />
+
+      {/* Settings & Archive Sheets (Controlled by Global Store) */}
+      <SettingsView open={activeSheet === 'settings'} onOpenChange={(open) => setOpenSheet(open ? 'settings' : null)} />
+      <ArchiveView /> {/* ArchiveView controls its own open state via activeSheet check internally? Let's check. Yes it does. */}
+      <StatsView />
+
+    </main >
   );
 }
