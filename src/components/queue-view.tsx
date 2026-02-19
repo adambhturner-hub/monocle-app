@@ -331,7 +331,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                         {...provided.draggableProps}
                                                                         className={cn(
                                                                             "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 active:shadow-lg select-none outline-none flex items-center gap-3 p-3",
-                                                                            index === 0 && "border-primary/60 bg-primary/5 shadow-md shadow-primary/5 ring-1 ring-primary/10",
+                                                                            index === 0 && "border-l-4 border-l-primary bg-primary/5 shadow-md relative scale-[1.02] z-10 my-1",
                                                                             snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50"
                                                                         )}
                                                                         style={{
