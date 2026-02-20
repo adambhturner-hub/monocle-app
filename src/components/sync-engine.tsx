@@ -44,6 +44,10 @@ export function SyncEngine() {
     // This allows us to break infinite loops between Zustand and Firestore.
     const lastSyncedStateStrRef = useRef<string>('');
 
+    // Prevent pushing local state to the cloud until we have received at least one 
+    // snapshot from the cloud, otherwise LocalStorage hydration will overwrite the cloud instantly.
+    const isCloudReadyRef = useRef<boolean>(false);
+
     // 1. Listen to Cloud Changes
     useEffect(() => {
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -63,6 +67,9 @@ export function SyncEngine() {
                             sessionHistory: cloudData.sessionHistory || []
                         });
 
+                        // We have successfully received data from the cloud, it is now safe to push local mutations
+                        isCloudReadyRef.current = true;
+
                         // Only load from cloud if the data is actually different from what we last synced
                         if (incomingStateStr !== lastSyncedStateStrRef.current) {
                             console.log("[Monocle Sync] Pulling payload from Firestore");
@@ -80,6 +87,9 @@ export function SyncEngine() {
                         // Instantly push their current local state to the cloud to initialize it.
                         const state = useMonocleStore.getState();
                         console.log("[Monocle Sync] Initializing new cloud document for user");
+
+                        // It's safe to push now that we know the cloud is empty
+                        isCloudReadyRef.current = true;
 
                         const rawPayload = {
                             tasks: state.tasks,
@@ -129,7 +139,8 @@ export function SyncEngine() {
                 state.settings !== prevState.settings ||
                 state.sessionHistory !== prevState.sessionHistory;
 
-            if (didSyncableDataChange) {
+            // Only push if data changed AND we have already performed our initial pull from the network
+            if (didSyncableDataChange && isCloudReadyRef.current) {
                 // Create a literal representation of the current syncable state
                 const currentStateStr = deepStringify({
                     tasks: state.tasks,
