@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export function GlobalShortcuts() {
     const {
@@ -24,8 +25,14 @@ export function GlobalShortcuts() {
             // Command/Ctrl + E: Complete Task
             if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
                 e.preventDefault();
-                completeTask();
-                toast.success("Task completed!");
+                const result = completeTask();
+                if (result?.nextTask) {
+                    toast.success("Recurring task completed!", {
+                        description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`
+                    });
+                } else {
+                    toast.success("Task completed!");
+                }
             }
 
             // Command/Ctrl + 1: Focus Mode

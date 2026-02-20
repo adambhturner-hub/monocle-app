@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon, Clock, Repeat, Plus, X, ArrowUpRight, Hash, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Repeat, Plus, X, ArrowUpRight, Hash, AlertCircle, Lightbulb } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMonocleStore } from '@/lib/store';
@@ -42,6 +42,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
     const [projectId, setProjectId] = useState<string>('all');
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
     const [recurrence, setRecurrence] = useState<string>('none');
+    const [isFrog, setIsFrog] = useState(false);
 
     // Parser State
     const [parsedData, setParsedData] = useState<ParsedTask | null>(null);
@@ -81,6 +82,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
     }, [activeTrigger, filterText, projects]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMentionSelectedIndex(0);
     }, [mentionOptions.length, activeTrigger]);
 
@@ -112,6 +114,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
     // Initializer ...
     useEffect(() => {
         if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setParsedData(null); // Reset parser on open
             if (taskToEdit) {
                 // ... existing fill logic
@@ -121,6 +124,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 setProjectId(taskToEdit.projectId || 'all');
                 setDueDate(taskToEdit.dueDate ? new Date(taskToEdit.dueDate) : undefined);
                 setRecurrence(taskToEdit.recurrence ? (typeof taskToEdit.recurrence === 'string' ? taskToEdit.recurrence : String(taskToEdit.recurrence)) : 'none');
+                setIsFrog(taskToEdit.isFrog || false);
             } else {
                 // ... existing fill logic
                 setTitle('');
@@ -129,6 +133,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 setProjectId(activeProject || 'all');
                 setDueDate(undefined);
                 setRecurrence('none');
+                setIsFrog(false);
             }
             setTimeout(() => titleInputRef.current?.focus(), 100);
         }
@@ -162,6 +167,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
             setPriority('medium');
             setRecurrence('none');
             setDueDate(undefined);
+            setIsFrog(false);
             setParsedData(null);
         }
     };
@@ -197,10 +203,19 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 duration: finalDuration ? finalDuration : taskToEdit.duration, // Only update if new parsed, or keep old? Logic: if parsed, use it.
                 isDraft
             });
+
+            // Re-assert frog status if needed because toggleFrog handles mututally exclusive global state
+            if (isFrog && !taskToEdit.isFrog) {
+                useMonocleStore.getState().toggleFrog(taskToEdit.id);
+            } else if (!isFrog && taskToEdit.isFrog) {
+                useMonocleStore.getState().toggleFrog(taskToEdit.id); // Toggle off if it was
+            }
+
             setOpen(false);
         } else {
+            const taskId = generateId();
             const newTask: Task = {
-                id: generateId(),
+                id: taskId,
                 title: finalTitle.trim(),
                 description: description.trim() || undefined,
                 status: 'todo',
@@ -213,6 +228,11 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 createdAt: Date.now(),
             };
             addTask(newTask);
+
+            if (isFrog) {
+                useMonocleStore.getState().toggleFrog(taskId);
+            }
+
             resetForm();
             if (!isControlled) {
                 setTimeout(() => titleInputRef.current?.focus(), 0);
@@ -441,21 +461,45 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                                 <SelectItem value="monthly">Monthly</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        {/* Frog Toggle */}
+                        <Button
+                            type="button"
+                            variant={isFrog ? "default" : "secondary"}
+                            size="sm"
+                            className={cn(
+                                "w-auto h-8 px-2 text-xs border-none shadow-sm transition-all gap-1.5",
+                                isFrog ? "bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30 font-medium ring-1 ring-emerald-500/30" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                            )}
+                            onClick={() => setIsFrog(!isFrog)}
+                        >
+                            <span className="text-sm leading-none">🐸</span>
+                            {isFrog ? 'Frog' : 'Make Frog'}
+                        </Button>
                     </div>
                 </div>
 
                 {/* Footer / Helper - Sticky Bottom */}
-                <div className="bg-muted/20 px-4 py-3 border-t flex items-center justify-between text-xs text-muted-foreground shrink-0 pb-5 sm:pb-3">
+                <div className="bg-muted/20 px-4 py-3 border-t flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground shrink-0 pb-5 sm:pb-3 gap-3">
                     <div className="hidden sm:flex items-center gap-4">
                         <span className="flex items-center gap-1">
                             <ArrowUpRight className="h-3 w-3" />
-                            Enter = {isEditMode ? 'save' : 'task'}
+                            {isEditMode ? 'Enter = save' : 'Enter = task, Shift+Enter = idea'}
                         </span>
                     </div>
                     {/* Explicit Add Button for mouse/mobile users */}
-                    <Button size="default" className="w-full sm:w-auto h-10 text-sm" onClick={() => handleSubmit(false)}>
-                        {isEditMode ? 'Save Changes' : 'Add Task'}
-                    </Button>
+                    <div className="flex w-full sm:w-auto gap-2">
+                        {!isEditMode && (
+                            <Button variant="secondary" size="default" className="flex-1 sm:flex-none h-10 text-sm gap-2" onClick={() => handleSubmit(true)}>
+                                <Lightbulb className="h-4 w-4" />
+                                <span className="hidden sm:inline">Save as Idea</span>
+                                <span className="sm:hidden">Idea</span>
+                            </Button>
+                        )}
+                        <Button size="default" className="flex-1 sm:flex-none h-10 text-sm" onClick={() => handleSubmit(false)}>
+                            {isEditMode ? 'Save Changes' : 'Add Task'}
+                        </Button>
+                    </div>
                 </div>
 
             </DialogContent>

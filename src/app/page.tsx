@@ -14,18 +14,19 @@ import { SettingsView } from '@/components/settings-view';
 import { StatsView } from '@/components/stats-view';
 import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
+import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 export default function Home() {
-  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal } = useMonocleStore();
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView } = useMonocleStore();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
       {/* Background Gradient */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
 
-      {/* Header - Fixed to top or just top of flow? Design looks standard. */}
+      {/* Header */}
       <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all">
         {/* Left: Hamburger + Logo */}
         <div className="flex items-center gap-3">
@@ -34,9 +35,7 @@ export default function Home() {
           <LogoSmall className="sm:hidden" showText={false} />
         </div>
 
-
         {/* Center: Add + View Selector */}
-        {/* Mobile: Static flow. Desktop: Absolute center. */}
         <div className="flex items-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:justify-center pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2">
             <AddTaskModal
@@ -63,23 +62,29 @@ export default function Home() {
           </div>
         </div>
 
-
-        {/* Right: Project Dropdown */}
-        <div className="flex items-center">
+        {/* Right: Project Dropdown & Momentum */}
+        <div className="flex items-center gap-4">
+          <MomentumMeter className="hidden sm:block" />
           <ProjectSelect />
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content (Always render Queue or Drafts underneath) */}
       <div className="w-full flex-1 flex flex-col items-center justify-center">
-        {view === 'focus' ? (
-          <FocusView />
-        ) : view === 'queue' ? (
-          <QueueView variant="fullscreen" mode="active" />
-        ) : (
+        {view === 'ideas' ? (
           <QueueView variant="fullscreen" mode="drafts" />
+        ) : (
+          <QueueView variant="fullscreen" mode="active" />
         )}
       </div>
+
+      {/* Focus Mode Overlay */}
+      {view === 'focus' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
+          {/* Close by clicking backdrop is handled inside FocusView for better separation, or we can handle it here if we pass onExit */}
+          <FocusView onExit={() => setView('queue')} />
+        </div>
+      )}
 
       {/* Sheets / Overlays */}
       <QueueView variant="sheet" />

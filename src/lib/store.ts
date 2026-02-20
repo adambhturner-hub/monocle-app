@@ -46,10 +46,12 @@ interface MonocleState {
     toggleDraft: (id: string) => void;
 
     // Queue Actions
-    completeTask: () => void;
-    archiveTask: (id: string) => void; // Silent complete for specific task
-    holdTask: () => void;
-    skipTask: () => void;
+    completeTask: (taskId?: string) => { nextTask?: Task } | void;
+    archiveTask: (id: string) => { nextTask?: Task } | void;
+    holdTask: (taskId?: string) => void;
+    snoozeTask: (durationMinutes: number, taskId?: string) => void;
+    wakeTask: (id: string) => void;
+    skipTask: (taskId?: string) => void;
     randomTask: () => void;
     promoteTask: (id: string) => void;
     prioritizeTask: () => void; // Sorts queue by priority
@@ -79,6 +81,9 @@ interface MonocleState {
     stopSession: (outcome: SessionOutcome) => void;
     tickSession: () => void; // Updates elapsed time
     getAutoPickedTask: () => Task | null;
+    getCompletedTodayCount: () => number;
+    toggleFrog: (id: string) => void;
+    frogDetourActive?: boolean;
 
     // Command Palette Power Features
     recentCommands: RecentCommand[];
@@ -113,8 +118,14 @@ export const useMonocleStore = create<MonocleState>()(
             },
 
             // Helper Getter
+            getCompletedTodayCount: () => {
+                const { tasks } = get();
+                const { isToday } = require('date-fns');
+                return tasks.filter(t => t.status === 'done' && t.completedAt && isToday(t.completedAt)).length;
+            },
+
             getAutoPickedTask: () => {
-                const { tasks, activeProject, settings } = get();
+                const { tasks, activeProject, settings, frogDetourActive } = get();
                 const now = Date.now();
 
                 // Filter eligible tasks
@@ -126,6 +137,16 @@ export const useMonocleStore = create<MonocleState>()(
                 );
 
                 if (eligible.length === 0) return null;
+
+                // 0. The Daily Frog (Apex Task)
+                const frog = eligible.find(t => t.isFrog);
+                if (frog) {
+                    if (frogDetourActive) {
+                        const detourTask = eligible.find(t => !t.isFrog);
+                        return detourTask || frog;
+                    }
+                    return frog;
+                }
 
                 // 1. Overdue (if enabled)
                 if (settings.autoPickOverdue) {
@@ -225,6 +246,27 @@ export const useMonocleStore = create<MonocleState>()(
                 tasks: state.tasks.map(t => t.id === id ? { ...t, isDraft: !t.isDraft } : t)
             })),
 
+            toggleFrog: (id) =>
+                set((state) => {
+                    const task = state.tasks.find(t => t.id === id);
+                    if (!task) return {};
+
+                    const lastState = [...state.tasks];
+                    const isBecomingFrog = !task.isFrog;
+
+                    const newTasks = state.tasks.map(t => {
+                        if (t.id === id) {
+                            return { ...t, isFrog: isBecomingFrog };
+                        }
+                        if (isBecomingFrog && t.isFrog) {
+                            return { ...t, isFrog: false };
+                        }
+                        return t;
+                    });
+
+                    return { tasks: newTasks, lastState, frogDetourActive: false };
+                }),
+
             getVisibleTasks: () => {
                 const { tasks, activeProject } = get();
                 return tasks.filter(t =>
@@ -234,19 +276,22 @@ export const useMonocleStore = create<MonocleState>()(
                 );
             },
 
-            completeTask: () =>
+            completeTask: (taskId?: string) => {
+                let generatedTask: Task | undefined;
                 set((state) => {
-                    const visible = state.tasks.filter(t => !t.isDraft && t.status !== 'done' && (state.activeProject ? t.projectId === state.activeProject : true));
-                    if (visible.length === 0) return {};
+                    const taskToComplete = taskId ? state.tasks.find(t => t.id === taskId) : get().getAutoPickedTask();
+                    if (!taskToComplete) return {};
 
                     // Snapshot
                     const lastState = [...state.tasks];
 
-                    const taskToComplete = visible[0];
-
                     // Play Sound (Global check)
                     if (state.settings.soundEnabled !== false) {
-                        soundEngine.playComplete();
+                        if (taskToComplete.isFrog) {
+                            soundEngine.playRibbit();
+                        } else {
+                            soundEngine.playComplete();
+                        }
                     }
 
                     // Check for active session
@@ -317,13 +362,17 @@ export const useMonocleStore = create<MonocleState>()(
                             archivedAt: undefined
                         };
 
+                        generatedTask = nextTask;
                         newTasks.push(nextTask);
                     }
 
-                    return { tasks: newTasks, lastState };
-                }),
+                    return { tasks: newTasks, lastState, frogDetourActive: false };
+                });
+                if (generatedTask) return { nextTask: generatedTask };
+            },
 
-            archiveTask: (id) =>
+            archiveTask: (id) => {
+                let generatedTask: Task | undefined;
                 set((state) => {
                     const taskToArchive = state.tasks.find(t => t.id === id);
                     if (!taskToArchive) return {};
@@ -380,34 +429,33 @@ export const useMonocleStore = create<MonocleState>()(
                             archivedAt: undefined
                         };
 
+                        generatedTask = nextTask;
                         newTasks.push(nextTask);
                     }
 
-                    return { tasks: newTasks, lastState };
-                }),
+                    return { tasks: newTasks, lastState, frogDetourActive: false };
+                });
+                if (generatedTask) return { nextTask: generatedTask };
+            },
 
-            holdTask: () =>
+            holdTask: (taskId?: string) =>
                 set((state) => {
+                    const currentTask = taskId ? state.tasks.find(t => t.id === taskId) : get().getAutoPickedTask();
+                    if (!currentTask) return {};
+
                     const visible = state.tasks.filter(t => !t.isDraft && t.status !== 'done' && (state.activeProject ? t.projectId === state.activeProject : true));
                     if (visible.length < 2) return {};
 
                     // Snapshot
                     const lastState = [...state.tasks];
 
-                    const currentTask = visible[0];
-                    // We want to move to Position #2 (index 1).
-                    // The task at visible[1] is currently at index 1.
-                    // We want to insert currentTask AFTER visible[1] relative to the start?
-                    // No, "Position #2" means it becomes the 2nd item.
-                    // [Task A, Task B, Task C] -> Hold A -> [Task B, Task A, Task C]
-
-                    const nextTask = visible[1]; // Task B
+                    const nextTask = visible.find(t => t.id !== currentTask.id);
 
                     // Remove currentTask from global list
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
 
                     // Find index of Task B in global list
-                    const nextTaskIndex = otherTasks.findIndex(t => t.id === nextTask.id);
+                    const nextTaskIndex = nextTask ? otherTasks.findIndex(t => t.id === nextTask.id) : -1;
 
                     if (nextTaskIndex !== -1) {
                         // Insert A after B
@@ -419,26 +467,13 @@ export const useMonocleStore = create<MonocleState>()(
                     return { tasks: otherTasks, lastState };
                 }),
 
-            skipTask: () =>
+            skipTask: (taskId?: string) =>
                 set((state) => {
-                    // Logic: Skip the *current active candidate*
-                    // This implies we need to know WHICH task is being skipped.
-                    // Usually it's the one returned by getAutoPickedTask() or the first visible one.
-                    // Let's assume it's the first visible one for now, as that's what the Focus view shows.
-
-                    const visible = state.tasks.filter(t =>
-                        !t.isDraft &&
-                        t.status !== 'done' &&
-                        (state.activeProject ? t.projectId === state.activeProject : true) &&
-                        (!t.skippedUntil || t.skippedUntil < Date.now())
-                    );
-
-                    if (visible.length < 1) return {};
+                    const currentTask = taskId ? state.tasks.find(t => t.id === taskId) : get().getAutoPickedTask();
+                    if (!currentTask) return {};
 
                     // Snapshot
                     const lastState = [...state.tasks];
-
-                    const currentTask = visible[0];
 
                     // Active Session Handling
                     let newCurrentSession = state.currentSession;
@@ -455,28 +490,89 @@ export const useMonocleStore = create<MonocleState>()(
                         newCurrentSession = null;
                     }
 
-                    // Apply Cooldown
+                    // Apply Cooldown (Frog is exempt from skip cooldowns)
+                    const isSkippingFrog = currentTask.isFrog;
                     const cooldownMs = state.settings.skipCooldown * 60 * 1000;
+                    const skippedUntil = (cooldownMs > 0 && !isSkippingFrog) ? Date.now() + cooldownMs : undefined;
+
+                    // Update friction counters
+                    const friction = currentTask.friction || { skips: 0, holds: 0 };
+                    const updatedTask = {
+                        ...currentTask,
+                        skippedUntil,
+                        friction: { ...friction, skips: friction.skips + 1 }
+                    };
+
+                    let nextTasks = [...state.tasks];
+
+                    if (isSkippingFrog) {
+                        // DO NOT move the frog physically. Just update its skippedUntil.
+                        nextTasks = nextTasks.map(t => t.id === currentTask.id ? updatedTask : t);
+                    } else {
+                        // Move normal tasks to the bottom of the active queue
+                        nextTasks = nextTasks.filter(t => t.id !== currentTask.id);
+                        nextTasks.push(updatedTask);
+                    }
+
+                    return {
+                        tasks: nextTasks,
+                        lastState,
+                        currentSession: newCurrentSession,
+                        sessionHistory: newSessionHistory,
+                        frogDetourActive: isSkippingFrog ? true : false
+                    };
+                }),
+
+            snoozeTask: (durationMinutes, taskId) =>
+                set((state) => {
+                    const currentTask = taskId ? state.tasks.find(t => t.id === taskId) : get().getAutoPickedTask();
+                    if (!currentTask) return {};
+
+                    const lastState = [...state.tasks];
+
+                    // Active Session Handling
+                    let newCurrentSession = state.currentSession;
+                    let newSessionHistory = state.sessionHistory;
+
+                    if (newCurrentSession && newCurrentSession.taskId === currentTask.id) {
+                        const completedSession: FocusSession = {
+                            ...newCurrentSession,
+                            endTime: Date.now(),
+                            status: 'completed',
+                            outcome: 'skip_task'
+                        };
+                        newSessionHistory = [completedSession, ...state.sessionHistory];
+                        newCurrentSession = null;
+                    }
+
+                    const cooldownMs = durationMinutes * 60 * 1000;
                     const skippedUntil = cooldownMs > 0 ? Date.now() + cooldownMs : undefined;
 
-                    const updatedTask = { ...currentTask, skippedUntil };
-
-                    // We update the task in the array.
-                    // We DO NOT move it physically if we are relying on `skippedUntil` filtering.
-                    // However, if we just update it, it stays in position but becomes invisible to `getAutoPickedTask`.
-                    // But for `QueueView`, we might still want to see it?
-                    // User said: "Avoid recently skipped tasks for X hours (Skip Cooldown)"
-                    // "Skipped tasks do not reappear until cooldown expires."
-                    // This implies they should be hidden from Focus Mode.
-                    // In Queue View, they probably just stay where they are?
-                    // But if we want to "rotate", we should probably move it to the end AND set cooldown?
-                    // Let's stick to simple: Move to End + Set Cooldown.
-                    // This creates a "cycle" effect which is nice.
+                    const friction = currentTask.friction || { skips: 0, holds: 0 };
+                    const updatedTask = {
+                        ...currentTask,
+                        skippedUntil,
+                        friction: { ...friction, holds: friction.holds + 1 }
+                    };
 
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
                     otherTasks.push(updatedTask);
 
-                    return { tasks: otherTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory };
+                    return { tasks: otherTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory, frogDetourActive: false };
+                }),
+
+            wakeTask: (id) =>
+                set((state) => {
+                    const task = state.tasks.find(t => t.id === id);
+                    if (!task) return {};
+
+                    const lastState = [...state.tasks];
+                    const updatedTask = { ...task, skippedUntil: undefined };
+
+                    const otherTasks = state.tasks.filter(t => t.id !== id);
+                    otherTasks.unshift(updatedTask);
+
+                    return { tasks: otherTasks, lastState };
                 }),
 
             randomTask: () =>

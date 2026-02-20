@@ -9,6 +9,7 @@ class SoundEngine {
     private masterGain: GainNode | null = null;
     private currentNoiseType: 'white' | 'pink' | 'brown' | 'off' = 'off';
     private volume: number = 0.5;
+    private ribbitBuffer: AudioBuffer | null = null;
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -24,9 +25,21 @@ class SoundEngine {
             this.masterGain = this.ctx.createGain();
             this.masterGain.connect(this.ctx.destination);
             this.setVolume(this.volume);
+            this.loadRibbit();
         }
         if (this.ctx.state === 'suspended') {
             this.ctx.resume();
+        }
+    }
+
+    private async loadRibbit() {
+        if (this.ribbitBuffer || !this.ctx) return;
+        try {
+            const response = await fetch('/frog.wav');
+            const arrayBuffer = await response.arrayBuffer();
+            this.ribbitBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+        } catch (err) {
+            console.error("Failed to load ribbit sound", err);
         }
     }
 
@@ -192,6 +205,26 @@ class SoundEngine {
         this.playTone(659.25, 'sine', 0.6, now + 0.1); // E5
         this.playTone(783.99, 'sine', 0.8, now + 0.2); // G5
         this.playTone(1046.50, 'sine', 1.0, now + 0.3);// C6
+    }
+
+    public async playRibbit() {
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+
+        if (!this.ribbitBuffer) {
+            await this.loadRibbit();
+        }
+
+        if (this.ribbitBuffer) {
+            const source = this.ctx.createBufferSource();
+            source.buffer = this.ribbitBuffer;
+            // The frog.wav might be loud, dial it down
+            const gain = this.ctx.createGain();
+            gain.gain.value = 0.6;
+            source.connect(gain);
+            gain.connect(this.masterGain);
+            source.start(0);
+        }
     }
 
     public playStart() {

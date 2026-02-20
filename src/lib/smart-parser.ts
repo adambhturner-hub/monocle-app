@@ -214,7 +214,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             const month = monthNames.findIndex(m => match[1].toLowerCase().startsWith(m));
             const day = parseInt(match[2]);
             const currentYear = new Date().getFullYear();
-            let year = match[3] ? parseInt(match[3]) : currentYear;
+            const year = match[3] ? parseInt(match[3]) : currentYear;
 
             let setDate = new Date(year, month, day);
             // If date has passed this year and no year, assume next

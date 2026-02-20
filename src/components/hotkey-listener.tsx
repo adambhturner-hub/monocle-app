@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 import { useMonocleStore } from '@/lib/store';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export function HotkeyListener() {
     const { completeTask, holdTask, skipTask, randomTask } = useMonocleStore();
@@ -18,9 +20,17 @@ export function HotkeyListener() {
             }
 
             switch (e.key.toLowerCase()) {
-                case 'c':
-                    completeTask();
+                case 'c': {
+                    const result = completeTask();
+                    if (result?.nextTask) {
+                        toast.success("Recurring task completed!", {
+                            description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`
+                        });
+                    } else {
+                        toast.success("Task completed!");
+                    }
                     break;
+                }
                 case 'h':
                     holdTask();
                     break;

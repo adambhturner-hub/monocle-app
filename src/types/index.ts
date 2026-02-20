@@ -18,6 +18,11 @@ export interface Task {
   completedAt?: number;
   skippedUntil?: number;
   duration?: number; // minutes
+  friction?: {
+    skips: number;
+    holds: number;
+  };
+  isFrog?: boolean;
 }
 
 export interface Project {
