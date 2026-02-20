@@ -10,7 +10,8 @@ const DEFAULT_SETTINGS: MonocleState['settings'] = {
     archiveRetention: 30,
     autoPickOverdue: true,
     skipCooldown: 360,
-    soundEnabled: true
+    soundEnabled: true,
+    hasSeenOnboarding: false
 };
 
 interface MonocleState {
@@ -35,8 +36,8 @@ interface MonocleState {
     activeModal: 'add-task' | 'project-manager' | null;
     setActiveModal: (modal: 'add-task' | 'project-manager' | null) => void;
 
-    view: 'focus' | 'queue' | 'ideas';
-    setView: (view: 'focus' | 'queue' | 'ideas') => void;
+    view: 'focus' | 'queue' | 'ideas' | 'analytics';
+    setView: (view: 'focus' | 'queue' | 'ideas' | 'analytics') => void;
 
     // Undo Logic
     lastState: Task[] | null;
@@ -61,11 +62,12 @@ interface MonocleState {
 
     // Settings
     settings: {
-        sortMode: 'manual' | 'date';
+        sortMode: 'manual' | 'date' | 'priority';
         archiveRetention: number; // days
         autoPickOverdue: boolean;
         skipCooldown: number; // minutes
         soundEnabled?: boolean;
+        hasSeenOnboarding: boolean;
     };
     updateSettings: (settings: Partial<MonocleState['settings']>) => void;
 
@@ -84,11 +86,15 @@ interface MonocleState {
     getCompletedTodayCount: () => number;
     toggleFrog: (id: string) => void;
     frogDetourActive?: boolean;
+    activeRandomTaskId?: string | null;
 
     // Command Palette Power Features
     recentCommands: RecentCommand[];
     addRecentCommand: (cmd: Omit<RecentCommand, 'timestamp'>) => void;
     jumpToTask: (taskId: string) => void;
+
+    // Cloud Sync
+    loadFromCloud: (cloudState: Partial<MonocleState>) => void;
 }
 
 export interface RecentCommand {
@@ -114,7 +120,9 @@ export const useMonocleStore = create<MonocleState>()(
                 sortMode: 'manual',
                 archiveRetention: 30,
                 autoPickOverdue: true,
-                skipCooldown: 6 * 60 // 6 hours default
+                skipCooldown: 6 * 60, // 6 hours default
+                hasSeenOnboarding: false,
+                soundEnabled: true
             },
 
             // Helper Getter
@@ -138,7 +146,14 @@ export const useMonocleStore = create<MonocleState>()(
 
                 if (eligible.length === 0) return null;
 
-                // 0. The Daily Frog (Apex Task)
+                // 0. The Random Curveball
+                const { activeRandomTaskId } = get();
+                if (activeRandomTaskId) {
+                    const curveball = eligible.find(t => t.id === activeRandomTaskId);
+                    if (curveball) return curveball;
+                }
+
+                // 1. The Daily Frog (Apex Task)
                 const frog = eligible.find(t => t.isFrog);
                 if (frog) {
                     if (frogDetourActive) {
@@ -171,6 +186,34 @@ export const useMonocleStore = create<MonocleState>()(
                 // conforming to "next in manual queue"
                 return eligible[0];
             },
+
+            loadFromCloud: (cloudState) => set((state) => {
+                // Smart merge arrays by ID to prevent devices from overwriting each others tasks
+                const mergeById = <T extends { id: string, updatedAt?: number }>(local: T[], cloud: T[]) => {
+                    const localMap = new Map(local.map(item => [item.id, item]));
+                    const mergedMap = new Map<string, T>();
+
+                    // Add all cloud items, overwriting local if cloud is newer (we don't have updatedAt per task yet, so cloud wins by default for existing)
+                    cloud.forEach(item => mergedMap.set(item.id, item));
+
+                    // Add local items that don't exist in cloud (offline creations)
+                    localMap.forEach((item, id) => {
+                        if (!mergedMap.has(id)) {
+                            mergedMap.set(id, item);
+                        }
+                    });
+
+                    return Array.from(mergedMap.values());
+                };
+
+                return {
+                    ...state,
+                    tasks: cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks) : state.tasks,
+                    projects: cloudState.projects !== undefined ? mergeById(state.projects, cloudState.projects) : state.projects,
+                    settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
+                    sessionHistory: cloudState.sessionHistory !== undefined ? mergeById(state.sessionHistory, cloudState.sessionHistory) : state.sessionHistory,
+                };
+            }),
 
             updateSettings: (newSettings) => set((state) => ({
                 settings: { ...state.settings, ...newSettings }
@@ -366,7 +409,7 @@ export const useMonocleStore = create<MonocleState>()(
                         newTasks.push(nextTask);
                     }
 
-                    return { tasks: newTasks, lastState, frogDetourActive: false };
+                    return { tasks: newTasks, lastState, frogDetourActive: false, activeRandomTaskId: null };
                 });
                 if (generatedTask) return { nextTask: generatedTask };
             },
@@ -433,7 +476,7 @@ export const useMonocleStore = create<MonocleState>()(
                         newTasks.push(nextTask);
                     }
 
-                    return { tasks: newTasks, lastState, frogDetourActive: false };
+                    return { tasks: newTasks, lastState, frogDetourActive: false, activeRandomTaskId: null };
                 });
                 if (generatedTask) return { nextTask: generatedTask };
             },
@@ -490,23 +533,20 @@ export const useMonocleStore = create<MonocleState>()(
                         newCurrentSession = null;
                     }
 
-                    // Apply Cooldown (Frog is exempt from skip cooldowns)
                     const isSkippingFrog = currentTask.isFrog;
-                    const cooldownMs = state.settings.skipCooldown * 60 * 1000;
-                    const skippedUntil = (cooldownMs > 0 && !isSkippingFrog) ? Date.now() + cooldownMs : undefined;
 
-                    // Update friction counters
-                    const friction = currentTask.friction || { skips: 0, holds: 0 };
                     const updatedTask = {
                         ...currentTask,
-                        skippedUntil,
-                        friction: { ...friction, skips: friction.skips + 1 }
+                        friction: {
+                            skips: (currentTask.friction?.skips || 0) + 1,
+                            holds: currentTask.friction?.holds || 0
+                        }
                     };
 
                     let nextTasks = [...state.tasks];
 
                     if (isSkippingFrog) {
-                        // DO NOT move the frog physically. Just update its skippedUntil.
+                        // DO NOT move the frog physically.
                         nextTasks = nextTasks.map(t => t.id === currentTask.id ? updatedTask : t);
                     } else {
                         // Move normal tasks to the bottom of the active queue
@@ -519,7 +559,8 @@ export const useMonocleStore = create<MonocleState>()(
                         lastState,
                         currentSession: newCurrentSession,
                         sessionHistory: newSessionHistory,
-                        frogDetourActive: isSkippingFrog ? true : false
+                        frogDetourActive: Boolean(isSkippingFrog),
+                        activeRandomTaskId: null
                     };
                 }),
 
@@ -548,17 +589,19 @@ export const useMonocleStore = create<MonocleState>()(
                     const cooldownMs = durationMinutes * 60 * 1000;
                     const skippedUntil = cooldownMs > 0 ? Date.now() + cooldownMs : undefined;
 
-                    const friction = currentTask.friction || { skips: 0, holds: 0 };
                     const updatedTask = {
                         ...currentTask,
-                        skippedUntil,
-                        friction: { ...friction, holds: friction.holds + 1 }
+                        skippedUntil: Date.now() + durationMinutes * 60000,
+                        friction: {
+                            skips: currentTask.friction?.skips || 0,
+                            holds: (currentTask.friction?.holds || 0) + 1
+                        }
                     };
 
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
-                    otherTasks.push(updatedTask);
+                    const finalTasks = [...otherTasks, updatedTask];
 
-                    return { tasks: otherTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory, frogDetourActive: false };
+                    return { tasks: finalTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory, frogDetourActive: false, activeRandomTaskId: null };
                 }),
 
             wakeTask: (id) =>
@@ -577,21 +620,26 @@ export const useMonocleStore = create<MonocleState>()(
 
             randomTask: () =>
                 set((state) => {
-                    const visible = state.tasks.filter(t => !t.isDraft && t.status !== 'done' && (state.activeProject ? t.projectId === state.activeProject : true));
+                    const now = Date.now();
+                    const visible = state.tasks.filter(t =>
+                        !t.isDraft &&
+                        t.status !== 'done' &&
+                        (state.activeProject ? t.projectId === state.activeProject : true) &&
+                        (!t.skippedUntil || t.skippedUntil < now)
+                    );
+
                     if (visible.length < 2) return {};
 
-                    // Snapshot
-                    const lastState = [...state.tasks];
+                    // Pick a random task that isn't the current naturally picked one
+                    const currentActive = get().getAutoPickedTask();
+                    const pool = visible.filter(t => t.id !== currentActive?.id);
 
-                    const randomIndex = Math.floor(Math.random() * visible.length);
-                    const randomTask = visible[randomIndex];
+                    if (pool.length === 0) return {};
 
-                    if (randomTask.id === visible[0].id) return {};
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    const randomTask = pool[randomIndex];
 
-                    const otherTasks = state.tasks.filter(t => t.id !== randomTask.id);
-                    otherTasks.unshift(randomTask);
-
-                    return { tasks: otherTasks, lastState };
+                    return { activeRandomTaskId: randomTask.id };
                 }),
 
             promoteTask: (id) =>
@@ -866,13 +914,37 @@ export const useMonocleStore = create<MonocleState>()(
             },
             merge: (persistedState: unknown, currentState: MonocleState) => {
                 const state = persistedState as MonocleState;
+
+                // Onboarding Injection
+                const isFirstTime = !state.settings?.hasSeenOnboarding && (!state.tasks || state.tasks.length === 0);
+
+                let initialTasks = state.tasks || [];
+                let hasSeenOnboarding = state.settings?.hasSeenOnboarding || false;
+
+                if (isFirstTime) {
+                    initialTasks = [{
+                        id: generateId(),
+                        title: 'Welcome to Monocle 🚀',
+                        description: '1. Add your daily tasks below.\n2. Hit "Focus Mode" to enter the cockpit.\n3. Execute them ruthlessly.',
+                        status: 'todo',
+                        createdAt: Date.now(),
+                        projectId: undefined,
+                        priority: 'high',
+                        isFrog: true,
+                        isDraft: false
+                    }];
+                    hasSeenOnboarding = true;
+                }
+
                 return {
                     ...currentState,
                     ...state,
+                    tasks: initialTasks,
                     settings: {
                         ...currentState.settings,
                         ...DEFAULT_SETTINGS,
-                        ...(state.settings || {})
+                        ...(state.settings || {}),
+                        hasSeenOnboarding
                     }
                 };
             }

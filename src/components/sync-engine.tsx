@@ -24,6 +24,19 @@ const removeUndefined = (obj: any): any => {
     return obj;
 };
 
+// Helper to stringify deterministically, sorting object keys to avoid infinite sync loops 
+// when Firestore alters key insertion order
+const deepStringify = (obj: any): string => {
+    if (obj === null || obj === undefined) return 'null';
+    if (typeof obj !== 'object') return JSON.stringify(obj);
+    if (Array.isArray(obj)) return `[${obj.map(deepStringify).join(',')}]`;
+    const keys = Object.keys(obj).sort();
+    const props = keys
+        .filter(k => obj[k] !== undefined)
+        .map(k => `"${k}":${deepStringify(obj[k])}`);
+    return `{${props.join(',')}}`;
+};
+
 export function SyncEngine() {
     const store = useMonocleStore();
 
@@ -43,7 +56,7 @@ export function SyncEngine() {
                         const cloudData = docSnap.data();
 
                         // Create a normalized string of the incoming syncable data
-                        const incomingStateStr = JSON.stringify({
+                        const incomingStateStr = deepStringify({
                             tasks: cloudData.tasks || [],
                             projects: cloudData.projects || [],
                             settings: cloudData.settings,
@@ -79,7 +92,7 @@ export function SyncEngine() {
                         const safePayload = removeUndefined(rawPayload);
 
                         // Update our ref so we don't bounce our own initial snapshot back
-                        lastSyncedStateStrRef.current = JSON.stringify({
+                        lastSyncedStateStrRef.current = deepStringify({
                             tasks: state.tasks,
                             projects: state.projects,
                             settings: state.settings,
@@ -118,7 +131,7 @@ export function SyncEngine() {
 
             if (didSyncableDataChange) {
                 // Create a literal representation of the current syncable state
-                const currentStateStr = JSON.stringify({
+                const currentStateStr = deepStringify({
                     tasks: state.tasks,
                     projects: state.projects,
                     settings: state.settings,
