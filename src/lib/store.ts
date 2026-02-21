@@ -95,8 +95,7 @@ interface MonocleState {
     startSession: (taskId: string, durationMinutes: number) => void;
     pauseSession: () => void;
     resumeSession: () => void;
-    stopSession: (outcome: SessionOutcome) => void;
-    tickSession: () => void; // Updates elapsed time
+    stopSession: (outcome: SessionOutcome) => void; // Updates elapsed time
     getAutoPickedTask: () => Task | null;
     getCompletedTodayCount: () => number;
     toggleFrog: (id: string) => void;
@@ -823,7 +822,7 @@ export const useMonocleStore = create<MonocleState>()(
                     projectId: task.projectId,
                     startTime: Date.now(),
                     durationScheduled: durationMinutes,
-                    durationElapsed: 0,
+                    totalPausedMs: 0,
                     status: 'running'
                 };
 
@@ -837,14 +836,28 @@ export const useMonocleStore = create<MonocleState>()(
             pauseSession: () => set((state) => {
                 if (!state.currentSession || state.currentSession.status !== 'running') return {};
                 return {
-                    currentSession: { ...state.currentSession, status: 'paused' }
+                    currentSession: {
+                        ...state.currentSession,
+                        status: 'paused',
+                        lastPausedAt: Date.now()
+                    }
                 };
             }),
 
             resumeSession: () => set((state) => {
-                if (!state.currentSession || state.currentSession.status !== 'paused') return {};
+                const session = state.currentSession;
+                if (!session || session.status !== 'paused') return {};
+
+                const now = Date.now();
+                const pausedDuration = session.lastPausedAt ? now - session.lastPausedAt : 0;
+
                 return {
-                    currentSession: { ...state.currentSession, status: 'running' }
+                    currentSession: {
+                        ...session,
+                        status: 'running',
+                        totalPausedMs: session.totalPausedMs + pausedDuration,
+                        lastPausedAt: undefined
+                    }
                 };
             }),
 
@@ -874,20 +887,7 @@ export const useMonocleStore = create<MonocleState>()(
                 };
             }),
 
-            tickSession: () => set((state) => {
-                if (!state.currentSession || state.currentSession.status !== 'running') return {};
 
-                // Play Tick Sound (if enabled)
-                if (state.settings.soundEnabled !== false) {
-                    soundEngine.playTick();
-                }
-
-                const newElapsed = state.currentSession.durationElapsed + 1;
-
-                return {
-                    currentSession: { ...state.currentSession, durationElapsed: newElapsed }
-                };
-            }),
 
             // Command Palette Power Features
             recentCommands: [],

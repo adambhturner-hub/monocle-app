@@ -2,13 +2,21 @@
 import { useMonocleStore } from '@/lib/store';
 import { useMemo } from 'react';
 import { isSameDay, subDays, format, startOfDay } from 'date-fns';
+import { FocusSession } from '@/types';
+
+const getSessionDurationSeconds = (session: FocusSession) => {
+    const end = session.endTime || Date.now();
+    const rawMs = end - session.startTime;
+    const actualMs = Math.max(0, rawMs - (session.totalPausedMs || 0));
+    return Math.floor(actualMs / 1000);
+};
 
 export function useStats() {
     const { sessionHistory } = useMonocleStore();
 
     const stats = useMemo(() => {
         // 1. Total Focus Time
-        const totalFocusSeconds = sessionHistory.reduce((acc, session) => acc + session.durationElapsed, 0);
+        const totalFocusSeconds = sessionHistory.reduce((acc, session) => acc + getSessionDurationSeconds(session), 0);
         const totalFocusMinutes = Math.floor(totalFocusSeconds / 60);
         const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
 
@@ -18,7 +26,7 @@ export function useStats() {
             const dayStart = startOfDay(date);
 
             const sessions = sessionHistory.filter(s => isSameDay(new Date(s.startTime), date));
-            const focusSeconds = sessions.reduce((acc, s) => acc + s.durationElapsed, 0);
+            const focusSeconds = sessions.reduce((acc, s) => acc + getSessionDurationSeconds(s), 0);
             const focusMinutes = Math.floor(focusSeconds / 60);
 
             return {
@@ -43,7 +51,7 @@ export function useStats() {
 
         while (true) {
             const sessionsThisDay = sessionHistory.filter(s => isSameDay(new Date(s.startTime), checkDate));
-            const focusThisDay = sessionsThisDay.reduce((acc, s) => acc + s.durationElapsed, 0);
+            const focusThisDay = sessionsThisDay.reduce((acc, s) => acc + getSessionDurationSeconds(s), 0);
 
             if (focusThisDay > 0) {
                 streak++;
@@ -69,7 +77,7 @@ export function useStats() {
         const projectStats = sessionHistory.reduce((acc, session) => {
             if (!session.projectId) return acc;
 
-            acc[session.projectId] = (acc[session.projectId] || 0) + session.durationElapsed;
+            acc[session.projectId] = (acc[session.projectId] || 0) + getSessionDurationSeconds(session);
             return acc;
         }, {} as Record<string, number>);
 

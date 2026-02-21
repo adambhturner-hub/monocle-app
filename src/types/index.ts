@@ -42,7 +42,8 @@ export interface FocusSession {
   startTime: number;
   endTime?: number;
   durationScheduled: number; // minutes
-  durationElapsed: number; // seconds
+  totalPausedMs: number;
+  lastPausedAt?: number;
   status: SessionStatus;
   outcome?: SessionOutcome;
 }

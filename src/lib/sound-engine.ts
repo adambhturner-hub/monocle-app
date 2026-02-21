@@ -284,26 +284,45 @@ class SoundEngine {
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
-        // Ringing bell sound (two sine waves interacting)
-        const osc1 = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        // Majestic, resonant bell sound (layered sines with long decay)
+        const playBell = (timeOffset: number) => {
+            if (!this.ctx || !this.masterGain) return;
+            const osc1 = this.ctx.createOscillator();
+            const osc2 = this.ctx.createOscillator();
+            const osc3 = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
 
-        osc1.frequency.setValueAtTime(880, this.ctx.currentTime); // A5
-        osc2.frequency.setValueAtTime(884, this.ctx.currentTime); // Detuned for wobble
+            const start = this.ctx.currentTime + timeOffset;
 
-        gain.gain.setValueAtTime(0, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.5);
+            // Frequencies for a rich bell tone (A4 base + harmonics)
+            osc1.frequency.setValueAtTime(440, start); // Fundamental
+            osc2.frequency.setValueAtTime(880, start); // Octave
+            osc3.frequency.setValueAtTime(1320, start); // Perfect Fifth above octave
 
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(this.masterGain);
+            // Strike envelope
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.4, start + 0.02); // Sharp attack
+            gain.gain.exponentialRampToValueAtTime(0.05, start + 1.0); // Ring out
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 3.0); // Fade to silence
 
-        osc1.start();
-        osc2.start();
-        osc1.stop(this.ctx.currentTime + 1.5);
-        osc2.stop(this.ctx.currentTime + 1.5);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc3.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc1.start(start);
+            osc2.start(start);
+            osc3.start(start);
+
+            osc1.stop(start + 3.0);
+            osc2.stop(start + 3.0);
+            osc3.stop(start + 3.0);
+        };
+
+        // Ring three times
+        playBell(0);
+        playBell(0.8);
+        playBell(1.6);
     }
 
     public async playRibbit() {
@@ -317,7 +336,6 @@ class SoundEngine {
         if (this.ribbitBuffer) {
             const source = this.ctx.createBufferSource();
             source.buffer = this.ribbitBuffer;
-            // The frog.wav might be loud, dial it down
             const gain = this.ctx.createGain();
             gain.gain.value = 0.6;
             source.connect(gain);
@@ -328,7 +346,6 @@ class SoundEngine {
 
     public playStart() {
         this.init();
-        // Rising tone
         if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -347,23 +364,39 @@ class SoundEngine {
     }
 
     public playTick() {
-        // Subtle tick
+        // Mechanical Watch Escapement
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const bufferSize = this.ctx.sampleRate * 0.05; // 50ms buffer
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
 
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.05);
+        const noiseSource = this.ctx.createBufferSource();
+        noiseSource.buffer = buffer;
 
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+        // Highpass filter to make it sound tiny and metallic
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 4000;
+        filter.Q.value = 1.0;
 
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.05);
+        const gainNode = this.ctx.createGain();
+        const start = this.ctx.currentTime;
+
+        gainNode.gain.setValueAtTime(0, start);
+        gainNode.gain.linearRampToValueAtTime(0.05, start + 0.002); // Very low volume, sharp click
+        gainNode.gain.exponentialRampToValueAtTime(0.001, start + 0.02); // Instant decay
+
+        noiseSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        noiseSource.start(start);
+        noiseSource.stop(start + 0.05);
     }
 }
 
