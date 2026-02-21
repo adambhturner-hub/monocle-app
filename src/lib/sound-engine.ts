@@ -64,11 +64,46 @@ class SoundEngine {
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
-        // Rapid series of high-pitched clicks
+        // Subtler, wooden "click" effect using filtered noise bursts
+        const playClick = (timeOffset: number) => {
+            if (!this.ctx || !this.masterGain) return;
+            const bufferSize = this.ctx.sampleRate * 0.05; // 50ms buffer
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseSource = this.ctx.createBufferSource();
+            noiseSource.buffer = buffer;
+
+            // Bandpass filter to make it sound "wooden" and less harsh
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1200 + Math.random() * 400;
+            filter.Q.value = 1.5;
+
+            // Very tight gain envelope for a sharp click
+            const gainNode = this.ctx.createGain();
+            const start = this.ctx.currentTime + timeOffset;
+
+            gainNode.gain.setValueAtTime(0, start);
+            gainNode.gain.linearRampToValueAtTime(0.4, start + 0.005); // low volume
+            gainNode.gain.exponentialRampToValueAtTime(0.01, start + 0.04);
+
+            noiseSource.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.masterGain);
+
+            noiseSource.start(start);
+            noiseSource.stop(start + 0.05);
+        };
+
+        // Trigger 3 quick clicks
         let timeOffset = 0;
-        for (let i = 0; i < 5; i++) {
-            this.playTone(800 + Math.random() * 400, 'square', 0.03, timeOffset);
-            timeOffset += 0.05 + Math.random() * 0.05;
+        for (let i = 0; i < 3; i++) {
+            playClick(timeOffset);
+            timeOffset += 0.06 + Math.random() * 0.04;
         }
     }
     public setVolume(val: number) {
