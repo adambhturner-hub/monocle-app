@@ -20,7 +20,12 @@ interface SwipeableTaskProps {
     rightLabel?: string;
     rightColorClass?: string;
     rightBgClass?: string;
-    downAction?: (taskId: string, minutes: number, label: string) => void;
+    downAction?: (taskId: string) => void;
+    downThresholdAction?: (taskId: string, minutes: number, label: string) => void;
+    downIcon?: React.ElementType;
+    downLabel?: string;
+    downColorClass?: string;
+    downBgClass?: string;
     isMobile: boolean; // Only enable swipes on mobile layout
 }
 
@@ -38,6 +43,11 @@ export function SwipeableTask({
     rightColorClass = "text-blue-500",
     rightBgClass = "bg-blue-500",
     downAction,
+    downThresholdAction,
+    downIcon: DownIcon = Shuffle,
+    downLabel = "Down",
+    downColorClass = "text-indigo-500",
+    downBgClass = "bg-indigo-500",
     isMobile
 }: SwipeableTaskProps) {
     const [offset, setOffset] = useState(0);
@@ -76,7 +86,7 @@ export function SwipeableTask({
                 isHorizontalSwipeRef.current = true;
                 e.preventDefault(); // Stop vertical scrolling once locked as swipe
             } else if (Math.abs(deltaY) > 10) {
-                if (deltaY > 0 && downAction) {
+                if (deltaY > 0 && (downAction || downThresholdAction)) {
                     isHorizontalSwipeRef.current = false;
                     e.preventDefault(); // lock vertical swipe
                 } else {
@@ -102,11 +112,17 @@ export function SwipeableTask({
             if (visualOffset < 0 && !rightAction) visualOffset = 0;
 
             setOffset(visualOffset);
-        } else if (isHorizontalSwipeRef.current === false && downAction) {
+        } else if (isHorizontalSwipeRef.current === false && (downAction || downThresholdAction)) {
             // Vertical Drag
             const resistance = 0.8; // Allow more travel vertically
             let visualOffset = deltaY * resistance;
             if (visualOffset < 0) visualOffset = 0; // Only pull down
+
+            // Cap visual travel for simple down action (not threshold)
+            if (downAction && !downThresholdAction && visualOffset > MAX_SWIPE) {
+                visualOffset = MAX_SWIPE;
+            }
+
             setOffsetY(visualOffset);
         }
     };
@@ -120,16 +136,20 @@ export function SwipeableTask({
             } else if (offset < -SWIPE_THRESHOLD && rightAction) {
                 rightAction(task.id);
             }
-        } else if (isHorizontalSwipeRef.current === false && downAction) {
-            // Vertical Drop Thresholds
-            if (offsetY > 240) {
-                downAction(task.id, 24 * 60, "Tomorrow");
-            } else if (offsetY > 180) {
-                downAction(task.id, 240, "4 hours");
-            } else if (offsetY > 120) {
-                downAction(task.id, 60, "1 hour");
-            } else if (offsetY > 60) {
-                downAction(task.id, 30, "30 mins");
+        } else if (isHorizontalSwipeRef.current === false) {
+            if (downThresholdAction) {
+                // Vertical Drop Thresholds
+                if (offsetY > 240) {
+                    downThresholdAction(task.id, 24 * 60, "Tomorrow");
+                } else if (offsetY > 180) {
+                    downThresholdAction(task.id, 240, "4 hours");
+                } else if (offsetY > 120) {
+                    downThresholdAction(task.id, 60, "1 hour");
+                } else if (offsetY > 60) {
+                    downThresholdAction(task.id, 30, "30 mins");
+                }
+            } else if (downAction && offsetY > SWIPE_THRESHOLD) {
+                downAction(task.id);
             }
         }
 
@@ -185,7 +205,7 @@ export function SwipeableTask({
             </div>
 
             {/* Vertical Hold Background */}
-            {downAction && offsetY > 0 && (
+            {downThresholdAction && offsetY > 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-start rounded-lg bg-indigo-500/10 text-indigo-500 font-bold tracking-wide pt-4 z-0">
                     <span className="text-sm">
                         {offsetY > 240 ? "Holding until Tomorrow" : offsetY > 180 ? "Holding for 4 hours" : offsetY > 120 ? "Holding for 1 hour" : offsetY > 60 ? "Holding for 30 mins" : "Pull to Hold..."}
@@ -196,6 +216,18 @@ export function SwipeableTask({
                             style={{ width: `${Math.min(100, (offsetY / 240) * 100)}%` }}
                         />
                     </div>
+                </div>
+            )}
+
+            {/* Basic Vertical Background */}
+            {downAction && !downThresholdAction && offsetY > 0 && (
+                <div className={cn(
+                    "absolute inset-0 flex flex-col items-center justify-start rounded-lg font-bold tracking-wide pt-6 z-0",
+                    offsetY > SWIPE_THRESHOLD ? cn(downBgClass, "text-white") : cn(downColorClass, downBgClass.replace('bg-', 'bg-opacity-20 bg-')),
+                    offsetY > 5 ? "opacity-100 transition-opacity duration-200" : "opacity-0"
+                )}>
+                    <DownIcon className="h-5 w-5 mb-1" />
+                    {offsetY > SWIPE_THRESHOLD && <span className="text-sm">{downLabel}</span>}
                 </div>
             )}
 

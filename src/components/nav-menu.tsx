@@ -9,7 +9,7 @@ import {
     SheetTrigger
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, Target, Layers, Lightbulb, Settings, FileText, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Menu, Target, Layers, Lightbulb, Settings, FileText, CheckCircle2, BarChart3, PenLine } from 'lucide-react';
 import { ArchiveView } from '@/components/archive-view';
 import { QueueView } from '@/components/queue-view';
 import { LogoSmall } from '@/components/logo';
@@ -51,6 +51,11 @@ export function NavMenu() {
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Views
                     </div>
+
+                    <Button variant="ghost" className="justify-start w-full hover:bg-secondary/50" onClick={() => handleNavigation(() => setView('capture'))}>
+                        <PenLine className="mr-2 h-4 w-4" />
+                        Capture Mode (Home)
+                    </Button>
 
                     <Button variant="ghost" className="justify-start w-full hover:bg-secondary/50" onClick={() => handleNavigation(() => setView('focus'))}>
                         <Target className="mr-2 h-4 w-4" />

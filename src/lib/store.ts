@@ -51,8 +51,8 @@ interface MonocleState {
     activeModal: 'add-task' | 'project-manager' | null;
     setActiveModal: (modal: 'add-task' | 'project-manager' | null) => void;
 
-    view: 'focus' | 'queue' | 'ideas' | 'analytics';
-    setView: (view: 'focus' | 'queue' | 'ideas' | 'analytics') => void;
+    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics';
+    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics') => void;
 
     // Undo Logic
     lastState: Task[] | null;

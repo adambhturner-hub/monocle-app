@@ -8,6 +8,7 @@ import { ArchiveView } from '@/components/archive-view';
 import { NavMenu } from '@/components/nav-menu';
 import { AddTaskModal } from '@/components/add-task-modal';
 import { ViewSelector } from '@/components/view-selector';
+import { CaptureView } from '@/components/capture-view';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { GlobalShortcuts } from '@/components/global-shortcuts';
 import { useMonocleStore } from '@/lib/store';
@@ -114,7 +115,11 @@ export default function Home() {
 
       {/* Main Content (Always render Queue or Drafts underneath) */}
       <div className="w-full flex-1 flex flex-col items-center justify-center">
-        {view === 'analytics' ? (
+        {view === 'capture' ? (
+          <div className="w-full h-full flex items-center justify-center pt-4 md:pt-8 relative z-0">
+            <CaptureView />
+          </div>
+        ) : view === 'analytics' ? (
           <div className="w-full flex-1 pt-12">
             <AnalyticsView />
           </div>

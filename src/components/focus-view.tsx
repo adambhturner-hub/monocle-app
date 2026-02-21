@@ -233,7 +233,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                         isMobile={isMobile}
                         leftAction={() => handleComplete()}
                         rightAction={() => handleSkip()}
-                        downAction={(id, mins, label) => handleHold(mins, label)}
+                        downThresholdAction={(id, mins, label) => handleHold(mins, label)}
                         leftIcon={CheckCircle2}
                         leftLabel="Complete"
                         leftBgClass="bg-emerald-500"
