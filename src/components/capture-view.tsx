@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenu
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Textarea } from './ui/textarea';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
@@ -164,10 +165,8 @@ export function CaptureView() {
             setView('queue');
         } else if (destination === 'focus') {
             setView('focus');
-        } else if (destination === 'idea') {
-            setView('ideas');
         } else {
-            // Stay on capture, refocus
+            // Stay on capture, refocus (for 'idea' and 'capture' actions)
             setTimeout(() => inputRef.current?.focus(), 10);
         }
     };
@@ -300,84 +299,95 @@ export function CaptureView() {
 
                         {/* Advanced Options Drawer */}
                         {advancedOpen && (
-                            <div className="flex justify-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
-                                {/* Priority */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className={cn(
-                                            "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
-                                            priority === 'high' ? "text-amber-500 border-amber-500/30" :
-                                                priority === 'low' ? "text-blue-500 border-blue-500/30" : "text-muted-foreground border-border/50"
-                                        )}>
-                                            <AlertCircle className="h-3.5 w-3.5" />
-                                            {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="center">
-                                        <DropdownMenuRadioGroup value={priority} onValueChange={(v: any) => setPriority(v as any)}>
-                                            <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="high" className="text-amber-500">High</DropdownMenuRadioItem>
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                            <div className="flex flex-col gap-3 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                                {/* Description Box */}
+                                <Textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Add details, notes, or links..."
+                                    className="min-h-[60px] resize-none text-sm bg-card hover:bg-secondary/50 focus:bg-secondary transition-colors border-border/50 rounded-xl px-3 py-2"
+                                />
 
-                                {/* Date */}
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <button className={cn(
-                                            "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
-                                            dueDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
-                                        )}>
-                                            <CalendarIcon className="h-3.5 w-3.5" />
-                                            {dueDate ? format(dueDate, 'MMM d') : 'Date'}
-                                        </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="center">
-                                        <CalendarComponent
-                                            mode="single"
-                                            selected={dueDate}
-                                            onSelect={(d: any) => setDueDate(d)}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                {/* Buttons Grid / Wrap */}
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {/* Priority */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button className={cn(
+                                                "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
+                                                priority === 'high' ? "text-amber-500 border-amber-500/30" :
+                                                    priority === 'low' ? "text-blue-500 border-blue-500/30" : "text-muted-foreground border-border/50"
+                                            )}>
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="center">
+                                            <DropdownMenuRadioGroup value={priority} onValueChange={(v: any) => setPriority(v as any)}>
+                                                <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="high" className="text-amber-500">High</DropdownMenuRadioItem>
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
 
-                                {/* Recurring */}
-                                <Select value={recurrence} onValueChange={setRecurrence}>
-                                    <SelectTrigger className="w-auto h-8 px-3 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary border-border/50 text-muted-foreground focus:ring-0">
-                                        <Repeat className="h-3.5 w-3.5" />
-                                        <SelectValue placeholder="Repeat" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">No Repeat</SelectItem>
-                                        <SelectItem value="daily">Daily</SelectItem>
-                                        <SelectItem value="weekly">Weekly</SelectItem>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                    {/* Date */}
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button className={cn(
+                                                "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
+                                                dueDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
+                                            )}>
+                                                <CalendarIcon className="h-3.5 w-3.5" />
+                                                {dueDate ? format(dueDate, 'MMM d') : 'Date'}
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="center">
+                                            <CalendarComponent
+                                                mode="single"
+                                                selected={dueDate}
+                                                onSelect={(d: any) => setDueDate(d)}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
 
-                                {/* Frog Toggle */}
-                                <button
-                                    onClick={() => { setIsFrog(!isFrog); setIsLightning(false); }}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card",
-                                        isFrog ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
-                                    )}
-                                >
-                                    <span className="text-sm leading-none mr-1.5">🐸</span> Frog
-                                </button>
+                                    {/* Recurring */}
+                                    <Select value={recurrence} onValueChange={setRecurrence}>
+                                        <SelectTrigger className="flex-1 justify-center h-8 px-3 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary border-border/50 text-muted-foreground focus:ring-0">
+                                            <Repeat className="h-3.5 w-3.5 shrink-0" />
+                                            <SelectValue placeholder="Repeat" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Repeat</SelectItem>
+                                            <SelectItem value="daily">Daily</SelectItem>
+                                            <SelectItem value="weekly">Weekly</SelectItem>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                        </SelectContent>
+                                    </Select>
 
-                                {/* Lightning Toggle */}
-                                <button
-                                    onClick={() => { setIsLightning(!isLightning); setIsFrog(false); }}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card",
-                                        isLightning ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
-                                    )}
-                                >
-                                    <span className="text-sm leading-none mr-1.5">⚡️</span> Quick
-                                </button>
+                                    {/* Frog Toggle */}
+                                    <button
+                                        onClick={() => { setIsFrog(!isFrog); setIsLightning(false); }}
+                                        className={cn(
+                                            "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
+                                            isFrog ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
+                                        )}
+                                    >
+                                        <span className="text-sm leading-none mr-1.5">🐸</span> Frog
+                                    </button>
+
+                                    {/* Lightning Toggle */}
+                                    <button
+                                        onClick={() => { setIsLightning(!isLightning); setIsFrog(false); }}
+                                        className={cn(
+                                            "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
+                                            isLightning ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
+                                        )}
+                                    >
+                                        <span className="text-sm leading-none mr-1.5">⚡️</span> Quick
+                                    </button>
+                                </div>
                             </div>
                         )}
 
