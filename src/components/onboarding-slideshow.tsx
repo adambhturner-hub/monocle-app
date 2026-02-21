@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, Target, ListTodo, Hand, Zap } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Target, ListTodo, Hand, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LogoSmall } from '@/components/logo';
 
@@ -35,20 +35,38 @@ export function OnboardingSlideshow() {
             icon: <Target className="h-16 w-16 text-primary mb-6" />
         },
         {
-            title: "Momentum Modes",
+            title: "Choose Your Sprint",
             description: (
-                <div className="flex flex-col gap-4 text-left w-full mt-4">
-                    <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30">
-                        <div className="text-2xl mt-0.5">🟢</div>
-                        <div className="flex-1"><span className="font-semibold text-foreground block mb-1">Frog</span> The hard thing that matters.</div>
-                    </div>
-                    <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30">
-                        <div className="text-2xl mt-0.5">🟡</div>
-                        <div className="flex-1"><span className="font-semibold text-foreground block mb-1">Lightning</span> A 2-minute ignition task.</div>
+                <div className="flex flex-col gap-4 text-left w-full mt-2">
+                    <p className="text-center text-base">
+                        Focus isn't vague. It's timed.<br />
+                        Decide how long you're committing — then begin.
+                    </p>
+                    <div className="flex flex-col gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30 text-sm">
+                        <div className="flex items-center gap-3"><span className="text-xl">⚡</span> <span className="font-semibold text-foreground">Lightning</span> <span className="text-muted-foreground ml-auto">2-min ignition</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🏃</span> <span className="font-semibold text-foreground">Micro-Sprint</span> <span className="text-muted-foreground ml-auto">5-min burst</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🍅</span> <span className="font-semibold text-foreground">Pomodoro</span> <span className="text-muted-foreground ml-auto">25-min sprint</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🌊</span> <span className="font-semibold text-foreground">Flow State</span> <span className="text-muted-foreground ml-auto">45-min immersion</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🔋</span> <span className="font-semibold text-foreground">Ultradian</span> <span className="text-muted-foreground ml-auto">90-min deep session</span></div>
                     </div>
                 </div>
             ),
-            icon: <Zap className="h-16 w-16 text-primary mb-6" />
+            icon: <Timer className="h-16 w-16 text-primary mb-6" />
+        },
+        {
+            title: "Eat the Frog",
+            description: (
+                <div className="flex flex-col gap-4 text-center w-full mt-2">
+                    <blockquote className="italic text-muted-foreground border-l-2 border-primary/50 pl-4 py-2 text-left bg-secondary/10 rounded-r-lg">
+                        "If it's your job to eat a frog, it's best to do it first thing in the morning."<br />
+                        <span className="text-sm font-semibold mt-2 block">— Mark Twain</span>
+                    </blockquote>
+                    <p className="text-base text-foreground mt-2">
+                        Choose your most important task. It will always rise to the top.
+                    </p>
+                </div>
+            ),
+            icon: <div className="text-7xl mb-6 leading-none">🐸</div>
         }
     ];
 
