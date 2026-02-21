@@ -138,12 +138,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         const deltaY = e.changedTouches[0].clientY - queueTouchStartRef.current.y;
         const deltaX = Math.abs(e.changedTouches[0].clientX - queueTouchStartRef.current.x);
 
-        // Only trigger if it's a strongly vertical swipe (100px) and not a lateral scroll
-        if (deltaX < 50) {
-            if (deltaY > 100) {
+        // Only trigger if it's a strongly vertical swipe and not a lateral scroll
+        if (deltaX < 75) {
+            if (deltaY > 75) {
                 // Swiped Down -> Go to Focus
                 setView('focus');
-            } else if (deltaY < -100) {
+            } else if (deltaY < -75) {
                 // Swiped Up -> Go to Capture
                 setView('capture');
             }
@@ -333,13 +333,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         const otherTasks = tasks.filter(t => t.id !== taskId);
         const updatedTask = { ...task, isDraft: false }; // Ensure it's active
 
-        // Find first active index to insert at? 
-        // We just put it at the start of component logic via store, but here we need to manually reorder.
-        // Easiest is to filter valid active tasks and unshift.
-        // Actually, simplest is just setTask([updatedTask, ...otherTasks])? 
-        // But we need to respect project filtering?
-        // Let's use `prioritizeTask` logic but for specific ID?
-        // Or just `promoteTask` does it?
 
         // Let's just manually reorder for now.
         setTask([updatedTask, ...otherTasks]);

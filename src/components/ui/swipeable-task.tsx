@@ -69,8 +69,8 @@ export function SwipeableTask({
     const startYRef = useRef(0);
     const isHorizontalSwipeRef = useRef<boolean | null>(null);
 
-    const SWIPE_THRESHOLD = 80; // Pixels needed to trigger action
-    const MAX_SWIPE = 120; // Visual cap
+    const SWIPE_THRESHOLD = 60; // Pixels needed to trigger action
+    const MAX_SWIPE = 100; // Visual cap
 
     const handleTouchStart = (e: React.TouchEvent) => {
         if (!isMobile) return;
@@ -113,7 +113,7 @@ export function SwipeableTask({
 
         if (isHorizontalSwipeRef.current) {
             // Apply slight resistance
-            const resistance = 0.6;
+            const resistance = 0.85;
             let visualOffset = deltaX * resistance;
 
             // Cap the visual travel

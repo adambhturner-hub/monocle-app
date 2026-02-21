@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { LogoSmall } from '@/components/logo';
 
 export function OnboardingSlideshow() {
-    const { settings, updateSettings } = useMonocleStore();
+    const { settings, updateSettings, isHydrated } = useMonocleStore();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isExiting, setIsExiting] = useState(false);
 
@@ -15,6 +15,7 @@ export function OnboardingSlideshow() {
     const touchEndX = useRef<number | null>(null);
     const minSwipeDistance = 50;
 
+    if (!isHydrated) return null;
     if (settings.hasSeenOnboarding) return null;
     if (isExiting) return null;
 

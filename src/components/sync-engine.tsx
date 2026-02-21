@@ -38,6 +38,7 @@ const deepStringify = (obj: any): string => {
 };
 
 export function SyncEngine() {
+    const isHydrated = useMonocleStore(state => state.isHydrated);
     const store = useMonocleStore();
 
     // Track the serialized state of the last known synced data.
@@ -50,6 +51,8 @@ export function SyncEngine() {
 
     // 1. Listen to Cloud Changes
     useEffect(() => {
+        if (!isHydrated) return;
+
         const unsubscribeAuth = auth.onAuthStateChanged((user) => {
             if (user) {
                 const userDocRef = firestoreDoc(db, 'users', user.uid);
@@ -136,10 +139,12 @@ export function SyncEngine() {
         });
 
         return () => unsubscribeAuth();
-    }, []);
+    }, [isHydrated]);
 
     // 2. Push Local Changes to Cloud
     useEffect(() => {
+        if (!isHydrated) return;
+
         const unsubscribeStore = useMonocleStore.subscribe((state, prevState) => {
             const user = auth.currentUser;
             if (!user) return;
@@ -191,7 +196,7 @@ export function SyncEngine() {
         });
 
         return () => unsubscribeStore();
-    }, []);
+    }, [isHydrated]);
 
     return null;
 }

@@ -111,6 +111,9 @@ interface MonocleState {
     // Cloud Sync & Storage
     loadFromCloud: (cloudState: Partial<MonocleState>) => void;
     clearData: () => void;
+
+    isHydrated?: boolean;
+    setHydrated?: () => void;
 }
 
 export interface RecentCommand {
@@ -130,6 +133,8 @@ export const useMonocleStore = create<MonocleState>()(
             tasks: [],
             projects: [],
             activeProject: null,
+            isHydrated: false,
+            setHydrated: () => set({ isHydrated: true }),
 
             // Settings Defaults
             settings: {
@@ -940,6 +945,11 @@ export const useMonocleStore = create<MonocleState>()(
             name: 'monocle-storage',
             storage: createJSONStorage(() => idbStorage),
             version: 1,
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.setHydrated?.();
+                }
+            },
             partialize: (state) => Object.fromEntries(
                 Object.entries(state).filter(([key]) => !['view', 'activeSheet', 'activeModal'].includes(key))
             ) as unknown as MonocleState,

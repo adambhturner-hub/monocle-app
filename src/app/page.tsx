@@ -23,7 +23,7 @@ import { Plus } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 
 export default function Home() {
-  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks } = useMonocleStore();
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated } = useMonocleStore();
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
@@ -47,7 +47,7 @@ export default function Home() {
     }
   }, [view, getVisibleTasks, setView]);
 
-  if (!isMounted || showSplash) {
+  if (!isMounted || showSplash || !isHydrated) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
         <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
