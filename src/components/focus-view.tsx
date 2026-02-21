@@ -292,8 +292,23 @@ export function FocusView({ onExit }: FocusViewProps) {
                                 onClick={() => setIsDetailsSheetOpen(true)}
                             >
 
+                                {/* Momentum Mode Indicator */}
+                                {(activeTask.isFrog || activeTask.isLightning) && (
+                                    <div className="flex flex-col items-center justify-center pt-8 md:pt-4 pb-2 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="text-5xl md:text-6xl drop-shadow-md mb-2">
+                                            {activeTask.isFrog ? '🐸' : '⚡'}
+                                        </div>
+                                        <span className={cn(
+                                            "text-xs font-bold uppercase tracking-widest",
+                                            activeTask.isFrog ? "text-emerald-600 dark:text-emerald-500" : "text-yellow-600 dark:text-yellow-500"
+                                        )}>
+                                            {activeTask.isFrog ? 'Eat The Frog' : 'Lightning Strike'}
+                                        </span>
+                                    </div>
+                                )}
+
                                 {/* Project Badge */}
-                                <div className="flex items-center justify-center pt-8 md:pt-0">
+                                <div className={cn("flex items-center justify-center", !(activeTask.isFrog || activeTask.isLightning) && "pt-8 md:pt-0")}>
                                     <div className="px-3 py-1 rounded-full bg-secondary/50 border text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                                         {project ? (
                                             <>
