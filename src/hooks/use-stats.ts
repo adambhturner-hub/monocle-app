@@ -88,6 +88,7 @@ export function useStats() {
                     id: projectId,
                     name: project?.name || 'Unknown Project',
                     color: project?.color || '#808080', // Default gray
+                    icon: project?.icon,
                     durationSeconds,
                     durationHours: (durationSeconds / 3600).toFixed(1),
                     percentage: Math.round((durationSeconds / totalFocusSeconds) * 100) || 0

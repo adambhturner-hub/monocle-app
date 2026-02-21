@@ -36,6 +36,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { RecurrenceInterval } from '@/types';
 import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
+import { getIconComponent } from '@/lib/icons';
 
 interface FocusViewProps {
     onExit?: () => void;
@@ -325,7 +326,12 @@ export function FocusView({ onExit }: FocusViewProps) {
                                     <div className="px-3 py-1 rounded-full bg-secondary/50 border text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                                         {project ? (
                                             <>
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
+                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: project.color }}>
+                                                    {(() => {
+                                                        const IconCmp = getIconComponent(project.icon);
+                                                        return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                                    })()}
+                                                </div>
                                                 {project.name}
                                             </>
                                         ) : (

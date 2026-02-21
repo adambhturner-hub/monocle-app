@@ -15,6 +15,7 @@ import {
 import { useMonocleStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
+import { getIconComponent } from '@/lib/icons';
 import {
     Calculator,
     Calendar,
@@ -181,9 +182,14 @@ export function CommandPalette() {
                             value={`project ${project.name}`}
                         >
                             <div
-                                className="mr-2 h-3 w-3 rounded-full border"
+                                className="mr-2 flex items-center justify-center shrink-0 w-4 h-4 rounded-sm"
                                 style={{ backgroundColor: project.color }}
-                            />
+                            >
+                                {(() => {
+                                    const IconCmp = getIconComponent(project.icon);
+                                    return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                })()}
+                            </div>
                             <span>{project.name}</span>
                         </CommandItem>
                     ))}

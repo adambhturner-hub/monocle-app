@@ -9,6 +9,7 @@ import { useMonocleStore } from '@/lib/store';
 import { Project } from '@/types';
 import { cn, generateId } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PROJECT_ICONS, getIconComponent } from '@/lib/icons';
 
 const COLORS = [
     '#ef4444', // Red 500
@@ -36,11 +37,13 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
     const [isCreating, setIsCreating] = useState(false);
     const [newName, setNewName] = useState('');
     const [newColor, setNewColor] = useState(COLORS[5]); // Default Blue
+    const [newIcon, setNewIcon] = useState('Folder');
 
     // Editing State
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editColor, setEditColor] = useState('');
+    const [editIcon, setEditIcon] = useState('Folder');
 
     // Delete State
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -51,9 +54,11 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
             id: generateId(),
             name: newName.trim(),
             color: newColor,
+            icon: newIcon,
         };
         addProject(newProject);
         setNewName('');
+        setNewIcon('Folder');
         setIsCreating(false);
     };
 
@@ -61,11 +66,12 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
         setEditingId(project.id);
         setEditName(project.name);
         setEditColor(project.color);
+        setEditIcon(project.icon || 'Folder');
     };
 
     const saveEdit = () => {
         if (!editingId || !editName.trim()) return;
-        updateProject(editingId, { name: editName.trim(), color: editColor });
+        updateProject(editingId, { name: editName.trim(), color: editColor, icon: editIcon });
         setEditingId(null);
     };
 
@@ -99,17 +105,44 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                     <div className="flex items-center gap-2 flex-1 animate-in fade-in zoom-in-95 duration-200">
                                         <Popover>
                                             <PopoverTrigger asChild>
-                                                <button className="w-6 h-6 rounded-full border border-border shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 ring-primary/20" style={{ backgroundColor: editColor }} />
+                                                <button className="w-8 h-8 rounded-md border border-border shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 ring-primary/20 flex items-center justify-center shrink-0" style={{ backgroundColor: editColor }}>
+                                                    {(() => {
+                                                        const IconCmp = getIconComponent(editIcon);
+                                                        return <IconCmp className="h-4 w-4 text-white drop-shadow-sm" />;
+                                                    })()}
+                                                </button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-fit p-2 grid grid-cols-5 gap-2">
-                                                {COLORS.map(c => (
-                                                    <button
-                                                        key={c}
-                                                        className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", editColor === c && "ring-2 ring-offset-2 ring-primary")}
-                                                        style={{ backgroundColor: c }}
-                                                        onClick={() => setEditColor(c)}
-                                                    />
-                                                ))}
+                                            <PopoverContent className="w-80 p-3 flex flex-col gap-4">
+                                                <div>
+                                                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Color</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {COLORS.map(c => (
+                                                            <button
+                                                                key={c}
+                                                                className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", editColor === c && "ring-2 ring-offset-2 ring-primary")}
+                                                                style={{ backgroundColor: c }}
+                                                                onClick={() => setEditColor(c)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Icon</p>
+                                                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                                                        {Object.keys(PROJECT_ICONS).map(iconName => {
+                                                            const IconCmp = PROJECT_ICONS[iconName];
+                                                            return (
+                                                                <button
+                                                                    key={iconName}
+                                                                    className={cn("w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors", editIcon === iconName && "bg-secondary text-primary ring-1 ring-primary")}
+                                                                    onClick={() => setEditIcon(iconName)}
+                                                                >
+                                                                    <IconCmp className="h-4 w-4" />
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </PopoverContent>
                                         </Popover>
                                         <Input
@@ -129,7 +162,12 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                 ) : (
                                     <>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
+                                            <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: project.color }}>
+                                                {(() => {
+                                                    const IconCmp = getIconComponent(project.icon);
+                                                    return <IconCmp className="h-3.5 w-3.5 text-white drop-shadow-sm" />;
+                                                })()}
+                                            </div>
                                             <span className="font-medium">{project.name}</span>
                                         </div>
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -156,17 +194,44 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                         <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/20 animate-in slide-in-from-top-2">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <button className="w-6 h-6 rounded-full border border-border shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 ring-primary/20" style={{ backgroundColor: newColor }} />
+                                    <button className="w-9 h-9 rounded-md border border-border shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 ring-primary/20 flex items-center justify-center shrink-0" style={{ backgroundColor: newColor }}>
+                                        {(() => {
+                                            const IconCmp = getIconComponent(newIcon);
+                                            return <IconCmp className="h-4 w-4 text-white drop-shadow-sm" />;
+                                        })()}
+                                    </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-fit p-2 grid grid-cols-5 gap-2">
-                                    {COLORS.map(c => (
-                                        <button
-                                            key={c}
-                                            className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", newColor === c && "ring-2 ring-offset-2 ring-primary")}
-                                            style={{ backgroundColor: c }}
-                                            onClick={() => setNewColor(c)}
-                                        />
-                                    ))}
+                                <PopoverContent className="w-80 p-3 flex flex-col gap-4">
+                                    <div>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Color</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {COLORS.map(c => (
+                                                <button
+                                                    key={c}
+                                                    className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", newColor === c && "ring-2 ring-offset-2 ring-primary")}
+                                                    style={{ backgroundColor: c }}
+                                                    onClick={() => setNewColor(c)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Icon</p>
+                                        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                                            {Object.keys(PROJECT_ICONS).map(iconName => {
+                                                const IconCmp = PROJECT_ICONS[iconName];
+                                                return (
+                                                    <button
+                                                        key={iconName}
+                                                        className={cn("w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors", newIcon === iconName && "bg-secondary text-primary ring-1 ring-primary")}
+                                                        onClick={() => setNewIcon(iconName)}
+                                                    >
+                                                        <IconCmp className="h-4 w-4" />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </PopoverContent>
                             </Popover>
                             <Input

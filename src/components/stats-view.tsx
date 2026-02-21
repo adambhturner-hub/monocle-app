@@ -6,6 +6,7 @@ import { useStats } from '@/hooks/use-stats';
 import { useMonocleStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Activity, Clock, Trophy, BarChart3, TrendingUp, PieChart } from 'lucide-react';
+import { getIconComponent } from '@/lib/icons';
 
 export function StatsView() {
     const { activeSheet, setOpenSheet } = useMonocleStore();
@@ -59,7 +60,12 @@ export function StatsView() {
                                 <div key={project.id} className="space-y-1">
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="font-medium flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
+                                            <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: project.color }}>
+                                                {(() => {
+                                                    const IconCmp = getIconComponent(project.icon);
+                                                    return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                                })()}
+                                            </div>
                                             {project.name}
                                         </span>
                                         <span className="text-muted-foreground">

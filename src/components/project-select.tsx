@@ -12,6 +12,7 @@ import {
 import { Folder, Settings2 } from 'lucide-react';
 import { ProjectManager } from '@/components/project-manager';
 import { cn } from '@/lib/utils';
+import { getIconComponent } from '@/lib/icons';
 
 export interface ProjectSelectProps {
     variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -32,7 +33,12 @@ export function ProjectSelect({ variant = "outline", className }: ProjectSelectP
                         <span className="flex items-center gap-2 truncate">
                             {activeProjectData ? (
                                 <>
-                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: activeProjectData.color }} />
+                                    <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: activeProjectData.color }}>
+                                        {(() => {
+                                            const IconCmp = getIconComponent(activeProjectData.icon);
+                                            return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                        })()}
+                                    </div>
                                     {activeProjectData.name}
                                 </>
                             ) : (
@@ -60,7 +66,12 @@ export function ProjectSelect({ variant = "outline", className }: ProjectSelectP
                             onClick={() => setActiveProject(project.id)}
                             className="gap-2"
                         >
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
+                            <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: project.color }}>
+                                {(() => {
+                                    const IconCmp = getIconComponent(project.icon);
+                                    return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                })()}
+                            </div>
                             <span className="truncate flex-1">{project.name}</span>
                             {activeProject === project.id && <span className="text-primary text-xs">●</span>}
                         </DropdownMenuItem>
