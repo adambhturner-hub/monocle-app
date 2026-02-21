@@ -59,15 +59,25 @@ export default function Home() {
 
       {/* Header */}
       <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all">
-        {/* Left: Hamburger + Logo */}
+        {/* Left: Hamburger */}
         <div className="flex items-center gap-3">
           <NavMenu />
-          <LogoSmall className="hidden sm:flex" />
-          <LogoSmall className="sm:hidden" showText={false} />
         </div>
 
-        {/* Center/Right: Add + View Selector */}
-        <div className="flex items-center gap-2 pointer-events-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:justify-center ml-auto sm:ml-0">
+        {/* Center: Monocle Logo Focus Trigger */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
+          <button
+            onClick={() => setView('focus')}
+            className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group"
+            title="Enter Focus Mode"
+          >
+            <LogoSmall className="hidden sm:flex group-hover:drop-shadow-[0_0_12px_rgba(var(--primary),0.5)] transition-all" />
+            <LogoSmall className="sm:hidden group-hover:drop-shadow-[0_0_12px_rgba(var(--primary),0.5)] transition-all" showText={false} />
+          </button>
+        </div>
+
+        {/* Right: Add + View Selector + Project Dropdown */}
+        <div className="flex items-center gap-2 max-w-[50%] justify-end pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2">
             <AddTaskModal
               open={activeModal === 'add-task'}
@@ -88,8 +98,10 @@ export default function Home() {
               <span className="hidden sm:inline">Add Task</span>
             </Button>
 
-            <div className="w-px h-6 bg-border mx-1 sm:mx-2" />
-            <ViewSelector />
+            <div className="hidden sm:block w-px h-6 bg-border mx-1 sm:mx-2" />
+            <div className="hidden sm:block">
+              <ViewSelector />
+            </div>
           </div>
         </div>
 

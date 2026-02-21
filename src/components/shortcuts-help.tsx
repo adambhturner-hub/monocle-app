@@ -14,7 +14,7 @@ export function ShortcutsHelp() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="fixed bottom-4 right-4 h-10 w-10 rounded-full bg-background border shadow-md text-muted-foreground hover:text-foreground z-50">
+                <Button variant="ghost" size="icon" className="fixed bottom-4 right-4 h-10 w-10 rounded-full bg-background border shadow-md text-muted-foreground hover:text-foreground z-50 hidden sm:flex">
                     <Keyboard className="h-5 w-5" />
                 </Button>
             </DialogTrigger>

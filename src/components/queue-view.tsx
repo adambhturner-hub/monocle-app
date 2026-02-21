@@ -526,59 +526,52 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                     {/* Quick Add Input */}
                                     {!searchQuery && (
                                         <div className="px-4 pb-4">
-                                            <Tooltip open={tasks.length <= 1 && !quickAddValue && mode === 'active' && isVisible}>
-                                                <TooltipTrigger asChild>
-                                                    <div className="relative">
-                                                        <Input
-                                                            value={quickAddValue}
-                                                            onChange={(e) => setQuickAddValue(e.target.value)}
-                                                            onPaste={(e) => {
-                                                                const text = e.clipboardData.getData('text');
-                                                                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-                                                                if (lines.length > 1) {
-                                                                    e.preventDefault();
-                                                                    setPendingPaste(lines);
-                                                                }
-                                                            }}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    const isDraft = mode === ('drafts' as any) ? !e.shiftKey : e.shiftKey;
-                                                                    handleQuickAdd(isDraft);
-                                                                }
-                                                            }}
-                                                            placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
-                                                            className={cn(
-                                                                "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all",
-                                                                tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
-                                                            )}
-                                                        />
-                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon-xs"
-                                                                className="h-6 w-6 text-muted-foreground hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-foreground rounded-md"
-                                                                onClick={() => handleQuickAdd(true)}
-                                                                title="Save as Idea"
-                                                            >
-                                                                <Lightbulb className="h-4 w-4" />
-                                                            </Button>
+                                            <div className="relative">
+                                                <Input
+                                                    value={quickAddValue}
+                                                    onChange={(e) => setQuickAddValue(e.target.value)}
+                                                    onPaste={(e) => {
+                                                        const text = e.clipboardData.getData('text');
+                                                        const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                                                        if (lines.length > 1) {
+                                                            e.preventDefault();
+                                                            setPendingPaste(lines);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const isDraft = mode === ('drafts' as any) ? !e.shiftKey : e.shiftKey;
+                                                            handleQuickAdd(isDraft);
+                                                        }
+                                                    }}
+                                                    placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
+                                                    className={cn(
+                                                        "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all",
+                                                        tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
+                                                    )}
+                                                />
+                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        className="h-6 w-6 text-muted-foreground hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-foreground rounded-md"
+                                                        onClick={() => handleQuickAdd(true)}
+                                                        title="Save as Idea"
+                                                    >
+                                                        <Lightbulb className="h-4 w-4" />
+                                                    </Button>
 
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon-xs"
-                                                                className="h-6 w-6 bg-primary/10 text-primary hover:bg-primary/20 rounded-md"
-                                                                onClick={() => handleQuickAdd(false)}
-                                                                title="Add to Queue"
-                                                            >
-                                                                <CornerDownLeft className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top" align="start" sideOffset={10} className="bg-popover text-popover-foreground border shadow-lg font-medium px-4 py-2 text-sm animate-pulse tracking-wide z-[60]">
-                                                    Start here! Add your first tasks.
-                                                </TooltipContent>
-                                            </Tooltip>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        className="h-6 w-6 bg-primary/10 text-primary hover:bg-primary/20 rounded-md"
+                                                        onClick={() => handleQuickAdd(false)}
+                                                        title="Add to Queue"
+                                                    >
+                                                        <CornerDownLeft className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
