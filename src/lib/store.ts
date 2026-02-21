@@ -936,7 +936,7 @@ export const useMonocleStore = create<MonocleState>()(
                         isFrog: true,
                         isDraft: false
                     }];
-                    hasSeenOnboarding = true;
+                    // Removed automatic hasSeenOnboarding = true; so the slideshow can control it
                 }
 
                 return {

@@ -19,10 +19,12 @@ import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 
 export default function Home() {
   const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks } = useMonocleStore();
   const [isMounted, setIsMounted] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
@@ -30,18 +32,28 @@ export default function Home() {
     if (view === 'focus' && getVisibleTasks().length === 0) {
       setView('queue');
     }
+
+    // Minimum artificial delay for splash screen branding
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
   }, [view, getVisibleTasks, setView]);
 
-  if (!isMounted) {
+  if (!isMounted || showSplash) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
         <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
+        <div className="animate-in fade-in zoom-in-95 duration-700 delay-100 fill-mode-both">
+          <LogoSmall className="scale-[2]" showText={false} />
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden animate-in fade-in duration-700">
       {/* Background Gradient */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
 
@@ -120,6 +132,7 @@ export default function Home() {
       <ArchiveView /> {/* ArchiveView controls its own open state via activeSheet check internally? Let's check. Yes it does. */}
       <StatsView />
 
+      <OnboardingSlideshow />
     </main >
   );
 }
