@@ -49,7 +49,7 @@ export function GlobalShortcuts() {
             // I: Quick Add
             if (e.key.toLowerCase() === 'i' && !hasModifier) {
                 e.preventDefault();
-                setActiveModal('add-task');
+                setView('capture');
             }
 
             // C: Complete Task
@@ -83,7 +83,7 @@ export function GlobalShortcuts() {
             // Command/Ctrl + K: Add Task (Legacy mapping for power users)
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault();
-                setActiveModal('add-task');
+                setView('capture');
             }
 
             // Focus Session Shortcuts
@@ -115,11 +115,11 @@ export function GlobalShortcuts() {
                 }
             }
 
-            // Enter: Open Add Task Modal fallback
+            // Enter: Open Capture mode fallback
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (!activeModal) {
-                    setActiveModal('add-task');
+                if (!activeModal && view !== 'capture') {
+                    setView('capture');
                 }
             }
 

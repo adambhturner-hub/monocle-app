@@ -9,7 +9,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Zap, ArrowRight, ListTodo } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Zap, ArrowRight, ListTodo, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Snail } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -31,6 +31,10 @@ export function CaptureView() {
 
     const [parsedData, setParsedData] = useState<ParsedTask | null>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [isFrog, setIsFrog] = useState(false);
+    const [isLightning, setIsLightning] = useState(false);
 
     // Mentions
     const { activeTrigger, filterText, isOpen: isMentionsOpen, onInputChange: onMentionChange, triggerIndex, closeMentions } = useMentions({ inputRef: inputRef as any });
@@ -108,7 +112,7 @@ export function CaptureView() {
         return () => clearTimeout(timer);
     }, [title, projects]);
 
-    const submitTask = (destination: 'capture' | 'queue' | 'focus') => {
+    const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea') => {
         if (!title.trim()) return;
 
         let finalTitle = title;
@@ -135,7 +139,9 @@ export function CaptureView() {
             projectId: finalProjectId,
             dueDate: finalDueDate,
             recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
-            isDraft: destination === 'queue' ? false : true, // Only fully promote if dropped into Queue or Focus explicitly? Actually, let's say all capture is real queue unless tagged otherwise. We'll make it false.
+            isDraft: destination === 'idea' ? true : false,
+            isFrog: isFrog,
+            isLightning: isLightning,
             createdAt: Date.now(),
         };
 
@@ -149,11 +155,16 @@ export function CaptureView() {
         setRecurrence('none');
         setDueDate(undefined);
         setParsedData(null);
+        setIsFrog(false);
+        setIsLightning(false);
+        setAdvancedOpen(false);
 
         if (destination === 'queue') {
             setView('queue');
         } else if (destination === 'focus') {
             setView('focus');
+        } else if (destination === 'idea') {
+            setView('ideas');
         } else {
             // Stay on capture, refocus
             setTimeout(() => inputRef.current?.focus(), 10);
@@ -194,17 +205,30 @@ export function CaptureView() {
             <SwipeableTask
                 task={dummyTask}
                 isMobile={true} // Enable swipes everywhere for capture
+
+                rightAction={() => submitTask('idea')}
+                rightIcon={Lightbulb}
+                rightLabel="Idea Dump"
+                rightBgClass="bg-yellow-500"
+                rightColorClass="text-yellow-600"
+
                 leftAction={() => submitTask('focus')}
-                rightAction={() => submitTask('capture')}
-                downAction={() => submitTask('queue')}
-                leftIcon={Zap}
+                leftIcon={Target}
                 leftLabel="Execute"
-                leftBgClass="bg-purple-500"
-                leftColorClass="text-purple-600"
-                rightIcon={Plus}
-                rightLabel="Add"
-                rightBgClass="bg-emerald-500"
-                rightColorClass="text-emerald-600"
+                leftBgClass="bg-red-500"
+                leftColorClass="text-red-600"
+
+                downAction={() => submitTask('queue')}
+                downIcon={Layers}
+                downLabel="Queue"
+                downBgClass="bg-blue-500"
+                downColorClass="text-blue-600"
+
+                upAction={() => submitTask('capture')}
+                upIcon={Plus}
+                upLabel="Add Task"
+                upBgClass="bg-indigo-500"
+                upColorClass="text-indigo-600"
             >
                 <Card className="w-full max-w-2xl h-[calc(100vh-10rem)] md:h-[600px] shadow-2xl border bg-card/95 backdrop-blur-xl relative flex flex-col items-center justify-center text-center rounded-[2rem] group transition-all duration-500 overflow-hidden ring-1 ring-white/5">
 
@@ -260,85 +284,136 @@ export function CaptureView() {
                         )}
                     </div>
 
+                    <div className="flex justify-center mt-6">
+                        <button
+                            onClick={() => setAdvancedOpen(!advancedOpen)}
+                            className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors bg-secondary/30 px-3 py-1.5 rounded-full"
+                        >
+                            {advancedOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            {advancedOpen ? "Hide Options" : "Advanced Options"}
+                        </button>
+                    </div>
+
                     {/* Metadata Rack (Bottom Toolbar) */}
-                    <div className="absolute bottom-6 w-full px-6 flex flex-col gap-6">
+                    <div className="absolute bottom-6 w-full px-6 flex flex-col gap-4">
 
-                        {/* Manual Overrides */}
-                        <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            {/* Priority */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-secondary/50 hover:bg-secondary",
-                                        priority === 'high' ? "text-amber-500 border-amber-500/30" :
-                                            priority === 'low' ? "text-blue-500 border-blue-500/30" : "text-muted-foreground border-border/50"
-                                    )}>
-                                        <AlertCircle className="h-3.5 w-3.5" />
-                                        {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="center">
-                                    <DropdownMenuRadioGroup value={priority} onValueChange={(v: any) => setPriority(v as any)}>
-                                        <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="high" className="text-amber-500">High</DropdownMenuRadioItem>
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                        {/* Advanced Options Drawer */}
+                        {advancedOpen && (
+                            <div className="flex justify-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                                {/* Priority */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className={cn(
+                                            "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
+                                            priority === 'high' ? "text-amber-500 border-amber-500/30" :
+                                                priority === 'low' ? "text-blue-500 border-blue-500/30" : "text-muted-foreground border-border/50"
+                                        )}>
+                                            <AlertCircle className="h-3.5 w-3.5" />
+                                            {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="center">
+                                        <DropdownMenuRadioGroup value={priority} onValueChange={(v: any) => setPriority(v as any)}>
+                                            <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="high" className="text-amber-500">High</DropdownMenuRadioItem>
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                            {/* Date */}
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-secondary/50 hover:bg-secondary",
-                                        dueDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
-                                    )}>
-                                        <CalendarIcon className="h-3.5 w-3.5" />
-                                        {dueDate ? format(dueDate, 'MMM d') : 'Date'}
-                                    </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="center">
-                                    <CalendarComponent
-                                        mode="single"
-                                        selected={dueDate}
-                                        onSelect={(d: any) => setDueDate(d)}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                                {/* Date */}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button className={cn(
+                                            "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
+                                            dueDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
+                                        )}>
+                                            <CalendarIcon className="h-3.5 w-3.5" />
+                                            {dueDate ? format(dueDate, 'MMM d') : 'Date'}
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="center">
+                                        <CalendarComponent
+                                            mode="single"
+                                            selected={dueDate}
+                                            onSelect={(d: any) => setDueDate(d)}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+
+                                {/* Frog Toggle */}
+                                <button
+                                    onClick={() => { setIsFrog(!isFrog); setIsLightning(false); }}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card",
+                                        isFrog ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
+                                    )}
+                                >
+                                    <Snail className="h-3.5 w-3.5" /> Frog
+                                </button>
+
+                                {/* Lightning Toggle */}
+                                <button
+                                    onClick={() => { setIsLightning(!isLightning); setIsFrog(false); }}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card",
+                                        isLightning ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
+                                    )}
+                                >
+                                    <Zap className="h-3.5 w-3.5" /> Quick
+                                </button>
+                            </div>
+                        )}
 
                         {/* Physical Action Buttons */}
-                        <div className="flex justify-center gap-3 w-full max-w-sm mx-auto">
-                            <Button
-                                variant="outline"
-                                className="flex-1 rounded-full h-12 bg-secondary/30 hover:bg-secondary border-white/5 data-[disabled]:opacity-50"
-                                onClick={() => submitTask('focus')}
-                                disabled={!title.trim()}
-                            >
-                                <Zap className="w-4 h-4 mr-2" /> Focus
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="flex-1 rounded-full h-12 bg-secondary/30 hover:bg-secondary border-white/5 data-[disabled]:opacity-50"
-                                onClick={() => submitTask('queue')}
-                                disabled={!title.trim()}
-                            >
-                                <ListTodo className="w-4 h-4 mr-2" /> Queue
-                            </Button>
+                        <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
+                            {/* 3 Small Top Buttons */}
+                            <div className="flex justify-between gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
+                                    onClick={() => submitTask('idea')}
+                                    disabled={!title.trim()}
+                                >
+                                    <Lightbulb className="w-3.5 h-3.5 mr-1.5 text-yellow-500" /> Idea
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
+                                    onClick={() => submitTask('queue')}
+                                    disabled={!title.trim()}
+                                >
+                                    <Layers className="w-3.5 h-3.5 mr-1.5 text-blue-500" /> Prioritize
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
+                                    onClick={() => submitTask('focus')}
+                                    disabled={!title.trim()}
+                                >
+                                    <Target className="w-3.5 h-3.5 mr-1.5 text-red-500" /> Execute
+                                </Button>
+                            </div>
+
+                            {/* Large Primary Add Button */}
                             <Button
                                 variant="default"
-                                className="flex-1 rounded-full h-12 bg-indigo-500 hover:bg-indigo-600 text-white data-[disabled]:opacity-50"
+                                size="lg"
+                                className="w-full rounded-full h-11 bg-indigo-500 hover:bg-indigo-600 text-white data-[disabled]:opacity-50 font-semibold shadow-md active:scale-95 transition-transform"
                                 onClick={() => submitTask('capture')}
                                 disabled={!title.trim()}
                             >
-                                <Plus className="w-4 h-4 mr-2" /> Add
+                                <Plus className="w-4 h-4 mr-2" /> Add Task
                             </Button>
                         </div>
                     </div>
 
                 </Card>
             </SwipeableTask>
-        </div>
+        </div >
     );
 }

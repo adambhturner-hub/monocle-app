@@ -98,7 +98,7 @@ export function CommandPalette() {
                                             // We rely on the ID being descriptive or using a lookup?
                                             // Simple switch for now:
                                             switch (cmd.id) {
-                                                case 'add-task': setActiveModal('add-task'); break;
+                                                case 'add-task': setView('capture'); break;
                                                 case 'focus-mode': setView('focus'); break;
                                                 case 'queue-view': setView('queue'); break;
                                                 case 'settings': setOpenSheet('settings'); break;
@@ -130,10 +130,10 @@ export function CommandPalette() {
 
                 <CommandGroup heading="Actions">
                     <CommandItem
-                        onSelect={() => runCommand(() => setActiveModal('add-task'), { id: 'add-task', type: 'action', label: 'Add Task' })}
+                        onSelect={() => runCommand(() => setView('capture'), { id: 'add-task', type: 'action', label: 'Capture Task' })}
                     >
                         <Zap className="mr-2 h-4 w-4" />
-                        <span>Add Task</span>
+                        <span>Capture Task</span>
                         <CommandShortcut>⌘K</CommandShortcut>
                     </CommandItem>
                     <CommandItem

@@ -26,6 +26,11 @@ interface SwipeableTaskProps {
     downLabel?: string;
     downColorClass?: string;
     downBgClass?: string;
+    upAction?: (taskId: string) => void;
+    upIcon?: React.ElementType;
+    upLabel?: string;
+    upColorClass?: string;
+    upBgClass?: string;
     isMobile: boolean; // Only enable swipes on mobile layout
 }
 
@@ -48,6 +53,11 @@ export function SwipeableTask({
     downLabel = "Down",
     downColorClass = "text-indigo-500",
     downBgClass = "bg-indigo-500",
+    upAction,
+    upIcon: UpIcon = Shuffle,
+    upLabel = "Up",
+    upColorClass = "text-indigo-500",
+    upBgClass = "bg-indigo-500",
     isMobile
 }: SwipeableTaskProps) {
     const [offset, setOffset] = useState(0);
@@ -86,7 +96,7 @@ export function SwipeableTask({
                 isHorizontalSwipeRef.current = true;
                 e.preventDefault(); // Stop vertical scrolling once locked as swipe
             } else if (Math.abs(deltaY) > 10) {
-                if (deltaY > 0 && (downAction || downThresholdAction)) {
+                if ((deltaY > 0 && (downAction || downThresholdAction)) || (deltaY < 0 && upAction)) {
                     isHorizontalSwipeRef.current = false;
                     e.preventDefault(); // lock vertical swipe
                 } else {
@@ -112,15 +122,21 @@ export function SwipeableTask({
             if (visualOffset < 0 && !rightAction) visualOffset = 0;
 
             setOffset(visualOffset);
-        } else if (isHorizontalSwipeRef.current === false && (downAction || downThresholdAction)) {
+        } else if (isHorizontalSwipeRef.current === false && (downAction || downThresholdAction || upAction)) {
             // Vertical Drag
             const resistance = 0.8; // Allow more travel vertically
             let visualOffset = deltaY * resistance;
-            if (visualOffset < 0) visualOffset = 0; // Only pull down
 
-            // Cap visual travel for simple down action (not threshold)
+            // Constrain pull directions based on available actions
+            if (visualOffset < 0 && !upAction) visualOffset = 0;
+            if (visualOffset > 0 && !(downAction || downThresholdAction)) visualOffset = 0;
+
+            // Cap visual travel for simple actions (not threshold)
             if (downAction && !downThresholdAction && visualOffset > MAX_SWIPE) {
                 visualOffset = MAX_SWIPE;
+            }
+            if (upAction && visualOffset < -MAX_SWIPE) {
+                visualOffset = -MAX_SWIPE;
             }
 
             setOffsetY(visualOffset);
@@ -150,6 +166,8 @@ export function SwipeableTask({
                 }
             } else if (downAction && offsetY > SWIPE_THRESHOLD) {
                 downAction(task.id);
+            } else if (upAction && offsetY < -SWIPE_THRESHOLD) {
+                upAction(task.id);
             }
         }
 
@@ -228,6 +246,18 @@ export function SwipeableTask({
                 )}>
                     <DownIcon className="h-5 w-5 mb-1" />
                     {offsetY > SWIPE_THRESHOLD && <span className="text-sm">{downLabel}</span>}
+                </div>
+            )}
+
+            {/* Up Action Background */}
+            {upAction && offsetY < 0 && (
+                <div className={cn(
+                    "absolute inset-0 flex flex-col items-center justify-end rounded-lg font-bold tracking-wide pb-6 z-0",
+                    offsetY < -SWIPE_THRESHOLD ? cn(upBgClass, "text-white") : cn(upColorClass, upBgClass.replace('bg-', 'bg-opacity-20 bg-')),
+                    offsetY < -5 ? "opacity-100 transition-opacity duration-200" : "opacity-0"
+                )}>
+                    {offsetY < -SWIPE_THRESHOLD && <span className="text-sm">{upLabel}</span>}
+                    <UpIcon className="h-5 w-5 mt-1" />
                 </div>
             )}
 
