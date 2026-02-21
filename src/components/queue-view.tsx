@@ -14,7 +14,7 @@ import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns';
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -62,7 +62,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         snoozeTask, // Added snoozeTask
         getAutoPickedTask,
         settings, // Add settings to destructuring
-        view
+        view,
+        setView
     } = useMonocleStore();
     const draftsRef = useRef<HTMLDivElement>(null);
 
@@ -424,11 +425,16 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             <TooltipProvider>
                 <div className={cn("flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", variant === 'fullscreen' ? "w-full max-w-6xl mx-auto border-x shadow-2xl h-[85vh] rounded-xl my-4" : "")}>
                     <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0">
-                        <div className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-primary" />
-                            {mode === 'active' ? 'Queue' : 'Idea Dump'}
-                            {activeProject && <span className="text-sm font-normal text-muted-foreground ml-2">(Filtered)</span>}
-                        </div>
+                        <button
+                            onClick={() => setView(mode === 'active' ? 'ideas' : 'queue')}
+                            className="text-xl sm:text-2xl font-bold flex items-center gap-2 hover:opacity-75 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md px-1 -ml-1 text-left"
+                            title={mode === 'active' ? "Switch to Idea Dump" : "Switch to Queue"}
+                        >
+                            <div className="h-3 w-3 rounded-full bg-primary shrink-0" />
+                            <span>{mode === 'active' ? 'Queue' : 'Idea Dump'}</span>
+                            <ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />
+                            {activeProject && <span className="text-sm font-normal text-muted-foreground ml-1">(Filtered)</span>}
+                        </button>
 
                         {/* Search Input */}
                         <div className="flex items-center gap-2 shrink-0">
