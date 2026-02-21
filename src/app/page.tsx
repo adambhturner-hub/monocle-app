@@ -27,9 +27,9 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
+  // Initialize and force capture on load
   useEffect(() => {
     setIsMounted(true);
-    // Always boot to Capture mode on fresh load
     setView('capture');
 
     // Minimum artificial delay for splash screen branding
@@ -38,6 +38,13 @@ export default function Home() {
     }, 800);
 
     return () => clearTimeout(timer);
+  }, [setView]);
+
+  // View state side-effects
+  useEffect(() => {
+    if (view === 'focus' && getVisibleTasks().length === 0) {
+      setView('queue');
+    }
   }, [view, getVisibleTasks, setView]);
 
   if (!isMounted || showSplash) {
