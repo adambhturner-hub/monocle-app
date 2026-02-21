@@ -83,10 +83,22 @@ export function SyncEngine() {
                             });
                         }
                     } else {
-                        // User exists but has no cloud document yet (first login)
-                        // Instantly push their current local state to the cloud to initialize it.
-                        const state = useMonocleStore.getState();
+                        // User exists but has no cloud document yet (first login / account creation)
                         console.log("[Monocle Sync] Initializing new cloud document for user");
+
+                        // Check if the local state belongs to a real offline user or if it's phantom leakage
+                        let state = useMonocleStore.getState();
+
+                        if (!state.settings.hasSeenOnboarding) {
+                            // This is a brand new account (or an uncleared cache from a previous logout)
+                            // Wipe the phantom state to prevent cross-account task leakage
+                            console.log("[Monocle Sync] Wiping phantom local state before cloud init");
+                            state.clearData();
+                            // Fetch the cleaned state
+                            state = useMonocleStore.getState();
+                        } else {
+                            console.log("[Monocle Sync] Preserving offline local data for new cloud account");
+                        }
 
                         // It's safe to push now that we know the cloud is empty
                         isCloudReadyRef.current = true;
