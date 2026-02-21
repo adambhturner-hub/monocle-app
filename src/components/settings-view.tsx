@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
+import { del } from 'idb-keyval';
 
 interface SettingsViewProps {
     open: boolean;
@@ -60,7 +61,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                 console.error("Failed to wipe cloud document", e);
             } finally {
                 clearData();
-                localStorage.clear();
+                await del('monocle-storage');
                 window.location.reload();
             }
         }
@@ -70,10 +71,10 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
         if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
             try {
                 clearData();
-                localStorage.clear();
+                await del('monocle-storage');
                 await signOut(auth);
             } finally {
-                onOpenChange(false);
+                // ... window reload handles closing and wiping anyway
                 window.location.reload();
             }
         }

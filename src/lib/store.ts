@@ -1,5 +1,19 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { get, set, del } from 'idb-keyval';
+
+// Custom IndexedDB storage adapter
+export const idbStorage: StateStorage = {
+    getItem: async (name: string): Promise<string | null> => {
+        return (await get(name)) || null;
+    },
+    setItem: async (name: string, value: string): Promise<void> => {
+        await set(name, value);
+    },
+    removeItem: async (name: string): Promise<void> => {
+        await del(name);
+    }
+};
 import { Task, Project, FocusSession, SessionOutcome } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
 import { generateId } from '@/lib/utils';
@@ -908,6 +922,7 @@ export const useMonocleStore = create<MonocleState>()(
         }),
         {
             name: 'monocle-storage',
+            storage: createJSONStorage(() => idbStorage),
             version: 1,
             partialize: (state) => Object.fromEntries(
                 Object.entries(state).filter(([key]) => !['view', 'activeSheet', 'activeModal'].includes(key))
