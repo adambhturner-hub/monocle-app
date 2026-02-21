@@ -19,7 +19,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon, Clock, Repeat, Plus, X, ArrowUpRight, Hash, AlertCircle, Lightbulb } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Repeat, Plus, X, ArrowUpRight, Hash, AlertCircle, Lightbulb, Folder } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMonocleStore } from '@/lib/store';
@@ -28,6 +28,7 @@ import { parseTaskInput, ParsedTask } from '@/lib/smart-parser';
 import { Badge } from '@/components/ui/badge';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from '@/components/mentions-list';
+import { getIconComponent } from '@/lib/icons';
 
 interface AddTaskModalProps {
     taskToEdit?: Task;
@@ -78,11 +79,18 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
             return projects
                 .filter(p => p.name.toLowerCase().includes(lowerFilter))
                 .slice(0, 5)
-                .map(p => ({
-                    label: p.name,
-                    value: p.id,
-                    icon: <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                }));
+                .map(p => {
+                    const IconCmp = getIconComponent(p.icon);
+                    return {
+                        label: p.name,
+                        value: p.id,
+                        icon: (
+                            <div className="flex items-center justify-center w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
+                                <IconCmp className="w-2.5 h-2.5 text-white" />
+                            </div>
+                        )
+                    };
+                });
         }
         if (activeTrigger === '!') {
             const priorities = [
@@ -392,15 +400,25 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                             <SelectValue placeholder="Select Project" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">No Project</SelectItem>
-                            {projects.map(p => (
-                                <SelectItem key={p.id} value={p.id}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                                        {p.name}
-                                    </div>
-                                </SelectItem>
-                            ))}
+                            <SelectItem value="all">
+                                <div className="flex items-center gap-2">
+                                    <Folder className="w-4 h-4 text-muted-foreground opacity-60" />
+                                    No Project
+                                </div>
+                            </SelectItem>
+                            {projects.map(p => {
+                                const IconCmp = getIconComponent(p.icon);
+                                return (
+                                    <SelectItem key={p.id} value={p.id}>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
+                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                            </div>
+                                            {p.name}
+                                        </div>
+                                    </SelectItem>
+                                );
+                            })}
                         </SelectContent>
                     </Select>
 

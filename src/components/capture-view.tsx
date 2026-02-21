@@ -9,13 +9,14 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Zap, ArrowRight, ListTodo, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Snail } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Zap, ArrowRight, ListTodo, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Snail, Folder } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getIconComponent } from '@/lib/icons';
 import { Textarea } from './ui/textarea';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
@@ -356,6 +357,49 @@ export function CaptureView() {
                                             />
                                         </PopoverContent>
                                     </Popover>
+
+                                    {/* Project Selection */}
+                                    <Select value={projectId} onValueChange={setProjectId}>
+                                        <SelectTrigger className="flex-1 justify-center h-8 px-3 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary border-border/50 text-muted-foreground focus:ring-0">
+                                            {(() => {
+                                                if (projectId === 'all') {
+                                                    return <><Folder className="h-3.5 w-3.5 shrink-0 opacity-60" /> <span className="truncate max-w-[80px]">Project</span></>;
+                                                }
+                                                const proj = projects.find(p => p.id === projectId);
+                                                if (!proj) return <><Folder className="h-3.5 w-3.5 shrink-0 opacity-60" /> <span className="truncate max-w-[80px]">Project</span></>;
+                                                const IconCmp = getIconComponent(proj.icon);
+                                                return (
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <div className="flex items-center justify-center shrink-0 w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                            <IconCmp className="h-2 w-2 text-white drop-shadow-sm" />
+                                                        </div>
+                                                        <span className="truncate max-w-[80px]">{proj.name}</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                <div className="flex items-center gap-2">
+                                                    <Folder className="w-4 h-4 text-muted-foreground opacity-60" />
+                                                    No Project
+                                                </div>
+                                            </SelectItem>
+                                            {projects.map(p => {
+                                                const IconCmp = getIconComponent(p.icon);
+                                                return (
+                                                    <SelectItem key={p.id} value={p.id}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
+                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                            </div>
+                                                            {p.name}
+                                                        </div>
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
 
                                     {/* Recurring */}
                                     <Select value={recurrence} onValueChange={setRecurrence}>

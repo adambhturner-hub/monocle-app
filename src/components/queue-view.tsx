@@ -10,6 +10,7 @@ import { cn, generateId } from '@/lib/utils';
 import { Task } from '@/types';
 import { ReactNode } from 'react';
 import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns';
+import { getIconComponent } from '@/lib/icons';
 
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
@@ -49,6 +50,7 @@ export interface QueueViewProps {
 function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defaultTab?: 'active' | 'drafts', variant?: 'sheet' | 'fullscreen', mode?: 'active' | 'drafts' }) {
     const {
         tasks,
+        projects,
         activeProject,
         setTask,
         updateTask,
@@ -673,7 +675,17 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                     handleEdit(task);
                                                                                                 }}
                                                                                             >
-                                                                                                <div className="flex items-center gap-2 relative z-10">
+                                                                                                <div className="flex items-center gap-2 relative z-10 w-full overflow-hidden shrink-0">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                                        return (
+                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })()}
                                                                                                     <p className={cn(
                                                                                                         "text-sm font-medium truncate",
                                                                                                         task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
@@ -935,7 +947,19 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                     >
                                                                                         <div className={cn("bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20")} onClick={() => handleEdit(task)}>
                                                                                             <div className="flex-1 min-w-0">
-                                                                                                <p className={cn("text-sm font-medium truncate", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")}>{task.title}</p>
+                                                                                                <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                                        return (
+                                                                                                            <div className="flex items-center justify-center shrink-0 w-3.5 h-3.5 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                <IconCmp className="h-2 w-2 text-white drop-shadow-sm" />
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })()}
+                                                                                                    <p className={cn("text-sm font-medium truncate shrink-0 max-w-full", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")}>{task.title}</p>
+                                                                                                </div>
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                     {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
                                                                                                 </div>
@@ -1129,7 +1153,17 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                         "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono",
                                                                                         snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
                                                                                     )}>
-                                                                                        <Circle className="h-4 w-4 text-muted-foreground/50" />
+                                                                                        <Circle className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                                                                                        {(() => {
+                                                                                            const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                            if (!proj) return null;
+                                                                                            const IconCmp = getIconComponent(proj.icon);
+                                                                                            return (
+                                                                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                </div>
+                                                                                            );
+                                                                                        })()}
                                                                                         <span className="text-sm truncate flex-1">{task.title}</span>
                                                                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
                                                                                             <Button
