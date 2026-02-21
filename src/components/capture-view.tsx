@@ -118,6 +118,7 @@ export function CaptureView() {
         if (!title.trim()) {
             if (destination === 'queue') setView('queue');
             if (destination === 'focus') setView('focus');
+            if (destination === 'idea') setView('ideas');
             return;
         }
 

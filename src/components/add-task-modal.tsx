@@ -191,8 +191,16 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
         }
     };
 
-    const handleSubmit = (isDraft: boolean = false) => {
-        if (!title.trim()) return;
+    const handleSubmit = (destination: 'idea' | 'queue' = 'queue') => {
+        if (!title.trim()) {
+            if (destination === 'idea') {
+                useMonocleStore.getState().setView('ideas');
+                setOpen(false);
+            }
+            return;
+        }
+
+        const isDraft = destination === 'idea';
 
         let finalTitle = title;
         let finalPriority = priority;
@@ -334,10 +342,10 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
 
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(false);
+            handleSubmit('queue');
         } else if (e.key === 'Enter' && e.shiftKey) {
             e.preventDefault();
-            handleSubmit(true);
+            handleSubmit('idea');
         }
     };
 
@@ -592,13 +600,13 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                     {/* Explicit Add Button for mouse/mobile users */}
                     <div className="flex w-full sm:w-auto gap-2">
                         {!isEditMode && (
-                            <Button variant="secondary" size="default" className="flex-1 sm:flex-none h-10 text-sm gap-2" onClick={() => handleSubmit(true)}>
+                            <Button variant="secondary" size="default" className="flex-1 sm:flex-none h-10 text-sm gap-2" onClick={() => handleSubmit('idea')}>
                                 <Lightbulb className="h-4 w-4" />
                                 <span className="hidden sm:inline">Save as Idea</span>
                                 <span className="sm:hidden">Idea</span>
                             </Button>
                         )}
-                        <Button size="default" className="flex-1 sm:flex-none h-10 text-sm" onClick={() => handleSubmit(false)}>
+                        <Button size="default" className="flex-1 sm:flex-none h-10 text-sm" onClick={() => handleSubmit('queue')}>
                             {isEditMode ? 'Save Changes' : 'Add Task'}
                         </Button>
                     </div>
