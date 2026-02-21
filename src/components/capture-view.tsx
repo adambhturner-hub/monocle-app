@@ -13,6 +13,7 @@ import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Zap, ArrowRight, L
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMentions } from '@/hooks/use-mentions';
@@ -206,17 +207,17 @@ export function CaptureView() {
                 task={dummyTask}
                 isMobile={true} // Enable swipes everywhere for capture
 
-                rightAction={() => submitTask('idea')}
-                rightIcon={Lightbulb}
-                rightLabel="Idea Dump"
-                rightBgClass="bg-yellow-500"
-                rightColorClass="text-yellow-600"
+                leftAction={() => submitTask('idea')}
+                leftIcon={Lightbulb}
+                leftLabel="Idea Dump"
+                leftBgClass="bg-yellow-500"
+                leftColorClass="text-yellow-600"
 
-                leftAction={() => submitTask('focus')}
-                leftIcon={Target}
-                leftLabel="Execute"
-                leftBgClass="bg-red-500"
-                leftColorClass="text-red-600"
+                rightAction={() => submitTask('focus')}
+                rightIcon={Target}
+                rightLabel="Execute"
+                rightBgClass="bg-red-500"
+                rightColorClass="text-red-600"
 
                 downAction={() => submitTask('queue')}
                 downIcon={Layers}
@@ -342,26 +343,40 @@ export function CaptureView() {
                                     </PopoverContent>
                                 </Popover>
 
+                                {/* Recurring */}
+                                <Select value={recurrence} onValueChange={setRecurrence}>
+                                    <SelectTrigger className="w-auto h-8 px-3 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary border-border/50 text-muted-foreground focus:ring-0">
+                                        <Repeat className="h-3.5 w-3.5" />
+                                        <SelectValue placeholder="Repeat" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">No Repeat</SelectItem>
+                                        <SelectItem value="daily">Daily</SelectItem>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
                                 {/* Frog Toggle */}
                                 <button
                                     onClick={() => { setIsFrog(!isFrog); setIsLightning(false); }}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card",
+                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card",
                                         isFrog ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
                                     )}
                                 >
-                                    <Snail className="h-3.5 w-3.5" /> Frog
+                                    <span className="text-sm leading-none mr-1.5">🐸</span> Frog
                                 </button>
 
                                 {/* Lightning Toggle */}
                                 <button
                                     onClick={() => { setIsLightning(!isLightning); setIsFrog(false); }}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card",
+                                        "px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card",
                                         isLightning ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
                                     )}
                                 >
-                                    <Zap className="h-3.5 w-3.5" /> Quick
+                                    <span className="text-sm leading-none mr-1.5">⚡️</span> Quick
                                 </button>
                             </div>
                         )}
