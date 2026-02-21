@@ -66,7 +66,7 @@ export function OnboardingSlideshow() {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 sm:p-12 h-[100dvh] max-h-[100dvh] overflow-hidden animate-in fade-in duration-500">
             {/* Minimalist Top Indicator */}
             <div className="absolute top-12 left-0 right-0 flex justify-center gap-2">
                 {slides.map((_, i) => (
@@ -92,7 +92,7 @@ export function OnboardingSlideshow() {
             </div>
 
             {/* Bottom Controls */}
-            <div className="w-full max-w-sm flex items-center justify-between pb-12 pt-6">
+            <div className="w-full max-w-sm flex items-center justify-between pb-24 pt-6 sm:pb-12">
                 <Button
                     variant="ghost"
                     onClick={handlePrev}
