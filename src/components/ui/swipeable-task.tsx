@@ -10,7 +10,8 @@ import React from 'react';
 interface SwipeableTaskProps {
     task: Task;
     children: ReactNode;
-    leftAction: (taskId: string) => void;
+    leftAction?: (taskId: string) => void;
+    leftThresholdAction?: (taskId: string, minutes: number, label: string) => void;
     leftIcon?: React.ElementType;
     leftLabel?: string;
     leftColorClass?: string;
@@ -38,6 +39,7 @@ export function SwipeableTask({
     task,
     children,
     leftAction,
+    leftThresholdAction,
     leftIcon: LeftIcon = CheckCircle2,
     leftLabel = "Complete",
     leftColorClass = "text-emerald-500",
@@ -115,11 +117,12 @@ export function SwipeableTask({
             let visualOffset = deltaX * resistance;
 
             // Cap the visual travel
-            if (visualOffset > MAX_SWIPE) visualOffset = MAX_SWIPE;
+            if (!leftThresholdAction && visualOffset > MAX_SWIPE) visualOffset = MAX_SWIPE;
             if (visualOffset < -MAX_SWIPE) visualOffset = -MAX_SWIPE;
 
-            // Prevent sliding left if no rightAction
+            // Prevent sliding if no actions
             if (visualOffset < 0 && !rightAction) visualOffset = 0;
+            if (visualOffset > 0 && !(leftAction || leftThresholdAction)) visualOffset = 0;
 
             setOffset(visualOffset);
         } else if (isHorizontalSwipeRef.current === false && (downAction || downThresholdAction || upAction)) {
@@ -147,8 +150,15 @@ export function SwipeableTask({
         if (!isMobile) return;
 
         if (isHorizontalSwipeRef.current) {
-            if (offset > SWIPE_THRESHOLD) {
-                leftAction(task.id);
+            if (offset > 0) {
+                if (leftThresholdAction) {
+                    if (offset > 240) leftThresholdAction(task.id, 24 * 60, "Tomorrow");
+                    else if (offset > 180) leftThresholdAction(task.id, 240, "4 hours");
+                    else if (offset > 120) leftThresholdAction(task.id, 60, "1 hour");
+                    else if (offset > 60) leftThresholdAction(task.id, 30, "30 mins");
+                } else if (leftAction && offset > SWIPE_THRESHOLD) {
+                    leftAction(task.id);
+                }
             } else if (offset < -SWIPE_THRESHOLD && rightAction) {
                 rightAction(task.id);
             }

@@ -404,7 +404,6 @@ export function CaptureView() {
                                     size="sm"
                                     className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
                                     onClick={() => submitTask('idea')}
-                                    disabled={!title.trim()}
                                 >
                                     <Lightbulb className="w-3.5 h-3.5 mr-1.5 text-yellow-500" /> Idea
                                 </Button>
@@ -413,7 +412,6 @@ export function CaptureView() {
                                     size="sm"
                                     className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
                                     onClick={() => submitTask('queue')}
-                                    disabled={!title.trim()}
                                 >
                                     <Layers className="w-3.5 h-3.5 mr-1.5 text-blue-500" /> Prioritize
                                 </Button>
@@ -422,7 +420,6 @@ export function CaptureView() {
                                     size="sm"
                                     className="flex-1 rounded-full bg-secondary/30 hover:bg-secondary border-border/50 data-[disabled]:opacity-50 h-9 font-medium text-xs"
                                     onClick={() => submitTask('focus')}
-                                    disabled={!title.trim()}
                                 >
                                     <Target className="w-3.5 h-3.5 mr-1.5 text-red-500" /> Execute
                                 </Button>
@@ -434,7 +431,6 @@ export function CaptureView() {
                                 size="lg"
                                 className="w-full rounded-full h-11 bg-indigo-500 hover:bg-indigo-600 text-white data-[disabled]:opacity-50 font-semibold shadow-md active:scale-95 transition-transform"
                                 onClick={() => submitTask('capture')}
-                                disabled={!title.trim()}
                             >
                                 <Plus className="w-4 h-4 mr-2" /> Add Task
                             </Button>
