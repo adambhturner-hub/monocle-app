@@ -481,54 +481,58 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                             <div className="flex flex-wrap gap-2 pt-1 border-t border-border/50 pt-3 mt-3">
 
                                 {/* Priority */}
-                                <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
-                                    <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
-                                        <SelectValue placeholder="Priority" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {!isFrog && (
+                                    <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+                                        <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
+                                            <SelectValue placeholder="Priority" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="low">Low</SelectItem>
+                                            <SelectItem value="medium">Medium</SelectItem>
+                                            <SelectItem value="high">High</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
 
                                 {/* Due Date */}
-                                <div className="flex items-center gap-1">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
+                                {!isFrog && (
+                                    <div className="flex items-center gap-1">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="secondary"
+                                                    className={cn(
+                                                        "w-auto h-8 px-2 justify-start text-left font-normal bg-muted/30 border-none shadow-sm hover:bg-muted/50 text-xs",
+                                                        !dueDate && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-3 w-3" />
+                                                    {dueDate ? format(dueDate, "MM/dd") : <span>Date?</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={dueDate}
+                                                    onSelect={setDueDate}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        {dueDate && (
                                             <Button
-                                                variant="secondary"
-                                                className={cn(
-                                                    "w-auto h-8 px-2 justify-start text-left font-normal bg-muted/30 border-none shadow-sm hover:bg-muted/50 text-xs",
-                                                    !dueDate && "text-muted-foreground"
-                                                )}
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon-xs"
+                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                onClick={() => setDueDate(undefined)}
+                                                title="Clear Date"
                                             >
-                                                <CalendarIcon className="mr-2 h-3 w-3" />
-                                                {dueDate ? format(dueDate, "MM/dd") : <span>Date?</span>}
+                                                <X className="h-4 w-4" />
                                             </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={dueDate}
-                                                onSelect={setDueDate}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    {dueDate && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-xs"
-                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                            onClick={() => setDueDate(undefined)}
-                                            title="Clear Date"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Recurring */}
                                 <Select value={recurrence} onValueChange={setRecurrence}>

@@ -323,10 +323,14 @@ export const useMonocleStore = create<MonocleState>()(
 
                     const newTasks = state.tasks.map(t => {
                         if (t.id === id) {
-                            return { ...t, isFrog: isBecomingFrog };
+                            if (isBecomingFrog) {
+                                return { ...t, isFrog: true, dueDate: undefined, priority: 'medium' as const };
+                            } else {
+                                return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const };
+                            }
                         }
                         if (isBecomingFrog && t.isFrog) {
-                            return { ...t, isFrog: false };
+                            return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const };
                         }
                         return t;
                     });
