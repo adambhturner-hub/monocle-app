@@ -29,10 +29,8 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Auto-redirect to queue if trying to focus with no tasks
-    if (view === 'focus' && getVisibleTasks().length === 0) {
-      setView('queue');
-    }
+    // Always boot to Capture mode on fresh load
+    setView('capture');
 
     // Minimum artificial delay for splash screen branding
     const timer = setTimeout(() => {
@@ -89,14 +87,14 @@ export default function Home() {
               onOpenChange={(val) => setActiveModal(val ? 'project-manager' : null)}
             />
 
-            {/* Add Task Button - Icon Only on Mobile */}
+            {/* Add Task Button - Routes to Capture Mode */}
             <Button
-              onClick={() => setActiveModal('add-task')}
+              onClick={() => setView('capture')}
               size="sm"
               className="rounded-full shadow-sm bg-primary/90 hover:bg-primary px-3 sm:px-4 shrink-0 transition-transform active:scale-95"
             >
               <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Add Task</span>
+              <span className="hidden sm:inline">Capture</span>
             </Button>
 
             <div className="hidden sm:block w-px h-6 bg-border mx-1 sm:mx-2" />
