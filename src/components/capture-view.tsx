@@ -243,47 +243,61 @@ export function CaptureView() {
 
                         {/* Upfront Project Selection */}
                         <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                            <Select value={projectId} onValueChange={setProjectId}>
-                                <SelectTrigger className="w-fit inline-flex justify-center h-9 px-4 rounded-full border border-border/50 text-xs font-semibold flex items-center gap-2 transition-all bg-secondary/50 hover:bg-secondary text-muted-foreground focus:ring-0 shadow-sm">
-                                    {(() => {
-                                        if (projectId === 'all') {
-                                            return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
-                                        }
-                                        const proj = projects.find(p => p.id === projectId);
-                                        if (!proj) return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
-                                        const IconCmp = getIconComponent(proj.icon);
-                                        return (
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <button className="w-fit inline-flex justify-center h-9 px-4 rounded-full border border-border/50 text-xs font-semibold flex items-center gap-2 transition-all bg-secondary/50 hover:bg-secondary text-muted-foreground focus:ring-0 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                        {(() => {
+                                            if (projectId === 'all') {
+                                                return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
+                                            }
+                                            const proj = projects.find(p => p.id === projectId);
+                                            if (!proj) return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
+                                            const IconCmp = getIconComponent(proj.icon);
+                                            return (
+                                                <div className="flex items-center gap-2 min-w-0 pointer-events-none">
+                                                    <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                        <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                    </div>
+                                                    <span className="truncate max-w-[120px] text-foreground">{proj.name}</span>
                                                 </div>
-                                                <span className="truncate max-w-[120px] text-foreground">{proj.name}</span>
-                                            </div>
-                                        );
-                                    })()}
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        <div className="flex items-center gap-2">
-                                            <Folder className="w-4 h-4 text-muted-foreground opacity-60" />
-                                            No Project
-                                        </div>
-                                    </SelectItem>
+                                            );
+                                        })()}
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent align="center" className="w-56 p-1 z-[100]">
+                                    <div className="text-[10px] font-bold px-2 py-1.5 text-muted-foreground uppercase tracking-widest mb-1">
+                                        Assign Project
+                                    </div>
+                                    <button
+                                        onClick={() => setProjectId('all')}
+                                        className={cn(
+                                            "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
+                                            projectId === 'all' && "bg-secondary text-primary font-medium"
+                                        )}
+                                    >
+                                        <Folder className="h-4 w-4 text-muted-foreground opacity-60" />
+                                        No Project
+                                    </button>
                                     {projects.map(p => {
                                         const IconCmp = getIconComponent(p.icon);
                                         return (
-                                            <SelectItem key={p.id} value={p.id}>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
-                                                        <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                    </div>
-                                                    {p.name}
+                                            <button
+                                                key={p.id}
+                                                onClick={() => setProjectId(p.id)}
+                                                className={cn(
+                                                    "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
+                                                    projectId === p.id && "bg-secondary text-primary font-medium"
+                                                )}
+                                            >
+                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
+                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
                                                 </div>
-                                            </SelectItem>
+                                                <span className="truncate">{p.name}</span>
+                                            </button>
                                         );
                                     })}
-                                </SelectContent>
-                            </Select>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <TextareaAutosize
