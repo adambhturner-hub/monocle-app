@@ -231,17 +231,29 @@ export function FocusView({ onExit }: FocusViewProps) {
                     <SwipeableTask
                         task={activeTask}
                         isMobile={isMobile}
-                        leftAction={() => handleComplete()}
+                        upAction={() => handleComplete()}
+                        upIcon={CheckCircle2}
+                        upLabel="Complete"
+                        upBgClass="bg-emerald-500"
+                        upColorClass="text-emerald-600"
+
                         rightAction={() => handleSkip()}
-                        downThresholdAction={(id, mins, label) => handleHold(mins, label)}
-                        leftIcon={CheckCircle2}
-                        leftLabel="Complete"
-                        leftBgClass="bg-emerald-500"
-                        leftColorClass="text-emerald-600"
                         rightIcon={Shuffle}
                         rightLabel="Skip"
                         rightBgClass="bg-blue-500"
                         rightColorClass="text-blue-600"
+
+                        downAction={activeTask.isFrog ? undefined : () => useMonocleStore.getState().randomTask()}
+                        downIcon={Dices}
+                        downLabel="Random"
+                        downBgClass="bg-indigo-500"
+                        downColorClass="text-indigo-600"
+
+                        leftAction={activeTask.isFrog ? () => { } : () => handleHold(60, "1 hr")}
+                        leftIcon={Pause}
+                        leftLabel="Hold (1h)"
+                        leftBgClass="bg-orange-500"
+                        leftColorClass="text-orange-600"
                     >
                         <Card
                             className={cn(

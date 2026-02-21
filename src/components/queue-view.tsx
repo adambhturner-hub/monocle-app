@@ -128,6 +128,29 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         setEditModalOpen(true);
     };
 
+    // Swipe-to-navigate logic for Queue View
+    const queueTouchStartRef = useRef<{ x: number, y: number } | null>(null);
+    const handleQueueTouchStart = (e: React.TouchEvent) => {
+        queueTouchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+    const handleQueueTouchEnd = (e: React.TouchEvent) => {
+        if (!queueTouchStartRef.current) return;
+        const deltaY = e.changedTouches[0].clientY - queueTouchStartRef.current.y;
+        const deltaX = Math.abs(e.changedTouches[0].clientX - queueTouchStartRef.current.x);
+
+        // Only trigger if it's a strongly vertical swipe (100px) and not a lateral scroll
+        if (deltaX < 50) {
+            if (deltaY > 100) {
+                // Swiped Down -> Go to Focus
+                setView('focus');
+            } else if (deltaY < -100) {
+                // Swiped Up -> Go to Capture
+                setView('capture');
+            }
+        }
+        queueTouchStartRef.current = null;
+    };
+
     // Scroll to section when opened with specific tab
     useEffect(() => {
         if (open && defaultTab === 'drafts' && draftsRef.current) {
@@ -423,7 +446,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     return (
         <>
             <TooltipProvider>
-                <div className={cn("flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", variant === 'fullscreen' ? "w-full max-w-6xl mx-auto border-x shadow-2xl h-[85vh] rounded-xl my-4" : "")}>
+                <div
+                    className={cn("flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", variant === 'fullscreen' ? "w-full max-w-6xl mx-auto border-x shadow-2xl h-[85vh] rounded-xl my-4" : "")}
+                    onTouchStart={handleQueueTouchStart}
+                    onTouchEnd={handleQueueTouchEnd}
+                >
                     <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0">
                         <button
                             onClick={() => setView(mode === 'active' ? 'ideas' : 'queue')}
