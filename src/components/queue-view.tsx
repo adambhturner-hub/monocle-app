@@ -898,14 +898,30 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                         handleEdit(task);
                                                                                     }}
                                                                                 >
-                                                                                    <div className="bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
-                                                                                        <div className="flex-1 min-w-0">
-                                                                                            <p className="text-sm font-medium truncate">{task.title}</p>
-                                                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                                {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                    <SwipeableTask
+                                                                                        key={task.id}
+                                                                                        task={task}
+                                                                                        isMobile={isBelowMd}
+                                                                                        leftAction={() => handleComplete(task.id)}
+                                                                                        rightAction={() => handleDump(task.id)}
+                                                                                        leftIcon={CheckCircle2}
+                                                                                        leftLabel="Complete"
+                                                                                        leftBgClass="bg-emerald-500"
+                                                                                        leftColorClass="text-emerald-600"
+                                                                                        rightIcon={Archive}
+                                                                                        rightLabel="To Idea Dump"
+                                                                                        rightBgClass="bg-indigo-500"
+                                                                                        rightColorClass="text-indigo-600"
+                                                                                    >
+                                                                                        <div className={cn("bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20")} onClick={() => handleEdit(task)}>
+                                                                                            <div className="flex-1 min-w-0">
+                                                                                                <p className={cn("text-sm font-medium truncate", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")}>{task.title}</p>
+                                                                                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    </div>
+                                                                                    </SwipeableTask>
                                                                                 </ContextMenuTrigger>
                                                                                 <ContextMenuContent>
                                                                                     <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now</ContextMenuItem>
