@@ -115,7 +115,11 @@ export function CaptureView() {
     }, [title, projects]);
 
     const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea') => {
-        if (!title.trim()) return;
+        if (!title.trim()) {
+            if (destination === 'queue') setView('queue');
+            if (destination === 'focus') setView('focus');
+            return;
+        }
 
         let finalTitle = title;
         let finalPriority = priority;
@@ -284,18 +288,18 @@ export function CaptureView() {
                         )}
                     </div>
 
-                    <div className="flex justify-center mt-6">
-                        <button
-                            onClick={() => setAdvancedOpen(!advancedOpen)}
-                            className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors bg-secondary/30 px-3 py-1.5 rounded-full"
-                        >
-                            {advancedOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                            {advancedOpen ? "Hide Options" : "Advanced Options"}
-                        </button>
-                    </div>
-
                     {/* Metadata Rack (Bottom Toolbar) */}
-                    <div className="absolute bottom-6 w-full px-6 flex flex-col gap-4">
+                    <div className="w-full px-6 mt-auto pb-6 flex flex-col gap-4 z-10">
+
+                        <div className="flex justify-center">
+                            <button
+                                onClick={() => setAdvancedOpen(!advancedOpen)}
+                                className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors bg-secondary/30 px-3 py-1.5 rounded-full"
+                            >
+                                {advancedOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                {advancedOpen ? "Hide Options" : "Advanced Options"}
+                            </button>
+                        </div>
 
                         {/* Advanced Options Drawer */}
                         {advancedOpen && (
