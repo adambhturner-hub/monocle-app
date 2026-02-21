@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, Target, ListTodo, Hand, Timer } from 'lucide-react';
@@ -9,6 +9,11 @@ export function OnboardingSlideshow() {
     const { settings, updateSettings } = useMonocleStore();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isExiting, setIsExiting] = useState(false);
+
+    // Swipe tracking
+    const touchStartX = useRef<number | null>(null);
+    const touchEndX = useRef<number | null>(null);
+    const minSwipeDistance = 50;
 
     if (settings.hasSeenOnboarding) return null;
     if (isExiting) return null;
@@ -83,8 +88,35 @@ export function OnboardingSlideshow() {
         setCurrentSlide(p => Math.max(0, p - 1));
     };
 
+    const onTouchStart = (e: React.TouchEvent) => {
+        touchEndX.current = null;
+        touchStartX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        touchEndX.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStartX.current || !touchEndX.current) return;
+        const distance = touchStartX.current - touchEndX.current;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            handleNext();
+        } else if (isRightSwipe) {
+            handlePrev();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 sm:p-12 h-[100dvh] max-h-[100dvh] overflow-hidden animate-in fade-in duration-500">
+        <div
+            className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 sm:p-12 h-[100dvh] max-h-[100dvh] overflow-hidden animate-in fade-in duration-500"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* Minimalist Top Indicator */}
             <div className="absolute top-12 left-0 right-0 flex justify-center gap-2">
                 {slides.map((_, i) => (
