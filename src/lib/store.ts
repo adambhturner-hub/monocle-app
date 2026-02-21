@@ -93,8 +93,9 @@ interface MonocleState {
     addRecentCommand: (cmd: Omit<RecentCommand, 'timestamp'>) => void;
     jumpToTask: (taskId: string) => void;
 
-    // Cloud Sync
+    // Cloud Sync & Storage
     loadFromCloud: (cloudState: Partial<MonocleState>) => void;
+    clearData: () => void;
 }
 
 export interface RecentCommand {
@@ -218,6 +219,15 @@ export const useMonocleStore = create<MonocleState>()(
             updateSettings: (newSettings) => set((state) => ({
                 settings: { ...state.settings, ...newSettings }
             })),
+
+            clearData: () => set({
+                tasks: [],
+                projects: [],
+                sessionHistory: [],
+                currentSession: null,
+                activeRandomTaskId: null,
+                settings: { ...DEFAULT_SETTINGS, hasSeenOnboarding: false }
+            }),
 
             setTask: (tasks) => set({ tasks }),
 

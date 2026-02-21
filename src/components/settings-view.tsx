@@ -35,7 +35,7 @@ interface SettingsViewProps {
 
 export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const { setTheme, theme } = useTheme();
-    const { tasks, projects, settings, updateSettings } = useMonocleStore();
+    const { tasks, projects, settings, updateSettings, clearData } = useMonocleStore();
     const [testSoundPlaying, setTestSoundPlaying] = useState(false);
 
     // Force re-render to update debug info
@@ -51,6 +51,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const handleSignOut = async () => {
         if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
             await signOut(auth);
+            clearData();
             localStorage.clear();
             onOpenChange(false);
             window.location.reload();
