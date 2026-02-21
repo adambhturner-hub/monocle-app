@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { get, set, del } from 'idb-keyval';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 // Custom IndexedDB storage adapter
 export const idbStorage: StateStorage = {
@@ -396,41 +397,39 @@ export const useMonocleStore = create<MonocleState>()(
                     // Recurrence Logic
                     if (taskToComplete.recurrence) {
                         let nextDueDate = Date.now();
-                        // Use scheduled due date if available, otherwise current time
                         const currentDue = taskToComplete.dueDate || Date.now();
 
                         switch (taskToComplete.recurrence) {
                             case 'daily':
-                                nextDueDate = currentDue + 24 * 60 * 60 * 1000;
+                                nextDueDate = addDays(currentDue, 1).getTime();
                                 break;
                             case 'weekly':
-                                nextDueDate = currentDue + 7 * 24 * 60 * 60 * 1000;
+                                nextDueDate = addWeeks(currentDue, 1).getTime();
                                 break;
                             case 'monthly':
-                                const d = new Date(currentDue);
-                                d.setMonth(d.getMonth() + 1);
-                                nextDueDate = d.getTime();
+                                nextDueDate = addMonths(currentDue, 1).getTime();
                                 break;
                             case 'yearly':
-                                const y = new Date(currentDue);
-                                y.setFullYear(y.getFullYear() + 1);
-                                nextDueDate = y.getTime();
+                                nextDueDate = addYears(currentDue, 1).getTime();
                                 break;
                             default:
                                 if (typeof taskToComplete.recurrence === 'number') {
-                                    nextDueDate = currentDue + taskToComplete.recurrence * 24 * 60 * 60 * 1000;
+                                    nextDueDate = addDays(currentDue, taskToComplete.recurrence).getTime();
                                 }
                         }
 
                         const nextTask: Task = {
                             ...taskToComplete,
-                            id: generateId(), // New ID for the next instance
+                            id: generateId(),
                             dueDate: nextDueDate,
                             status: 'todo',
                             createdAt: Date.now(),
-                            // Ensure clean slate for new instance
                             completedAt: undefined,
-                            archivedAt: undefined
+                            archivedAt: undefined,
+                            // Wash metadata clean
+                            isFrog: false,
+                            isLightning: false,
+                            friction: { skips: 0, holds: 0 }
                         };
 
                         generatedTask = nextTask;
