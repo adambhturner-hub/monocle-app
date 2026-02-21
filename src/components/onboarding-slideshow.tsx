@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, Target, ListTodo, Hand } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Target, ListTodo, Hand, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LogoSmall } from '@/components/logo';
 
@@ -26,13 +26,29 @@ export function OnboardingSlideshow() {
         },
         {
             title: "Tactile Control",
-            description: "Swipe right on a task to execute it. Swipe left to delay it into the Idea Dump.",
+            description: "Swipe right to complete.\nSwipe left to skip and move it down.",
             icon: <Hand className="h-16 w-16 text-primary mb-6" />
         },
         {
             title: "Radical Focus",
             description: "When you're ready to work, hit Focus Mode to enter the cockpit. One task. No distractions.",
             icon: <Target className="h-16 w-16 text-primary mb-6" />
+        },
+        {
+            title: "Momentum Modes",
+            description: (
+                <div className="flex flex-col gap-4 text-left w-full mt-4">
+                    <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30">
+                        <div className="text-2xl mt-0.5">🟢</div>
+                        <div className="flex-1"><span className="font-semibold text-foreground block mb-1">Frog</span> The hard thing that matters.</div>
+                    </div>
+                    <div className="flex items-start gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30">
+                        <div className="text-2xl mt-0.5">🟡</div>
+                        <div className="flex-1"><span className="font-semibold text-foreground block mb-1">Lightning</span> A 2-minute ignition task.</div>
+                    </div>
+                </div>
+            ),
+            icon: <Zap className="h-16 w-16 text-primary mb-6" />
         }
     ];
 
@@ -69,9 +85,9 @@ export function OnboardingSlideshow() {
                 <div key={currentSlide} className="flex flex-col items-center animate-in slide-in-from-right-4 fade-in duration-500">
                     {slides[currentSlide].icon}
                     <h1 className="text-3xl font-bold tracking-tight mb-4">{slides[currentSlide].title}</h1>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <div className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line w-full">
                         {slides[currentSlide].description}
-                    </p>
+                    </div>
                 </div>
             </div>
 
