@@ -39,10 +39,38 @@ class SoundEngine {
             const arrayBuffer = await response.arrayBuffer();
             this.ribbitBuffer = await this.ctx.decodeAudioData(arrayBuffer);
         } catch (err) {
-            console.error("Failed to load ribbit sound", err);
+            console.error("Failed to play ribbit sound", err);
         }
     }
 
+    public playSkip() {
+        this.init();
+        const now = 0;
+        // Quick downward sweep (like sweeping away)
+        this.playTone(300, 'sine', 0.15, now);
+        this.playTone(200, 'sine', 0.15, now + 0.05);
+        this.playTone(100, 'sine', 0.15, now + 0.1);
+    }
+
+    public playHold() {
+        this.init();
+        const now = 0;
+        // Soft muffled double pop
+        this.playTone(400, 'triangle', 0.1, now);
+        this.playTone(350, 'triangle', 0.1, now + 0.15);
+    }
+
+    public playDiceRattle() {
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+
+        // Rapid series of high-pitched clicks
+        let timeOffset = 0;
+        for (let i = 0; i < 5; i++) {
+            this.playTone(800 + Math.random() * 400, 'square', 0.03, timeOffset);
+            timeOffset += 0.05 + Math.random() * 0.05;
+        }
+    }
     public setVolume(val: number) {
         this.volume = Math.max(0, Math.min(1, val));
         if (this.masterGain) {

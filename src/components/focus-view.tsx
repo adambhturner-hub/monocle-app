@@ -259,24 +259,6 @@ export function FocusView({ onExit }: FocusViewProps) {
 
                             {/* Actions Menu (Top Right) */}
                             <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground/50 hover:text-indigo-500 hover:bg-indigo-500/10"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                randomTask();
-                                            }}
-                                        >
-                                            <Dices className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" align="end">
-                                        <p>Pick Random Task</p>
-                                    </TooltipContent>
-                                </Tooltip>
                                 {/* ... menu items ... */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -508,7 +490,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                     </Button>
 
                                     {/* Random */}
-                                    <Button variant="outline" size="sm" onClick={() => randomTask()} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm hidden sm:flex">
+                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); randomTask(); }} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm flex">
                                         <Dices className="mr-1.5 h-3.5 w-3.5" /> Random
                                     </Button>
 

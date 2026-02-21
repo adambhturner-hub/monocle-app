@@ -581,6 +581,10 @@ export const useMonocleStore = create<MonocleState>()(
                         nextTasks.push(updatedTask);
                     }
 
+                    if (state.settings.soundEnabled !== false) {
+                        soundEngine.playSkip();
+                    }
+
                     return {
                         tasks: nextTasks,
                         lastState,
@@ -619,6 +623,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const updatedTask = {
                         ...currentTask,
                         skippedUntil: Date.now() + durationMinutes * 60000,
+                        isFrog: false,
                         friction: {
                             skips: currentTask.friction?.skips || 0,
                             holds: (currentTask.friction?.holds || 0) + 1
@@ -627,6 +632,10 @@ export const useMonocleStore = create<MonocleState>()(
 
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
                     const finalTasks = [...otherTasks, updatedTask];
+
+                    if (state.settings.soundEnabled !== false) {
+                        soundEngine.playHold();
+                    }
 
                     return { tasks: finalTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory, frogDetourActive: false, activeRandomTaskId: null };
                 }),
@@ -665,6 +674,10 @@ export const useMonocleStore = create<MonocleState>()(
 
                     const randomIndex = Math.floor(Math.random() * pool.length);
                     const randomTask = pool[randomIndex];
+
+                    if (state.settings.soundEnabled !== false) {
+                        soundEngine.playDiceRattle();
+                    }
 
                     return { activeRandomTaskId: randomTask.id };
                 }),
