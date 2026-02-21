@@ -20,8 +20,11 @@ export function FocusTimer({ taskId }: { taskId: string }) {
         pauseSession,
         resumeSession,
         stopSession,
-        tickSession
+        tickSession,
+        tasks
     } = useMonocleStore();
+
+    const task = tasks.find(t => t.id === taskId);
 
     // Local state for the ticker interval
     useEffect(() => {
@@ -35,16 +38,38 @@ export function FocusTimer({ taskId }: { taskId: string }) {
     }, [currentSession?.status, tickSession]);
 
     // Derived state
-    const isSessionActive = currentSession && currentSession.taskId === taskId;
-    const isRunning = isSessionActive && currentSession.status === 'running';
-    const isPaused = isSessionActive && currentSession.status === 'paused';
+    const isSessionActive = currentSession?.taskId === taskId;
+    const isRunning = isSessionActive && currentSession?.status === 'running';
+    const isPaused = isSessionActive && currentSession?.status === 'paused';
 
     // Duration Logic
     // If no session, show defaults.
     // If session, show remaining.
 
     const [selectedDuration, setSelectedDuration] = useState(25);
-    const PRESETS = [25, 45, 60];
+    const PRESETS = [2, 5, 25, 45, 60, 90];
+
+    const [hasManuallyStopped, setHasManuallyStopped] = useState(false);
+
+    // Auto-start Lightning Tasks
+    useEffect(() => {
+        if (task?.isLightning && !isSessionActive && !currentSession && !hasManuallyStopped) {
+            startSession(taskId, 2);
+        }
+    }, [task?.isLightning, isSessionActive, currentSession, taskId, startSession, hasManuallyStopped]);
+
+    // Productivity Models map
+    const getPresetBrand = (min: number) => {
+        switch (min) {
+            case 2: return "⚡️ Lightning";
+            case 5: return "🏃 Micro-Sprint";
+            case 25: return "🍅 Pomodoro";
+            case 45: return "🌊 Flow State";
+            case 60: return "🧠 Deep Work";
+            case 90: return "🔋 Ultradian";
+            default: return "Focus Timer";
+        }
+    };
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -55,7 +80,28 @@ export function FocusTimer({ taskId }: { taskId: string }) {
     // Popover State
     const [open, setOpen] = useState(false);
 
-    if (!isSessionActive) {
+    // Alarm State (Must be before early return)
+    const [hasRung, setHasRung] = useState(false);
+
+    // Derived Active Session Values (Safe to compute before early return)
+    const totalSeconds = isSessionActive && currentSession ? currentSession.durationScheduled * 60 : 0;
+    const elapsed = isSessionActive && currentSession ? currentSession.durationElapsed : 0;
+    const remaining = isSessionActive ? Math.max(0, totalSeconds - elapsed) : 0;
+    const progress = totalSeconds > 0 ? Math.min(100, (elapsed / totalSeconds) * 100) : 0;
+    const isFinished = isSessionActive && totalSeconds > 0 && remaining === 0;
+
+    // Alarm Logic
+    useEffect(() => {
+        if (isFinished && !hasRung && isRunning) {
+            soundEngine.playAlarm();
+            setHasRung(true);
+            pauseSession();
+        } else if (!isFinished && hasRung) {
+            setHasRung(false);
+        }
+    }, [isFinished, hasRung, isRunning, pauseSession]);
+
+    if (!isSessionActive || !currentSession) {
         return (
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -66,10 +112,12 @@ export function FocusTimer({ taskId }: { taskId: string }) {
                 <PopoverContent className="w-64 p-4" align="center">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
-                            <h4 className="font-medium leading-none">Focus Timer</h4>
+                            <h4 className="font-medium flex items-center gap-2">
+                                {getPresetBrand(selectedDuration)}
+                            </h4>
                             <span className="text-xs text-muted-foreground">{selectedDuration}m</span>
                         </div>
-                        <div className="flex items-center gap-2 justify-center">
+                        <div className="grid grid-cols-2 gap-2">
                             {PRESETS.map(min => (
                                 <Button
                                     key={min}
@@ -81,7 +129,7 @@ export function FocusTimer({ taskId }: { taskId: string }) {
                                         selectedDuration === min ? "font-bold" : "text-muted-foreground"
                                     )}
                                 >
-                                    {min}m
+                                    {getPresetBrand(min)}
                                 </Button>
                             ))}
                         </div>
@@ -103,13 +151,6 @@ export function FocusTimer({ taskId }: { taskId: string }) {
             </Popover>
         );
     }
-
-    // Active Session View
-    const totalSeconds = currentSession.durationScheduled * 60;
-    const elapsed = currentSession.durationElapsed;
-    const remaining = Math.max(0, totalSeconds - elapsed);
-    const progress = Math.min(100, (elapsed / totalSeconds) * 100);
-    const isFinished = remaining === 0;
 
     return (
         <div className="flex flex-col items-center gap-4 py-2 w-full animate-in fade-in zoom-in duration-300">
@@ -141,7 +182,10 @@ export function FocusTimer({ taskId }: { taskId: string }) {
                         variant="ghost"
                         size="icon"
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => stopSession('abandoned')}
+                        onClick={() => {
+                            setHasManuallyStopped(true);
+                            stopSession('abandoned');
+                        }}
                         title="End Session"
                     >
                         <Square className="h-4 w-4 fill-current" />

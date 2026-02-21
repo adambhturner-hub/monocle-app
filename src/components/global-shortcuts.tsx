@@ -11,8 +11,11 @@ export function GlobalShortcuts() {
         setActiveModal,
         setOpenSheet,
         setView,
+        view,
         completeTask,
-        randomTask
+        skipTask,
+        randomTask,
+        getVisibleTasks
     } = useMonocleStore();
 
     useEffect(() => {
@@ -22,67 +25,71 @@ export function GlobalShortcuts() {
                 return;
             }
 
-            // Command/Ctrl + E: Complete Task
-            if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+            // Modifier check
+            const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
+
+            // F: Focus Mode
+            if (e.key.toLowerCase() === 'f' && !hasModifier) {
+                setView('focus');
+                setOpenSheet(null);
+            }
+
+            // Q: Queue Mode
+            if (e.key.toLowerCase() === 'q' && !hasModifier) {
+                setView('queue');
+                setOpenSheet(null);
+            }
+
+            // A: Analytics Mode
+            if (e.key.toLowerCase() === 'a' && !hasModifier) {
+                setView('analytics');
+                setOpenSheet(null);
+            }
+
+            // I: Quick Add
+            if (e.key.toLowerCase() === 'i' && !hasModifier) {
+                e.preventDefault();
+                setActiveModal('add-task');
+            }
+
+            // C: Complete Task
+            if (e.key.toLowerCase() === 'c' && !hasModifier) {
                 e.preventDefault();
                 const result = completeTask();
                 if (result?.nextTask) {
                     toast.success("Recurring task completed!", {
                         description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`
                     });
-                } else {
+                } else if (result) {
                     toast.success("Task completed!");
                 }
             }
 
-            // Command/Ctrl + 1: Focus Mode
-            if ((e.metaKey || e.ctrlKey) && e.key === '1') {
+            // S: Skip Task
+            if (e.key.toLowerCase() === 's' && !hasModifier) {
                 e.preventDefault();
+                skipTask();
+                toast("Task passed");
+            }
+
+            // R: Random / Curveball
+            if (e.key.toLowerCase() === 'r' && !hasModifier) {
+                e.preventDefault();
+                randomTask();
                 setView('focus');
-                setOpenSheet(null);
+                toast("Curveball incoming...");
             }
 
-            // Command/Ctrl + 2: Queue Mode
-            if ((e.metaKey || e.ctrlKey) && e.key === '2') {
-                e.preventDefault();
-                setView('queue');
-                setOpenSheet(null);
-            }
-
-            // F: Focus Mode
-            if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-                setView('focus');
-                setOpenSheet(null);
-            }
-
-            // Q: Queue Mode
-            if (e.key.toLowerCase() === 'q' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-                setView('queue');
-                setOpenSheet(null);
-            }
-
-            // Command/Ctrl + 3: Archive Mode (Sheet)
-            if ((e.metaKey || e.ctrlKey) && e.key === '3') {
-                e.preventDefault();
-                setOpenSheet('archive');
-            }
-
-            // Command/Ctrl + K: Add Task
+            // Command/Ctrl + K: Add Task (Legacy mapping for power users)
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault();
                 setActiveModal('add-task');
             }
 
-            // S: Shuffle
-            if (e.key.toLowerCase() === 's' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-                randomTask();
-                toast.success("Shuffled!");
-            }
-
             // Focus Session Shortcuts
             // T: Start/Pause
-            if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-                const { currentSession, startSession, pauseSession, resumeSession, getVisibleTasks } = useMonocleStore.getState();
+            if (e.key.toLowerCase() === 't' && !hasModifier && !e.shiftKey) {
+                const { currentSession, startSession, pauseSession, resumeSession } = useMonocleStore.getState();
 
                 if (currentSession?.status === 'running') {
                     pauseSession();
@@ -91,27 +98,24 @@ export function GlobalShortcuts() {
                     resumeSession();
                     toast.success("Focus Resumed");
                 } else if (!currentSession) {
-                    // Start new session for active task
                     const visible = getVisibleTasks();
                     if (visible.length > 0) {
-                        startSession(visible[0].id, 25); // Default 25m
+                        startSession(visible[0].id, 25);
                         toast.success("Focus Started (25m)");
                     }
                 }
             }
 
             // Shift+T: Stop Session
-            if (e.key.toLowerCase() === 't' && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            if (e.key.toLowerCase() === 't' && e.shiftKey && !hasModifier) {
                 const { currentSession, stopSession } = useMonocleStore.getState();
                 if (currentSession) {
-                    stopSession('abandoned'); // Or asking/confirming? For now just stop.
+                    stopSession('abandoned');
                     toast("Session Ended");
                 }
             }
 
-            // Alt+T: Cycle Presets (Optional - maybe skip for now if complex to wire to UI state)
-
-            // Enter: Open Add Task Modal (Legacy/Alternative)
+            // Enter: Open Add Task Modal fallback
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!activeModal) {
@@ -119,22 +123,16 @@ export function GlobalShortcuts() {
                 }
             }
 
-            // Esc: Close everything
-            if (e.key === 'Escape') {
-                // Optional: Close sheets if open
-                // setOpenSheet(null);
-            }
-
-            // ?: Open Shortcuts Help (Settings)
-            if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            // ?: Open Settings
+            if (e.key === '?' && !hasModifier) {
                 setOpenSheet('settings');
-                toast.dismiss(); // Clear current toasts to show we did something?
+                toast.dismiss();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeModal, setActiveModal, setOpenSheet, setView, completeTask, randomTask]);
+    }, [activeModal, setActiveModal, setOpenSheet, setView, completeTask, skipTask, randomTask]);
 
     return null;
 }

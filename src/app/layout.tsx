@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react"
+import { AuthGuard } from "@/components/auth-guard";
+import { SyncEngine } from "@/components/sync-engine";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CommandPalette } from "@/components/command-palette";
@@ -47,9 +50,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
-          <CommandPalette />
+          <AuthGuard>
+            <SyncEngine />
+            {children}
+            <Toaster />
+            <CommandPalette />
+          </AuthGuard>
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

@@ -23,6 +23,7 @@ export interface Task {
     holds: number;
   };
   isFrog?: boolean;
+  isLightning?: boolean;
 }
 
 export interface Project {

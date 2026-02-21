@@ -11,8 +11,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Folder, Settings2 } from 'lucide-react';
 import { ProjectManager } from '@/components/project-manager';
+import { cn } from '@/lib/utils';
 
-export function ProjectSelect() {
+export interface ProjectSelectProps {
+    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+    className?: string;
+}
+
+export function ProjectSelect({ variant = "outline", className }: ProjectSelectProps = {}) {
     const { projects, activeProject, setActiveProject } = useMonocleStore();
     const [managerOpen, setManagerOpen] = useState(false);
 
@@ -22,7 +28,7 @@ export function ProjectSelect() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2 min-w-[150px] justify-between h-9 bg-secondary/30 hover:bg-secondary/50 border-transparent hover:border-border transition-all">
+                    <Button variant={variant} className={cn("gap-2 min-w-[150px] justify-between h-9 bg-secondary/30 hover:bg-secondary/50 border-transparent hover:border-border transition-all", className)}>
                         <span className="flex items-center gap-2 truncate">
                             {activeProjectData ? (
                                 <>

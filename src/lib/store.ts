@@ -899,6 +899,9 @@ export const useMonocleStore = create<MonocleState>()(
         {
             name: 'monocle-storage',
             version: 1,
+            partialize: (state) => Object.fromEntries(
+                Object.entries(state).filter(([key]) => !['view', 'activeSheet', 'activeModal'].includes(key))
+            ) as unknown as MonocleState,
             migrate: (persistedState: unknown, version: number) => {
                 if (version === 0) {
                     const state = persistedState as MonocleState;

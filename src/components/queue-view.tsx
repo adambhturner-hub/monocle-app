@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { List, GripVertical, CheckCircle2, Circle, Calendar, ArrowUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn, generateId } from '@/lib/utils';
@@ -15,12 +14,15 @@ import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns';
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
+import { ProjectSelect } from './project-select';
 import { parseTaskInput } from '@/lib/smart-parser';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { SwipeableTask } from '@/components/ui/swipeable-task';
+import { soundEngine } from '@/lib/sound-engine';
 import {
     Tooltip,
     TooltipContent,
@@ -65,6 +67,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     const draftsRef = useRef<HTMLDivElement>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchActive, setIsSearchActive] = useState(false);
     const [quickAddValue, setQuickAddValue] = useState('');
     // Initialize sortMode from settings
     const [sortMode, setSortMode] = useState<'manual' | 'date' | 'priority'>(settings.sortMode);
@@ -101,6 +104,22 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             setRenderTick(prev => prev + 1);
         }, 60000); // Check every minute
         return () => clearInterval(interval);
+    }, []);
+
+    // Media query for mobile detection
+    const [isBelowMd, setIsBelowMd] = useState(false);
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 768px)'); // md breakpoint
+        const handleMediaQueryChange = (event: MediaQueryListEvent) => {
+            setIsBelowMd(event.matches);
+        };
+
+        setIsBelowMd(mediaQuery.matches); // Set initial state
+        mediaQuery.addEventListener('change', handleMediaQueryChange);
+
+        return () => {
+            mediaQuery.removeEventListener('change', handleMediaQueryChange);
+        };
     }, []);
 
     const handleEdit = (task: Task) => {
@@ -367,11 +386,44 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         }
     };
 
+    const handleSkip = (taskId: string) => {
+        const taskToSkip = tasks.find(t => t.id === taskId);
+        if (taskToSkip) {
+            useMonocleStore.getState().skipTask(taskId);
+            toast("Task passed", {
+                description: taskToSkip.isFrog ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
+                action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
+            });
+        }
+    };
+
+    const handlePromote = (taskId: string) => {
+        useMonocleStore.getState().promoteTask(taskId);
+        soundEngine.playPromote();
+        toast("Sent to Queue 🚀", { description: "Promoted from Drafts" });
+    };
+
+    const handleComplete = (taskId: string) => {
+        const result = archiveTask(taskId);
+
+        if (result?.nextTask) {
+            toast("Recurring task completed", {
+                description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
+                action: { label: "Undo", onClick: () => undo() },
+                duration: 5000
+            });
+        } else {
+            toast("Task completed", {
+                action: { label: "Undo", onClick: () => undo() }
+            });
+        }
+    };
+
     return (
         <>
             <TooltipProvider>
                 <div className={cn("flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", variant === 'fullscreen' ? "w-full max-w-6xl mx-auto border-x shadow-2xl h-[85vh] rounded-xl my-4" : "")}>
-                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0">
                         <div className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full bg-primary" />
                             {mode === 'active' ? 'Queue' : 'Idea Dump'}
@@ -379,14 +431,41 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                         </div>
 
                         {/* Search Input */}
-                        <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search tasks..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-8 bg-muted/50 border-none shadow-none h-9 text-sm"
-                            />
+                        <div className="flex items-center gap-2 shrink-0">
+                            {(!isBelowMd || isSearchActive) ? (
+                                <div className="relative w-full sm:w-64 animate-in fade-in slide-in-from-right-2">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search tasks..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-8 bg-muted/50 border-none shadow-none h-9 text-sm"
+                                        autoFocus={isSearchActive}
+                                    />
+                                    {isBelowMd && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            className="absolute right-1 top-1 h-7 w-7 text-muted-foreground"
+                                            onClick={() => {
+                                                setIsSearchActive(false);
+                                                setSearchQuery('');
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 ml-auto text-muted-foreground hover:bg-muted"
+                                    onClick={() => setIsSearchActive(true)}
+                                >
+                                    <Search className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -395,12 +474,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
                             {/* Active Queue */}
                             {mode === 'active' && (
-                                <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4 md:p-6 pb-0">
+                                <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-3 md:p-4 pb-0">
                                     <div className="flex items-center justify-between mb-3 shrink-0">
-                                        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                            Active Tasks
-                                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{activeTasks.length}</span>
-                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            <ProjectSelect variant="ghost" className="h-8 text-xs font-semibold uppercase tracking-widest text-muted-foreground bg-transparent border-none shadow-none hover:bg-muted/50 px-2 -ml-2 min-w-0" />
+                                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold shrink-0">{activeTasks.length}</span>
+                                        </div>
                                         <div className="flex bg-muted/50 p-0.5 rounded-lg border">
                                             <button
                                                 onClick={() => setSortMode('manual')}
@@ -412,7 +491,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                                 )}
                                             >
-                                                <List className="h-3 w-3" />
+                                                <ListFilter className="h-3 w-3" />
                                                 Manual
                                             </button>
                                             <button
@@ -467,7 +546,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                     handleQuickAdd(isDraft);
                                                                 }
                                                             }}
-                                                            placeholder={mode === ('drafts' as any) ? "Add an idea... (Enter = save)" : "Add a task... (Enter = save, Shift+Enter = draft)"}
+                                                            placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
                                                             className={cn(
                                                                 "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all",
                                                                 tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
@@ -504,12 +583,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                     )}
 
                                     <div className="flex-1 min-h-0">
-                                        <ScrollArea className="h-full -mx-4 px-4">
+                                        <div className="h-[calc(100vh-[180px])] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4 scroll-smooth">
                                             {sortMode === 'manual' && !searchQuery ? (
                                                 <>
                                                     <Droppable droppableId="active">
                                                         {(provided) => (
-                                                            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
+                                                            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4 min-h-[50px]">
                                                                 {activeTasks.length === 0 && (
                                                                     <div className="text-center py-10 px-6 text-muted-foreground/60 text-sm border-2 border-dashed rounded-xl flex flex-col items-center gap-2">
                                                                         <p className="font-medium text-foreground/80">Your queue is clear.</p>
@@ -522,148 +601,169 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                             <div
                                                                                 ref={provided.innerRef}
                                                                                 {...provided.draggableProps}
-                                                                                className={cn(
-                                                                                    "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 active:shadow-lg select-none outline-none flex items-center gap-3 p-3 relative overflow-hidden",
-                                                                                    task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
-                                                                                    task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
-                                                                                    task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "border-l-4 border-l-primary bg-primary/5 shadow-md scale-[1.02] z-10 my-1",
-                                                                                    task.id === currentActiveTask?.id && task.isFrog && "shadow-md shadow-emerald-500/10 scale-[1.02] z-10 my-1 border-l-emerald-500",
-                                                                                    task.id === currentActiveTask?.id && task.isLightning && !task.isFrog && "shadow-md shadow-yellow-500/10 scale-[1.02] z-10 my-1 border-l-yellow-500",
-                                                                                    snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50",
-                                                                                    (Date.now() - task.createdAt < 2000) && "animate-in fade-in slide-in-from-top-4 duration-500"
-                                                                                )}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
                                                                                     left: "auto",
                                                                                     top: "auto"
                                                                                 }}
+                                                                                className={cn("w-full outline-none", task.id === currentActiveTask?.id ? "z-10 relative" : "")}
                                                                             >
-                                                                                {/* Frog Glow Background Layer */}
-                                                                                {task.isFrog && (
-                                                                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent pointer-events-none" />
-                                                                                )}
-
-                                                                                {/* Drag Handle */}
-                                                                                <div {...provided.dragHandleProps} className="text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing shrink-0 relative z-10">
-                                                                                    <GripVertical className="h-4 w-4" />
-                                                                                </div>
-
-                                                                                {/* Content Area with Context Menu */}
-                                                                                <ContextMenu>
-                                                                                    <ContextMenuTrigger
-                                                                                        className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center"
-                                                                                        onDoubleClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            handleEdit(task);
-                                                                                        }}
-                                                                                    >
-                                                                                        <div className="flex items-center gap-2 relative z-10">
-                                                                                            <p className={cn(
-                                                                                                "text-sm font-medium truncate",
-                                                                                                task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
-                                                                                                task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
-                                                                                                task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
-                                                                                            )}>
-                                                                                                {task.title}
-                                                                                            </p>
-                                                                                            {task.isFrog && (
-                                                                                                <span className="text-sm leading-none shrink-0">🐸</span>
-                                                                                            )}
-                                                                                            {task.isLightning && !task.isFrog && (
-                                                                                                <span className="text-sm leading-none shrink-0">⚡️</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        {task.description && (
-                                                                                            <Tooltip>
-                                                                                                <TooltipTrigger asChild>
-                                                                                                    <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-0.5 max-w-[90%]">
-                                                                                                        {task.description}
-                                                                                                    </p>
-                                                                                                </TooltipTrigger>
-                                                                                                <TooltipContent side="bottom" align="start" className="max-w-[300px]">
-                                                                                                    <p className="text-xs whitespace-pre-wrap">{task.description}</p>
-                                                                                                </TooltipContent>
-                                                                                            </Tooltip>
+                                                                                <SwipeableTask
+                                                                                    task={task}
+                                                                                    isMobile={isBelowMd}
+                                                                                    leftAction={(id) => handleComplete(id)}
+                                                                                    rightAction={(id) => {
+                                                                                        const taskToSkip = tasks.find(t => t.id === id);
+                                                                                        if (taskToSkip) {
+                                                                                            useMonocleStore.getState().skipTask(id);
+                                                                                            toast("Task passed", {
+                                                                                                description: taskToSkip.isFrog ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
+                                                                                                action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
+                                                                                            });
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    <div
+                                                                                        className={cn(
+                                                                                            "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 active:shadow-lg select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
+                                                                                            task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
+                                                                                            task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
+                                                                                            task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "border-l-4 border-l-primary bg-primary/5 shadow-md scale-[1.02] z-10 my-1",
+                                                                                            task.id === currentActiveTask?.id && task.isFrog && "shadow-md shadow-emerald-500/10 scale-[1.02] z-10 my-1 border-l-emerald-500",
+                                                                                            task.id === currentActiveTask?.id && task.isLightning && !task.isFrog && "shadow-md shadow-yellow-500/10 scale-[1.02] z-10 my-1 border-l-yellow-500",
+                                                                                            snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50",
+                                                                                            (Date.now() - task.createdAt < 2000) && "animate-in fade-in slide-in-from-top-4 duration-500"
                                                                                         )}
-                                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                            {task.dueDate && (
-                                                                                                <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}>
-                                                                                                    <Calendar className="h-3 w-3" />
-                                                                                                    {format(task.dueDate, 'MMM d')}
-                                                                                                </span>
-                                                                                            )}
-                                                                                            {task.priority !== 'medium' && (
-                                                                                                <span className={cn("uppercase font-bold", task.priority === 'high' ? "text-red-500" : "text-blue-500")}>
-                                                                                                    {task.priority}
-                                                                                                </span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </ContextMenuTrigger>
-                                                                                    <ContextMenuContent>
-                                                                                        <ContextMenuItem onClick={() => handleFocusNow(task.id)}>
-                                                                                            <CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => handleEdit(task)}>
-                                                                                            <Edit2 className="mr-2 h-4 w-4" /> Edit
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
-                                                                                            <FileText className="mr-2 h-4 w-4" /> Duplicate
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuSeparator />
-                                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().toggleFrog(task.id)}>
-                                                                                            <span className="mr-2 text-sm leading-none">🐸</span> {task.isFrog ? 'Unmark Frog' : 'Mark as Daily Frog'}
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuSeparator />
-                                                                                        <ContextMenuItem onClick={() => handleMakeNext(task.id)}>
-                                                                                            <ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => handleDump(task.id)}>
-                                                                                            <Archive className="mr-2 h-4 w-4" /> Send to Idea Dump
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => handleArchive(task.id)}>
-                                                                                            <CheckCircle2 className="mr-2 h-4 w-4" /> Archive
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuSeparator />
-                                                                                        <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive">
-                                                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                                                        </ContextMenuItem>
-                                                                                    </ContextMenuContent>
-                                                                                </ContextMenu>
+                                                                                    >
+                                                                                        {/* Frog Glow Background Layer */}
+                                                                                        {task.isFrog && (
+                                                                                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent pointer-events-none" />
+                                                                                        )}
 
-                                                                                {/* Indicators and Actions */}
-                                                                                {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
-                                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon-xs"
-                                                                                        className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
-                                                                                        type="button"
-                                                                                        onPointerDown={(e) => e.stopPropagation()}
-                                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleArchive(task.id);
-                                                                                        }}
-                                                                                        title="Archive Task"
-                                                                                    >
-                                                                                        <CheckCircle2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon-xs"
-                                                                                        className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
-                                                                                        type="button"
-                                                                                        onPointerDown={(e) => e.stopPropagation()}
-                                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleEdit(task);
-                                                                                        }}
-                                                                                        title="Edit Task"
-                                                                                    >
-                                                                                        <Edit2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </div>
+                                                                                        {/* Drag Handle */}
+                                                                                        <div {...provided.dragHandleProps} className="text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing shrink-0 relative z-10 touch-none">
+                                                                                            <GripVertical className="h-4 w-4" />
+                                                                                        </div>
+
+                                                                                        {/* Content Area with Context Menu */}
+                                                                                        <ContextMenu>
+                                                                                            <ContextMenuTrigger
+                                                                                                className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center"
+                                                                                                onDoubleClick={(e) => {
+                                                                                                    e.preventDefault();
+                                                                                                    handleEdit(task);
+                                                                                                }}
+                                                                                            >
+                                                                                                <div className="flex items-center gap-2 relative z-10">
+                                                                                                    <p className={cn(
+                                                                                                        "text-sm font-medium truncate",
+                                                                                                        task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
+                                                                                                        task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
+                                                                                                        task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
+                                                                                                    )}>
+                                                                                                        {task.title}
+                                                                                                    </p>
+                                                                                                    {task.isFrog && (
+                                                                                                        <span className="text-sm leading-none shrink-0">🐸</span>
+                                                                                                    )}
+                                                                                                    {task.isLightning && !task.isFrog && (
+                                                                                                        <span className="text-sm leading-none shrink-0">⚡️</span>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                {task.description && (
+                                                                                                    <Tooltip>
+                                                                                                        <TooltipTrigger asChild>
+                                                                                                            <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-0.5 max-w-[90%]">
+                                                                                                                {task.description}
+                                                                                                            </p>
+                                                                                                        </TooltipTrigger>
+                                                                                                        <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+                                                                                                            <p className="text-xs whitespace-pre-wrap">{task.description}</p>
+                                                                                                        </TooltipContent>
+                                                                                                    </Tooltip>
+                                                                                                )}
+                                                                                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {task.dueDate && (
+                                                                                                        <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}>
+                                                                                                            <Calendar className="h-3 w-3" />
+                                                                                                            {format(task.dueDate, 'MMM d')}
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                    {task.priority === 'high' && (
+                                                                                                        <AlertCircle className="h-3 w-3 text-red-500" />
+                                                                                                    )}
+                                                                                                    {task.priority === 'low' && (
+                                                                                                        <ArrowUpDown className="h-3 w-3 text-blue-500" />
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </ContextMenuTrigger>
+                                                                                            <ContextMenuContent>
+                                                                                                <ContextMenuItem onClick={() => handleFocusNow(task.id)}>
+                                                                                                    <CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => handleEdit(task)}>
+                                                                                                    <Edit2 className="mr-2 h-4 w-4" /> Edit
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
+                                                                                                    <FileText className="mr-2 h-4 w-4" /> Duplicate
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuSeparator />
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().toggleFrog(task.id)}>
+                                                                                                    <span className="mr-2 text-sm leading-none">🐸</span> {task.isFrog ? 'Unmark Frog' : 'Mark as Daily Frog'}
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuSeparator />
+                                                                                                <ContextMenuItem onClick={() => handleMakeNext(task.id)}>
+                                                                                                    <ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => handleDump(task.id)}>
+                                                                                                    <Archive className="mr-2 h-4 w-4" /> Send to Idea Dump
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => handleArchive(task.id)}>
+                                                                                                    <CheckCircle2 className="mr-2 h-4 w-4" /> Archive
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuSeparator />
+                                                                                                <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive">
+                                                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                                                </ContextMenuItem>
+                                                                                            </ContextMenuContent>
+                                                                                        </ContextMenu>
+
+                                                                                        {/* Indicators and Actions */}
+                                                                                        {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
+                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleArchive(task.id);
+                                                                                                }}
+                                                                                                title="Archive Task"
+                                                                                            >
+                                                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleEdit(task);
+                                                                                                }}
+                                                                                                title="Edit Task"
+                                                                                            >
+                                                                                                <Edit2 className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </SwipeableTask>
                                                                             </div>
                                                                         )}
                                                                     </Draggable>
@@ -680,7 +780,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 {...provided.droppableProps}
                                                                 ref={provided.innerRef}
                                                                 className={cn(
-                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl",
+                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
                                                                     snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
                                                                 )}
                                                             >
@@ -741,7 +841,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 {...provided.droppableProps}
                                                                 ref={provided.innerRef}
                                                                 className={cn(
-                                                                    "mt-4 transition-colors rounded-xl border-2 border-dashed flex items-center justify-center py-4 opacity-50 transition-opacity",
+                                                                    "mt-4 transition-colors rounded-xl border-2 border-dashed flex items-center justify-center py-4 opacity-50 transition-opacity min-h-[50px]",
                                                                     snapshot.isDraggingOver ? "opacity-100 bg-primary/10 border-primary/40 text-foreground" : "border-muted-foreground/20 text-muted-foreground"
                                                                 )}
                                                             >
@@ -897,7 +997,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                     )}
                                                 </div>
                                             )}
-                                        </ScrollArea>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -949,7 +1049,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
 
                                     <div className="flex-1 min-h-0">
-                                        <ScrollArea className="h-full -mx-4 px-4">
+                                        <div className="h-[calc(100vh-[180px])] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4 scroll-smooth">
                                             <Droppable droppableId="drafts">
                                                 {(provided) => (
                                                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
@@ -964,84 +1064,103 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                     <div
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
-                                                                        {...provided.dragHandleProps}
-                                                                        className="group outline-none"
                                                                         style={{
                                                                             ...provided.draggableProps.style,
                                                                             left: "auto",
                                                                             top: "auto"
                                                                         }}
+                                                                        className={cn("w-full outline-none", snapshot.isDragging ? "z-50" : "")}
                                                                     >
-                                                                        <ContextMenu>
-                                                                            <ContextMenuTrigger className={cn(
-                                                                                "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono",
-                                                                                snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
-                                                                            )}>
-                                                                                <Circle className="h-4 w-4 text-muted-foreground/50" />
-                                                                                <span className="text-sm truncate flex-1">{task.title}</span>
-                                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon-xs"
-                                                                                        className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
-                                                                                        type="button"
-                                                                                        onPointerDown={(e) => e.stopPropagation()}
-                                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleDump(task.id);
-                                                                                        }}
-                                                                                        title="Send to Idea Dump"
-                                                                                    >
-                                                                                        <Lightbulb className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon-xs"
-                                                                                        className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
-                                                                                        type="button"
-                                                                                        onPointerDown={(e) => e.stopPropagation()}
-                                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleArchive(task.id);
-                                                                                        }}
-                                                                                        title="Archive Task"
-                                                                                    >
-                                                                                        <CheckCircle2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon-xs"
-                                                                                        className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
-                                                                                        type="button"
-                                                                                        onPointerDown={(e) => e.stopPropagation()}
-                                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleEdit(task);
-                                                                                        }}
-                                                                                        title="Edit Task"
-                                                                                    >
-                                                                                        <Edit2 className="h-3 w-3" />
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </ContextMenuTrigger>
-                                                                            <ContextMenuContent>
-                                                                                <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Promote to Focus</ContextMenuItem>
-                                                                                <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Promote to Queue</ContextMenuItem>
-                                                                                <ContextMenuSeparator />
-                                                                                <ContextMenuItem onClick={() => handleEdit(task)}>
-                                                                                    <Edit2 className="mr-2 h-4 w-4" /> Edit
-                                                                                </ContextMenuItem>
-                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
-                                                                                    <FileText className="mr-2 h-4 w-4" /> Duplicate
-                                                                                </ContextMenuItem>
-                                                                                <ContextMenuSeparator />
-                                                                                <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
-                                                                                <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
-                                                                            </ContextMenuContent>
-                                                                        </ContextMenu>
+                                                                        <SwipeableTask
+                                                                            task={task}
+                                                                            isMobile={isBelowMd}
+                                                                            leftAction={(id) => handlePromote(id)}
+                                                                            rightAction={(id) => handleDelete(id)}
+                                                                            leftIcon={ArrowUpCircle}
+                                                                            leftLabel="Promote to Queue"
+                                                                            leftBgClass="bg-yellow-500"
+                                                                            leftColorClass="text-yellow-600"
+                                                                            rightIcon={Trash2}
+                                                                            rightLabel="Delete"
+                                                                            rightBgClass="bg-red-500"
+                                                                            rightColorClass="text-red-600"
+                                                                        >
+                                                                            <div
+                                                                                {...provided.dragHandleProps}
+                                                                                className="group outline-none touch-none"
+                                                                            >
+                                                                                <ContextMenu>
+                                                                                    <ContextMenuTrigger className={cn(
+                                                                                        "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono",
+                                                                                        snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
+                                                                                    )}>
+                                                                                        <Circle className="h-4 w-4 text-muted-foreground/50" />
+                                                                                        <span className="text-sm truncate flex-1">{task.title}</span>
+                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleDump(task.id);
+                                                                                                }}
+                                                                                                title="Send to Idea Dump"
+                                                                                            >
+                                                                                                <Lightbulb className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleArchive(task.id);
+                                                                                                }}
+                                                                                                title="Archive Task"
+                                                                                            >
+                                                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleEdit(task);
+                                                                                                }}
+                                                                                                title="Edit Task"
+                                                                                            >
+                                                                                                <Edit2 className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    </ContextMenuTrigger>
+                                                                                    <ContextMenuContent>
+                                                                                        <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Promote to Focus</ContextMenuItem>
+                                                                                        <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Promote to Queue</ContextMenuItem>
+                                                                                        <ContextMenuSeparator />
+                                                                                        <ContextMenuItem onClick={() => handleEdit(task)}>
+                                                                                            <Edit2 className="mr-2 h-4 w-4" /> Edit
+                                                                                        </ContextMenuItem>
+                                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
+                                                                                            <FileText className="mr-2 h-4 w-4" /> Duplicate
+                                                                                        </ContextMenuItem>
+                                                                                        <ContextMenuSeparator />
+                                                                                        <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                                        <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
+                                                                                    </ContextMenuContent>
+                                                                                </ContextMenu>
+                                                                            </div>
+                                                                        </SwipeableTask>
                                                                     </div>
                                                                 )}
                                                             </Draggable>
@@ -1050,7 +1169,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                     </div>
                                                 )}
                                             </Droppable>
-                                        </ScrollArea>
+                                        </div>
                                     </div>
                                 </div>
                             )}

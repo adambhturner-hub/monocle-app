@@ -15,6 +15,7 @@ import { QueueView } from '@/components/queue-view';
 import { LogoSmall } from '@/components/logo';
 import { SettingsView } from '@/components/settings-view';
 import { useMonocleStore } from '@/lib/store';
+import { ProjectSelect } from '@/components/project-select';
 
 export function NavMenu() {
     const [open, setOpen] = useState(false);
@@ -85,6 +86,10 @@ export function NavMenu() {
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
                     </Button>
+
+                    <div className="mt-2 sm:hidden px-2">
+                        <ProjectSelect />
+                    </div>
 
                     <div className="mt-auto pt-4 text-xs text-center text-muted-foreground">
                         v0.13.0 (Sprint 13)

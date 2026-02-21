@@ -8,6 +8,16 @@ import { generateId } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Clock, Repeat, Plus, X, ArrowUpRight, Hash, AlertCircle, Lightbulb } from 'lucide-react';
 import { format } from 'date-fns';
@@ -28,6 +38,7 @@ interface AddTaskModalProps {
 export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }: AddTaskModalProps) {
     const { addTask, updateTask, projects, activeProject, setOpenSheet } = useMonocleStore();
     const [internalOpen, setInternalOpen] = useState(false);
+    const [showMore, setShowMore] = useState(false);
 
     const isControlled = controlledOpen !== undefined;
     const open = isControlled ? controlledOpen : internalOpen;
@@ -43,6 +54,10 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
     const [recurrence, setRecurrence] = useState<string>('none');
     const [isFrog, setIsFrog] = useState(false);
+    const [isLightning, setIsLightning] = useState(false);
+
+    // Multi-task paste state
+    const [pendingPaste, setPendingPaste] = useState<string[] | null>(null);
 
     // Parser State
     const [parsedData, setParsedData] = useState<ParsedTask | null>(null);
@@ -123,8 +138,9 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 setPriority(taskToEdit.priority);
                 setProjectId(taskToEdit.projectId || 'all');
                 setDueDate(taskToEdit.dueDate ? new Date(taskToEdit.dueDate) : undefined);
-                setRecurrence(taskToEdit.recurrence ? (typeof taskToEdit.recurrence === 'string' ? taskToEdit.recurrence : String(taskToEdit.recurrence)) : 'none');
+                setRecurrence(taskToEdit.recurrence?.toString() || 'none');
                 setIsFrog(taskToEdit.isFrog || false);
+                setIsLightning(taskToEdit.isLightning || false);
             } else {
                 // ... existing fill logic
                 setTitle('');
@@ -134,6 +150,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 setDueDate(undefined);
                 setRecurrence('none');
                 setIsFrog(false);
+                setShowMore(false);
             }
             setTimeout(() => titleInputRef.current?.focus(), 100);
         }
@@ -168,7 +185,9 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
             setRecurrence('none');
             setDueDate(undefined);
             setIsFrog(false);
+            setIsLightning(false);
             setParsedData(null);
+            setShowMore(false);
         }
     };
 
@@ -200,7 +219,8 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 projectId: finalProjectId,
                 dueDate: finalDueDate,
                 recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
-                duration: finalDuration ? finalDuration : taskToEdit.duration, // Only update if new parsed, or keep old? Logic: if parsed, use it.
+                duration: finalDuration ? finalDuration : taskToEdit.duration,
+                isLightning,
                 isDraft
             });
 
@@ -224,6 +244,7 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 dueDate: finalDueDate,
                 recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
                 duration: finalDuration,
+                isLightning,
                 isDraft,
                 createdAt: Date.now(),
             };
@@ -240,6 +261,51 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 setOpen(false);
             }
         }
+    };
+
+    const handleBatchSubmit = (lines: string[], isDraft: boolean = false) => {
+        let count = 0;
+        let finalPriority = priority;
+        let finalDueDate = dueDate?.getTime();
+        let finalRecurrence: string | number = recurrence;
+        let finalProjectId = projectId === 'all' ? undefined : projectId;
+
+        // Note: For batch add, we DO NOT apply the smart parser to individual lines 
+        // if we are explicitly carrying over metadata from the modal's current selected state.
+        // Actually, it's safer to just run the parser on each line, and let the modal's state act as a fallback.
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            const result = parseTaskInput(trimmed, projects);
+
+            const taskId = generateId();
+            const newTask: Task = {
+                id: taskId,
+                title: result.title.trim(),
+                description: undefined,
+                status: 'todo',
+                priority: result.priority || finalPriority,
+                projectId: result.projectId || finalProjectId,
+                dueDate: result.dueDate || finalDueDate,
+                recurrence: (result.recurrence || (finalRecurrence === 'none' ? undefined : finalRecurrence)) as any,
+                duration: result.duration,
+                isLightning,
+                isDraft,
+                createdAt: Date.now() + count,
+            };
+            addTask(newTask);
+
+            if (isFrog && count === 0) {
+                useMonocleStore.getState().toggleFrog(taskId);
+            }
+            count++;
+        });
+
+        setPendingPaste(null);
+        resetForm();
+        setOpen(false);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -339,6 +405,14 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                                 setTitle(e.target.value);
                                 onMentionChange();
                             }}
+                            onPaste={(e) => {
+                                const text = e.clipboardData.getData('text');
+                                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                                if (lines.length > 1) {
+                                    e.preventDefault();
+                                    setPendingPaste(lines);
+                                }
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder="Task Name"
                             className="text-xl font-semibold border-none shadow-none px-0 focus-visible:ring-0 placeholder:text-muted-foreground/30 h-auto rounded-none"
@@ -384,99 +458,123 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                                 )}
                             </div>
                         )}
+                        <div className="mt-1">
+                            <Button variant="link" size="sm" className="h-6 px-0 text-xs text-muted-foreground hover:text-foreground" onClick={() => setShowMore(!showMore)}>
+                                {showMore ? 'Less Options' : 'More Options...'}
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Description */}
-                    <div className="space-y-2">
-                        <Textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Description..."
-                            className="min-h-[60px] resize-none border-none shadow-none px-0 focus-visible:ring-0 placeholder:text-muted-foreground/30 text-sm rounded-none bg-transparent"
-                        />
-                    </div>
+                    {showMore && (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                            {/* Description */}
+                            <div className="space-y-2 mb-3">
+                                <Textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Description..."
+                                    className="min-h-[60px] resize-none border-none shadow-none px-0 focus-visible:ring-0 placeholder:text-muted-foreground/30 text-sm rounded-none bg-transparent"
+                                />
+                            </div>
 
-                    {/* Metadata Row */}
-                    <div className="flex flex-wrap gap-2 pt-1">
+                            {/* Metadata Row */}
+                            <div className="flex flex-wrap gap-2 pt-1 border-t border-border/50 pt-3 mt-3">
 
-                        {/* Priority */}
-                        <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
-                            <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
-                                <SelectValue placeholder="Priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
-                            </SelectContent>
-                        </Select>
+                                {/* Priority */}
+                                <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+                                    <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
+                                        <SelectValue placeholder="Priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="low">Low</SelectItem>
+                                        <SelectItem value="medium">Medium</SelectItem>
+                                        <SelectItem value="high">High</SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                        {/* Due Date */}
-                        <div className="flex items-center gap-1">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="secondary"
-                                        className={cn(
-                                            "w-auto h-8 px-2 justify-start text-left font-normal bg-muted/30 border-none shadow-sm hover:bg-muted/50 text-xs",
-                                            !dueDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-3 w-3" />
-                                        {dueDate ? format(dueDate, "MM/dd") : <span>Date?</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={dueDate}
-                                        onSelect={setDueDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            {dueDate && (
+                                {/* Due Date */}
+                                <div className="flex items-center gap-1">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="secondary"
+                                                className={cn(
+                                                    "w-auto h-8 px-2 justify-start text-left font-normal bg-muted/30 border-none shadow-sm hover:bg-muted/50 text-xs",
+                                                    !dueDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                                {dueDate ? format(dueDate, "MM/dd") : <span>Date?</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={dueDate}
+                                                onSelect={setDueDate}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    {dueDate && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                            onClick={() => setDueDate(undefined)}
+                                            title="Clear Date"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {/* Recurring */}
+                                <Select value={recurrence} onValueChange={setRecurrence}>
+                                    <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
+                                        <SelectValue placeholder="Recurring?" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">No Repeat</SelectItem>
+                                        <SelectItem value="daily">Daily</SelectItem>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Frog Toggle */}
                                 <Button
                                     type="button"
-                                    variant="ghost"
-                                    size="icon-xs"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                    onClick={() => setDueDate(undefined)}
-                                    title="Clear Date"
+                                    variant={isFrog ? "default" : "secondary"}
+                                    size="sm"
+                                    className={cn(
+                                        "w-auto h-8 px-2 text-xs border-none shadow-sm transition-all gap-1.5",
+                                        isFrog ? "bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30 font-medium ring-1 ring-emerald-500/30" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                                    )}
+                                    onClick={() => setIsFrog(!isFrog)}
                                 >
-                                    <X className="h-4 w-4" />
+                                    <span className="text-sm leading-none">🐸</span>
+                                    {isFrog ? 'Frog' : 'Make Frog'}
                                 </Button>
-                            )}
+
+                                {/* Lightning Toggle */}
+                                <Button
+                                    type="button"
+                                    variant={isLightning ? "default" : "secondary"}
+                                    size="sm"
+                                    className={cn(
+                                        "w-auto h-8 px-2 text-xs border-none shadow-sm transition-all gap-1.5",
+                                        isLightning ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:hover:bg-yellow-500/30 font-medium ring-1 ring-yellow-500/30" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                                    )}
+                                    onClick={() => setIsLightning(!isLightning)}
+                                >
+                                    <span className="text-sm leading-none">⚡️</span>
+                                    {isLightning ? 'Lightning' : 'Quick Win'}
+                                </Button>
+                            </div>
                         </div>
-
-                        {/* Recurring */}
-                        <Select value={recurrence} onValueChange={setRecurrence}>
-                            <SelectTrigger className="w-auto h-8 px-2 text-xs bg-muted/30 border-none shadow-sm hover:bg-muted/50">
-                                <SelectValue placeholder="Recurring?" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">No Repeat</SelectItem>
-                                <SelectItem value="daily">Daily</SelectItem>
-                                <SelectItem value="weekly">Weekly</SelectItem>
-                                <SelectItem value="monthly">Monthly</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        {/* Frog Toggle */}
-                        <Button
-                            type="button"
-                            variant={isFrog ? "default" : "secondary"}
-                            size="sm"
-                            className={cn(
-                                "w-auto h-8 px-2 text-xs border-none shadow-sm transition-all gap-1.5",
-                                isFrog ? "bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30 font-medium ring-1 ring-emerald-500/30" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-                            )}
-                            onClick={() => setIsFrog(!isFrog)}
-                        >
-                            <span className="text-sm leading-none">🐸</span>
-                            {isFrog ? 'Frog' : 'Make Frog'}
-                        </Button>
-                    </div>
+                    )}
                 </div>
 
                 {/* Footer / Helper - Sticky Bottom */}
@@ -503,6 +601,41 @@ export function AddTaskModal({ taskToEdit, open: controlledOpen, onOpenChange }:
                 </div>
 
             </DialogContent>
+
+            {/* Render AlertDialog for Multi-line Paste outside DialogContent */}
+            <AlertDialog open={!!pendingPaste} onOpenChange={(open) => !open && setPendingPaste(null)}>
+                <AlertDialogContent className="z-[100]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Create {pendingPaste?.length} items?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You pasted multiple lines. Do you want to create a separate task for each line?
+                            <br /><br />
+                            <span className="font-semibold text-foreground">Note:</span> Your currently selected project, priority, and tags will be applied to all of them.
+                            {isFrog && (
+                                <><br /><br /><span className="text-emerald-500 font-medium text-xs">The Daily Frog will only be applied to the first task in the list.</span></>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground border p-2 rounded-md bg-muted/30">
+                        {pendingPaste?.slice(0, 5).map((line, i) => (
+                            <div key={i} className="truncate">• {line}</div>
+                        ))}
+                        {(pendingPaste?.length || 0) > 5 && (
+                            <div className="text-xs italic mt-1 font-medium">...and {(pendingPaste?.length || 0) - 5} more</div>
+                        )}
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPendingPaste(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            if (pendingPaste) {
+                                handleBatchSubmit(pendingPaste, false);
+                            }
+                        }}>
+                            Create Tasks
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 }

@@ -21,10 +21,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Moon, Sun, Laptop, Trash2, Download, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic } from 'lucide-react';
+import { Moon, Sun, Laptop, Trash2, Download, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity } from 'lucide-react';
 import { useMonocleStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface SettingsViewProps {
     open: boolean;
@@ -39,11 +41,21 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     // Force re-render to update debug info
     // const [, setTick] = useState(0);
 
-    // Placeholder for data clearing logic
     const handleClearData = () => {
         if (confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
             localStorage.clear();
             window.location.reload();
+        }
+    };
+
+    const handleSignOut = async () => {
+        if (confirm("Are you sure you want to sign out? Your tasks will stop syncing.")) {
+            // Wait for sign out so AuthGuard catches it and kicks us to login
+            await signOut(auth);
+            // We can also clear local storage if desired, but local-first usually implies 
+            // keeping data on the device until explicitly cleared via handleClearData.
+            onOpenChange(false);
+            window.location.reload(); // Force a clean slate on auth change
         }
     };
 
@@ -132,6 +144,25 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                 <br />
                                 App is optimized to play like a media app (Spotify), ignoring the silent switch.
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Account & Sync Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
+                            <Activity className="h-5 w-5" />
+                            <h3>Account & Sync</h3>
+                        </div>
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-emerald-500/5 border-emerald-500/20">
+                            <div className="space-y-0.5">
+                                <Label className="text-base text-emerald-600 dark:text-emerald-400">Cloud Sync Active</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Signed in as <span className="font-medium text-foreground">{auth.currentUser?.email}</span>
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={handleSignOut}>
+                                Sign Out
+                            </Button>
                         </div>
                     </div>
 

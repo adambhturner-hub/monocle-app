@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { FocusView } from '@/components/focus-view';
 import { ProjectSelect } from '@/components/project-select';
 import { QueueView } from '@/components/queue-view';
@@ -12,6 +13,7 @@ import { GlobalShortcuts } from '@/components/global-shortcuts';
 import { useMonocleStore } from '@/lib/store';
 import { SettingsView } from '@/components/settings-view';
 import { StatsView } from '@/components/stats-view';
+import { AnalyticsView } from '@/components/analytics-view';
 import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
@@ -19,7 +21,24 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 export default function Home() {
-  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView } = useMonocleStore();
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks } = useMonocleStore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    // Auto-redirect to queue if trying to focus with no tasks
+    if (view === 'focus' && getVisibleTasks().length === 0) {
+      setView('queue');
+    }
+  }, [view, getVisibleTasks, setView]);
+
+  if (!isMounted) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">
@@ -35,8 +54,8 @@ export default function Home() {
           <LogoSmall className="sm:hidden" showText={false} />
         </div>
 
-        {/* Center: Add + View Selector */}
-        <div className="flex items-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:justify-center pointer-events-none">
+        {/* Center/Right: Add + View Selector */}
+        <div className="flex items-center gap-2 pointer-events-none sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:justify-center ml-auto sm:ml-0">
           <div className="pointer-events-auto flex items-center gap-2">
             <AddTaskModal
               open={activeModal === 'add-task'}
@@ -62,16 +81,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right: Project Dropdown & Momentum */}
-        <div className="flex items-center gap-4">
-          <MomentumMeter className="hidden sm:block" />
+        {/* Right: Project Dropdown & Momentum (Desktop Only) */}
+        <div className="hidden sm:flex items-center gap-4">
+          <MomentumMeter />
           <ProjectSelect />
         </div>
       </header>
 
       {/* Main Content (Always render Queue or Drafts underneath) */}
       <div className="w-full flex-1 flex flex-col items-center justify-center">
-        {view === 'ideas' ? (
+        {view === 'analytics' ? (
+          <div className="w-full flex-1 pt-12">
+            <AnalyticsView />
+          </div>
+        ) : view === 'ideas' ? (
           <QueueView variant="fullscreen" mode="drafts" />
         ) : (
           <QueueView variant="fullscreen" mode="active" />

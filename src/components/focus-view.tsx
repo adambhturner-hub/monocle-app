@@ -5,7 +5,7 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
@@ -29,11 +29,13 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'; // Renamed to avoid collision
 import { AddTaskModal } from './add-task-modal';
 import TextareaAutosize from 'react-textarea-autosize';
 import { RecurrenceInterval } from '@/types';
 import { FocusAtmosphere } from './focus-atmosphere';
+import { SwipeableTask } from './ui/swipeable-task';
 
 interface FocusViewProps {
     onExit?: () => void;
@@ -66,6 +68,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     // Edit Modal State
     const [editModalOpen, setEditModalOpen] = React.useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+    const [isDetailsSheetOpen, setIsDetailsSheetOpen] = React.useState(false);
 
     const [renderTick, setRenderTick] = React.useState(0);
 
@@ -81,6 +84,15 @@ export function FocusView({ onExit }: FocusViewProps) {
 
     const project = activeTask?.projectId ? projects.find(p => p.id === activeTask.projectId) : null;
 
+    // Detect if Mobile to enable swipe
+    const [isMobile, setIsMobile] = React.useState(false);
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const renderEmptyState = () => {
         const snoozedTasks = tasks.filter(t => !t.isDraft && t.status !== 'done' && (activeProject ? t.projectId === activeProject : true) && (t.skippedUntil && t.skippedUntil > Date.now()));
         const hasSnoozed = snoozedTasks.length > 0;
@@ -90,14 +102,14 @@ export function FocusView({ onExit }: FocusViewProps) {
                 className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6 animate-in fade-in zoom-in duration-500 w-full max-w-3xl cursor-default"
                 onClick={(e) => e.stopPropagation()} // Prevent exit when clicking the empty state itself
             >
-                <div className="p-8 rounded-full bg-secondary/30 mb-4">
-                    <Check className="h-12 w-12 text-muted-foreground/50" />
+                <div className="p-8 rounded-full bg-secondary/30 mb-4 shadow-inner">
+                    <Check className="h-12 w-12 text-muted-foreground/40" />
                 </div>
-                <h2 className="text-3xl font-bold text-muted-foreground/80">No tasks remain</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground/80">Queue Empty</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
                     {hasSnoozed
-                        ? "Your active queue is empty, but you have tasks on hold. Review your queue to wake them up early, or take a break."
-                        : "You've cleared your queue. Add a new task above or take a break."}
+                        ? "Your active queue is empty, but you have tasks on hold. Return to the Queue to wake them up early, or take a break."
+                        : "Focus Mode requires an active task. Return to the Queue to add your next objective to the engine."}
                 </p>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={(e) => { e.stopPropagation(); if (onExit) onExit(); else setView('queue'); }}>Open Queue</Button>
@@ -160,9 +172,10 @@ export function FocusView({ onExit }: FocusViewProps) {
         toast("Task Snoozed", { description: `Hidden until ${label}`, action: { label: "Undo", onClick: () => undo() } });
     };
     const handleSkip = () => {
+        const isFrogSkipping = activeTask?.isFrog;
         skipTask();
         toast("Task passed", {
-            description: `Moved to bottom of Queue`,
+            description: isFrogSkipping ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
             action: { label: "Undo", onClick: () => undo() }
         });
     };
@@ -215,265 +228,319 @@ export function FocusView({ onExit }: FocusViewProps) {
 
                 {/* Main Focus Card - STRICT FIT OR Empty State */}
                 {activeTask ? (
-                    <Card
-                        className={cn(
-                            "w-full max-w-3xl h-[calc(100vh-6rem)] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative overflow-hidden flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
-                            activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : ""
-                        )}
-                        onClick={(e) => e.stopPropagation()}
+                    <SwipeableTask
+                        task={activeTask}
+                        isMobile={isMobile}
+                        leftAction={() => handleComplete()}
+                        rightAction={() => handleSkip()}
+                        leftIcon={CheckCircle2}
+                        leftLabel="Complete"
+                        leftBgClass="bg-emerald-500"
+                        leftColorClass="text-emerald-600"
+                        rightIcon={Shuffle}
+                        rightLabel="Skip"
+                        rightBgClass="bg-blue-500"
+                        rightColorClass="text-blue-600"
                     >
+                        <Card
+                            className={cn(
+                                "w-full max-w-3xl h-[calc(100vh-6rem)] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative overflow-hidden flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
+                                activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : "",
+                                activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/50 bg-yellow-500/5" : ""
+                            )}
+                            onClick={(e) => e.stopPropagation()}
+                        >
 
-                        {/* Focus Atmosphere - Always Visible */}
-                        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10">
-                            <FocusAtmosphere />
-                        </div>
-
-                        {/* Actions Menu (Top Right) */}
-                        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
-                            {/* ... menu items ... */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/50 hover:text-foreground">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
-                                        <Edit className="mr-2 h-4 w-4" /> Edit Task (Modal)
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleDuplicate}>
-                                        <Copy className="mr-2 h-4 w-4" /> Duplicate
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleConvertToDraft}>
-                                        <FileText className="mr-2 h-4 w-4" /> Convert to Draft
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleArchive}>
-                                        <Archive className="mr-2 h-4 w-4" /> Archive
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-
-                        {/* Content Section - Grows to fill space */}
-                        <div className="flex-1 flex flex-col items-center justify-center w-full gap-2 md:gap-6 overflow-y-auto">
-
-                            {/* Project Badge */}
-                            <div className="flex items-center justify-center pt-8 md:pt-0">
-                                <div className="px-3 py-1 rounded-full bg-secondary/50 border text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                    {project ? (
-                                        <>
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
-                                            {project.name}
-                                        </>
-                                    ) : (
-                                        "No Project"
-                                    )}
-                                </div>
+                            {/* Focus Atmosphere - Always Visible */}
+                            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10">
+                                <FocusAtmosphere />
                             </div>
 
-                            {/* Task Title Row (Inline Edit) */}
-                            <div className="flex items-center justify-center gap-3 w-full group/title relative px-2">
-                                <input
-                                    type="text"
-                                    value={activeTask.title}
-                                    onChange={(e) => updateTask(activeTask.id, { title: e.target.value })}
-                                    className="bg-transparent border-none text-2xl md:text-5xl font-bold tracking-tight text-foreground leading-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1"
-                                    placeholder="Task Name"
-                                />
+                            {/* Actions Menu (Top Right) */}
+                            <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
+                                {/* ... menu items ... */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/50 hover:text-foreground">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+                                            <Edit className="mr-2 h-4 w-4" /> Edit Task (Modal)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleDuplicate}>
+                                            <Copy className="mr-2 h-4 w-4" /> Duplicate
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleConvertToDraft}>
+                                            <FileText className="mr-2 h-4 w-4" /> Convert to Draft
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleArchive}>
+                                            <Archive className="mr-2 h-4 w-4" /> Archive
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
 
-                            {/* Description (Inline Edit + Scroll) */}
-                            <div className="w-full max-w-xl relative group/desc min-h-[40px] shrink-0">
-                                <TextareaAutosize
-                                    value={activeTask.description || ''}
-                                    onChange={(e) => updateTask(activeTask.id, { description: e.target.value })}
-                                    placeholder="Add a description..."
-                                    minRows={1}
-                                    maxRows={4}
-                                    className="w-full bg-transparent border-none text-sm md:text-lg text-muted-foreground/80 text-center leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md p-1 transition-all"
-                                />
-                            </div>
+                            {/* Tappable Background Area for the Details Sheet */}
+                            <div
+                                className="flex-1 flex flex-col items-center justify-center w-full gap-2 md:gap-6 overflow-y-auto cursor-pointer"
+                                onClick={() => setIsDetailsSheetOpen(true)}
+                            >
 
-                            {/* Focus Timer */}
-                            <div className="w-full py-1 shrink-0">
-                                <FocusTimer taskId={activeTask.id} />
-                            </div>
-
-                            {/* Due Date Line */}
-                            <div className="h-5 flex items-center justify-center shrink-0">
-                                {dueDateText && (
-                                    <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                                        <Clock className="h-3 w-3" />
-                                        {dueDateText}
+                                {/* Project Badge */}
+                                <div className="flex items-center justify-center pt-8 md:pt-0">
+                                    <div className="px-3 py-1 rounded-full bg-secondary/50 border text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        {project ? (
+                                            <>
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
+                                                {project.name}
+                                            </>
+                                        ) : (
+                                            "No Project"
+                                        )}
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Metadata Chips Row - Compact Grid on Mobile */}
-                            <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
-                                {/* Due Date Chip */}
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <button className={cn(
-                                            "px-2.5 py-1 rounded-full border bg-secondary/30 text-xs font-medium flex items-center gap-1.5 transition-all",
-                                            activeTask.dueDate ? "text-muted-foreground" : "text-muted-foreground/50 border-dashed"
-                                        )}>
-                                            <Calendar className="h-3 w-3" />
-                                            {activeTask.dueDate ? format(activeTask.dueDate, 'MMM d') : 'Set Date'}
-                                        </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="center">
-                                        <CalendarComponent
-                                            mode="single"
-                                            selected={activeTask.dueDate ? new Date(activeTask.dueDate) : undefined}
-                                            onSelect={(d) => updateTask(activeTask.id, { dueDate: d ? d.getTime() : undefined })}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-
-                                {/* Priority Chip */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className={cn(
-                                            "px-2.5 py-1 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all",
-                                            activeTask.priority === 'high' ? "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200" :
-                                                activeTask.priority === 'medium' ? "bg-secondary/30 text-muted-foreground border-transparent" :
-                                                    "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200"
-                                        )}>
-                                            <AlertCircle className="h-3 w-3" />
-                                            {activeTask.priority.charAt(0).toUpperCase() + activeTask.priority.slice(1)} Priority
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="center">
-                                        <DropdownMenuRadioGroup value={activeTask.priority} onValueChange={handlePrioritySelect}>
-                                            <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="high" className="text-amber-600">High</DropdownMenuRadioItem>
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
-                                {/* Frog Chip */}
-                                <button
-                                    onClick={() => toggleFrog(activeTask.id)}
-                                    className={cn(
-                                        "px-2.5 py-1 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all",
-                                        activeTask.isFrog ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 ring-2 ring-emerald-500/20" : "bg-secondary/30 text-muted-foreground border-transparent hover:border-emerald-200 hover:text-emerald-600"
-                                    )}
-                                >
-                                    <span className="text-sm leading-none">🐸</span>
-                                    {activeTask.isFrog ? 'Daily Frog' : 'Mark as Frog'}
-                                </button>
-
-                                {/* Recurring Chip */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className={cn(
-                                            "px-2.5 py-1 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all",
-                                            activeTask.recurrence ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200" : "bg-secondary/30 text-muted-foreground border-transparent"
-                                        )}>
-                                            <Repeat className="h-3 w-3" />
-                                            {activeTask.recurrence ? 'Recurring' : 'Not Recurring'}
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="center">
-                                        <DropdownMenuRadioGroup value={activeTask.recurrence ? String(activeTask.recurrence) : 'none'} onValueChange={handleRecurrenceSelect}>
-                                            <DropdownMenuRadioItem value="none">One-time</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="daily">Daily</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="weekly">Weekly</DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="monthly">Monthly</DropdownMenuRadioItem>
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-
-                            {/* Friction Score */}
-                            {(activeTask.friction?.skips || activeTask.friction?.holds) ? (
-                                <div className="text-[10px] sm:text-xs text-muted-foreground/50 font-medium mt-2 flex gap-2 items-center justify-center">
-                                    {!!activeTask.friction.skips && <span>Skipped: {activeTask.friction.skips}</span>}
-                                    {!!activeTask.friction.skips && !!activeTask.friction.holds && <span>•</span>}
-                                    {!!activeTask.friction.holds && <span>Snoozed: {activeTask.friction.holds}</span>}
                                 </div>
-                            ) : null}
 
-                        </div>
+                                {/* Task Title Row (Tappable for details) */}
+                                <div
+                                    className="flex items-center justify-center gap-3 w-full group/title relative px-2 py-4 cursor-pointer hover:bg-foreground/5 dark:hover:bg-foreground/10 rounded-xl transition-colors"
+                                    onClick={() => setIsDetailsSheetOpen(true)}
+                                >
+                                    <h1
+                                        className={cn(
+                                            "bg-transparent border-none text-3xl md:text-5xl font-bold tracking-tight leading-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1",
+                                            activeTask.isLightning && !activeTask.isFrog ? "text-yellow-600 dark:text-yellow-400" : "text-foreground"
+                                        )}
+                                    >
+                                        {activeTask.title}
+                                    </h1>
+                                </div>
 
-                        {/* Footer Actions - Pinned to bottom of Card */}
-                        <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
-                            {/* Secondary Actions */}
-                            <div className="flex items-center justify-center gap-2">
-                                {/* Skip */}
-                                <Button variant="outline" size="sm" onClick={handleSkip} title="Move to bottom of Queue" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm">
-                                    <Shuffle className="mr-1.5 h-3.5 w-3.5" /> Skip
-                                </Button>
+                                {/* Focus Timer */}
+                                <div className="w-full py-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    <FocusTimer taskId={activeTask.id} />
+                                </div>
+                            </div>
 
-                                {/* Snooze Dropdown */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <div className="inline-block"> {/* Wrapper needed for DropdownMenuTrigger when button is disabled */}
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <span className="inline-block"> {/* Wrapper needed for disabled button in Tooltip */}
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            disabled={activeTask.isFrog}
-                                                            className={cn(
-                                                                "h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm",
-                                                                activeTask.isFrog && "opacity-50 cursor-not-allowed hidden" // Optionally hide or just dim. Let's dim and disable.
-                                                            )}
-                                                        >
-                                                            <Pause className="mr-1.5 h-3.5 w-3.5" /> Hold
-                                                        </Button>
-                                                    </span>
-                                                </TooltipTrigger>
-                                                {activeTask.isFrog && (
-                                                    <TooltipContent side="top">
-                                                        <p className="text-xs">The Daily Frog cannot be placed on hold.</p>
-                                                    </TooltipContent>
-                                                )}
-                                            </Tooltip>
+                            {/* Visual Indicator for Sheet (Tappable too) */}
+                            <div className="w-full shrink-0 flex flex-col items-center justify-center opacity-40 cursor-pointer mt-2" onClick={() => setIsDetailsSheetOpen(true)}>
+                                <ChevronUp className="h-5 w-5 text-muted-foreground hidden md:block animate-bounce" />
+                                <div className="w-10 h-1.5 rounded-full bg-foreground/20 md:hidden"></div>
+                            </div>
+
+                            {/* Details Drawer - Holds Description and Metadata */}
+                            <Drawer open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen}>
+                                <DrawerContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]">
+                                    <DrawerHeader className="pb-4">
+                                        <DrawerTitle className="text-center font-bold">
+                                            <input
+                                                type="text"
+                                                value={activeTask.title}
+                                                onChange={(e) => updateTask(activeTask.id, { title: e.target.value })}
+                                                className="bg-transparent border-none text-xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
+                                                placeholder="Task Name"
+                                            />
+                                        </DrawerTitle>
+                                    </DrawerHeader>
+
+                                    <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto items-center">
+                                        {/* Description */}
+                                        <div className="w-full relative group/desc min-h-[40px] shrink-0">
+                                            <TextareaAutosize
+                                                value={activeTask.description || ''}
+                                                onChange={(e) => updateTask(activeTask.id, { description: e.target.value })}
+                                                placeholder="Add a description..."
+                                                minRows={1}
+                                                maxRows={4}
+                                                className="w-full bg-secondary/50 border-none text-sm md:text-base text-foreground/80 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-xl p-4 transition-all"
+                                            />
                                         </div>
-                                    </DropdownMenuTrigger>
-                                    {!activeTask.isFrog && (
-                                        <DropdownMenuContent align="center" className="w-48">
-                                            <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Snooze For...</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => handleHold(30, "30 minutes later")}>
-                                                <Clock className="mr-2 h-4 w-4" /> 30 minutes
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleHold(60, "1 hour later")}>
-                                                <Clock className="mr-2 h-4 w-4" /> 1 hour
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleHold(240, "4 hours later")}>
-                                                <Clock className="mr-2 h-4 w-4" /> 4 hours
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleHold(1440, "tomorrow")}>
-                                                <Calendar className="mr-2 h-4 w-4" /> Tomorrow
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    )}
-                                </DropdownMenu>
+
+                                        {/* Metadata Chips Row */}
+                                        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                                            {/* Due Date Chip */}
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <button className={cn(
+                                                        "px-3 py-1.5 rounded-full border bg-secondary/30 text-sm font-medium flex items-center gap-2 transition-all",
+                                                        activeTask.dueDate ? "text-muted-foreground" : "text-muted-foreground/50 border-dashed"
+                                                    )}>
+                                                        <Calendar className="h-4 w-4" />
+                                                        {activeTask.dueDate ? format(activeTask.dueDate, 'MMM d') : 'Set Date'}
+                                                    </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="center">
+                                                    <CalendarComponent
+                                                        mode="single"
+                                                        selected={activeTask.dueDate ? new Date(activeTask.dueDate) : undefined}
+                                                        onSelect={(d) => updateTask(activeTask.id, { dueDate: d ? d.getTime() : undefined })}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+
+                                            {/* Priority Chip */}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className={cn(
+                                                        "px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-2 transition-all",
+                                                        activeTask.priority === 'high' ? "text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200" :
+                                                            activeTask.priority === 'medium' ? "bg-secondary/30 text-muted-foreground border-transparent" :
+                                                                "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200"
+                                                    )}>
+                                                        <AlertCircle className="h-4 w-4" />
+                                                        {activeTask.priority.charAt(0).toUpperCase() + activeTask.priority.slice(1)} Priority
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="center">
+                                                    <DropdownMenuRadioGroup value={activeTask.priority} onValueChange={handlePrioritySelect}>
+                                                        <DropdownMenuRadioItem value="low" className="text-blue-500">Low</DropdownMenuRadioItem>
+                                                        <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
+                                                        <DropdownMenuRadioItem value="high" className="text-amber-600">High</DropdownMenuRadioItem>
+                                                    </DropdownMenuRadioGroup>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+
+                                            {/* Lightning Chip */}
+                                            <button
+                                                onClick={() => updateTask(activeTask.id, { isLightning: !activeTask.isLightning })}
+                                                className={cn(
+                                                    "px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-2 transition-all",
+                                                    activeTask.isLightning ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 ring-2 ring-yellow-500/20" : "bg-secondary/30 text-muted-foreground border-transparent hover:border-yellow-200 hover:text-yellow-600"
+                                                )}
+                                            >
+                                                <span className="text-sm leading-none">⚡</span>
+                                                {activeTask.isLightning ? 'Lightning Fast' : 'Mark Lightning'}
+                                            </button>
+
+                                            {/* Frog Chip */}
+                                            <button
+                                                onClick={() => toggleFrog(activeTask.id)}
+                                                className={cn(
+                                                    "px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-2 transition-all",
+                                                    activeTask.isFrog ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 ring-2 ring-emerald-500/20" : "bg-secondary/30 text-muted-foreground border-transparent hover:border-emerald-200 hover:text-emerald-600"
+                                                )}
+                                            >
+                                                <span className="text-sm leading-none">🐸</span>
+                                                {activeTask.isFrog ? 'Daily Frog' : 'Mark as Frog'}
+                                            </button>
+
+                                            {/* Recurring Chip */}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className={cn(
+                                                        "px-3 py-1.5 rounded-full border text-sm font-medium flex items-center gap-2 transition-all",
+                                                        activeTask.recurrence ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200" : "bg-secondary/30 text-muted-foreground border-transparent"
+                                                    )}>
+                                                        <Repeat className="h-4 w-4" />
+                                                        {activeTask.recurrence ? 'Recurring' : 'Not Recurring'}
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="center">
+                                                    <DropdownMenuRadioGroup value={activeTask.recurrence ? String(activeTask.recurrence) : 'none'} onValueChange={handleRecurrenceSelect}>
+                                                        <DropdownMenuRadioItem value="none">One-time</DropdownMenuRadioItem>
+                                                        <DropdownMenuRadioItem value="daily">Daily</DropdownMenuRadioItem>
+                                                        <DropdownMenuRadioItem value="weekly">Weekly</DropdownMenuRadioItem>
+                                                        <DropdownMenuRadioItem value="monthly">Monthly</DropdownMenuRadioItem>
+                                                    </DropdownMenuRadioGroup>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+
+                                        {/* Friction Score */}
+                                        {(activeTask.friction?.skips || activeTask.friction?.holds) ? (
+                                            <div className="text-xs text-muted-foreground/50 font-medium flex gap-3 items-center justify-center">
+                                                {!!activeTask.friction.skips && <span>Skipped: {activeTask.friction.skips}</span>}
+                                                {!!activeTask.friction.skips && !!activeTask.friction.holds && <span>•</span>}
+                                                {!!activeTask.friction.holds && <span>Snoozed: {activeTask.friction.holds}</span>}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+
+                            {/* Footer Actions - Pinned to bottom of Card */}
+                            <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
+                                {/* Secondary Actions */}
+                                <div className="flex items-center justify-center gap-2">
+                                    {/* Skip */}
+                                    <Button variant="outline" size="sm" onClick={handleSkip} title="Move to bottom of Queue" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm">
+                                        <Shuffle className="mr-1.5 h-3.5 w-3.5" /> Skip
+                                    </Button>
+
+                                    {/* Random */}
+                                    <Button variant="outline" size="sm" onClick={() => randomTask()} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm hidden sm:flex">
+                                        <Dices className="mr-1.5 h-3.5 w-3.5" /> Random
+                                    </Button>
+
+                                    {/* Snooze Dropdown */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <div className="inline-block"> {/* Wrapper needed for DropdownMenuTrigger when button is disabled */}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="inline-block"> {/* Wrapper needed for disabled button in Tooltip */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                disabled={activeTask.isFrog}
+                                                                className={cn(
+                                                                    "h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm",
+                                                                    activeTask.isFrog && "opacity-50 cursor-not-allowed hidden" // Optionally hide or just dim. Let's dim and disable.
+                                                                )}
+                                                            >
+                                                                <Pause className="mr-1.5 h-3.5 w-3.5" /> Hold
+                                                            </Button>
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    {activeTask.isFrog && (
+                                                        <TooltipContent side="top">
+                                                            <p className="text-xs">The Daily Frog cannot be placed on hold.</p>
+                                                        </TooltipContent>
+                                                    )}
+                                                </Tooltip>
+                                            </div>
+                                        </DropdownMenuTrigger>
+                                        {!activeTask.isFrog && (
+                                            <DropdownMenuContent align="center" className="w-48">
+                                                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Snooze For...</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => handleHold(30, "30 minutes later")}>
+                                                    <Clock className="mr-2 h-4 w-4" /> 30 minutes
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleHold(60, "1 hour later")}>
+                                                    <Clock className="mr-2 h-4 w-4" /> 1 hour
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleHold(240, "4 hours later")}>
+                                                    <Clock className="mr-2 h-4 w-4" /> 4 hours
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleHold(1440, "tomorrow")}>
+                                                    <Calendar className="mr-2 h-4 w-4" /> Tomorrow
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        )}
+                                    </DropdownMenu>
+                                </div>
+
+                                {/* Complete Button - Prominent */}
+                                <div className="w-full max-w-xs mx-auto">
+                                    <Button variant="default" size="lg" onClick={handleComplete} className="w-full h-11 rounded-full text-sm font-semibold shadow-md hover:shadow-xl hover:scale-105 transition-all">
+                                        <Check className="mr-2 h-4 w-4" /> Complete Task
+                                    </Button>
+                                </div>
                             </div>
 
-                            {/* Complete Button - Prominent */}
-                            <div className="w-full max-w-xs mx-auto">
-                                <Button variant="default" size="lg" onClick={handleComplete} className="w-full h-11 rounded-full text-sm font-semibold shadow-md hover:shadow-xl hover:scale-105 transition-all">
-                                    <Check className="mr-2 h-4 w-4" /> Complete Task
-                                </Button>
-                            </div>
-                        </div>
-
-                    </Card>
+                        </Card>
+                    </SwipeableTask>
                 ) : (
                     renderEmptyState()
                 )}
             </div>
-        </TooltipProvider>
+        </TooltipProvider >
     );
 }

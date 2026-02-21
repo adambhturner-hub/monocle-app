@@ -46,7 +46,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     // Med
     const medPatterns = [/\b(medium|med|normal|p2)\b/i, /(!{1})/]; // !
     // Low
-    const lowPatterns = [/\b(low|lo|later|someday|p3)\b/i];
+    const lowPatterns = [/\b(low|lo|later|p3)\b/i];
 
     // Check High first (strongest wins)
     if (highPatterns.some(p => p.test(cleanTitle))) {

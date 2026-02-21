@@ -207,6 +207,42 @@ class SoundEngine {
         this.playTone(1046.50, 'sine', 1.0, now + 0.3);// C6
     }
 
+    public playPromote() {
+        this.init();
+        // Fast ascending sweep (D Major arpeggio)
+        const now = 0;
+        this.playTone(587.33, 'sine', 0.4, now);        // D5
+        this.playTone(739.99, 'sine', 0.4, now + 0.08); // F#5
+        this.playTone(880.00, 'sine', 0.5, now + 0.16); // A5
+        this.playTone(1174.66, 'sine', 0.6, now + 0.24);// D6
+    }
+
+    public playAlarm() {
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+
+        // Ringing bell sound (two sine waves interacting)
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.frequency.setValueAtTime(880, this.ctx.currentTime); // A5
+        osc2.frequency.setValueAtTime(884, this.ctx.currentTime); // Detuned for wobble
+
+        gain.gain.setValueAtTime(0, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.5);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(this.ctx.currentTime + 1.5);
+        osc2.stop(this.ctx.currentTime + 1.5);
+    }
+
     public async playRibbit() {
         this.init();
         if (!this.ctx || !this.masterGain) return;
