@@ -41,20 +41,41 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     // Force re-render to update debug info
     // const [, setTick] = useState(0);
 
-    const handleClearData = () => {
+    const handleClearData = async () => {
         if (confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
-            localStorage.clear();
-            window.location.reload();
+            try {
+                if (auth.currentUser) {
+                    const { doc, setDoc } = await import('firebase/firestore');
+                    const { db } = await import('@/lib/firebase');
+                    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+                    await setDoc(userDocRef, {
+                        tasks: [],
+                        projects: [],
+                        sessionHistory: [],
+                        settings: { ...settings, hasSeenOnboarding: false },
+                        updatedAt: Date.now()
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to wipe cloud document", e);
+            } finally {
+                clearData();
+                localStorage.clear();
+                window.location.reload();
+            }
         }
     };
 
     const handleSignOut = async () => {
         if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
-            await signOut(auth);
-            clearData();
-            localStorage.clear();
-            onOpenChange(false);
-            window.location.reload();
+            try {
+                clearData();
+                localStorage.clear();
+                await signOut(auth);
+            } finally {
+                onOpenChange(false);
+                window.location.reload();
+            }
         }
     };
 
