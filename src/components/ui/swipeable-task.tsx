@@ -20,6 +20,7 @@ interface SwipeableTaskProps {
     rightLabel?: string;
     rightColorClass?: string;
     rightBgClass?: string;
+    downAction?: (taskId: string, minutes: number, label: string) => void;
     isMobile: boolean; // Only enable swipes on mobile layout
 }
 
@@ -36,9 +37,11 @@ export function SwipeableTask({
     rightLabel = "Skip",
     rightColorClass = "text-blue-500",
     rightBgClass = "bg-blue-500",
+    downAction,
     isMobile
 }: SwipeableTaskProps) {
     const [offset, setOffset] = useState(0);
+    const [offsetY, setOffsetY] = useState(0);
     const [isSwiping, setIsSwiping] = useState(false);
     const startXRef = useRef(0);
     const startYRef = useRef(0);
@@ -73,9 +76,14 @@ export function SwipeableTask({
                 isHorizontalSwipeRef.current = true;
                 e.preventDefault(); // Stop vertical scrolling once locked as swipe
             } else if (Math.abs(deltaY) > 10) {
-                isHorizontalSwipeRef.current = false;
-                setIsSwiping(false); // Cancel swipe logic
-                return;
+                if (deltaY > 0 && downAction) {
+                    isHorizontalSwipeRef.current = false;
+                    e.preventDefault(); // lock vertical swipe
+                } else {
+                    isHorizontalSwipeRef.current = false;
+                    setIsSwiping(false); // Cancel swipe logic
+                    return;
+                }
             } else {
                 return; // Wait for clearer intention
             }
@@ -94,22 +102,40 @@ export function SwipeableTask({
             if (visualOffset < 0 && !rightAction) visualOffset = 0;
 
             setOffset(visualOffset);
+        } else if (isHorizontalSwipeRef.current === false && downAction) {
+            // Vertical Drag
+            const resistance = 0.8; // Allow more travel vertically
+            let visualOffset = deltaY * resistance;
+            if (visualOffset < 0) visualOffset = 0; // Only pull down
+            setOffsetY(visualOffset);
         }
     };
 
     const handleTouchEnd = () => {
         if (!isMobile) return;
 
-        if (offset > SWIPE_THRESHOLD) {
-            // Trigger Right Swipe (from left side)
-            leftAction(task.id);
-        } else if (offset < -SWIPE_THRESHOLD && rightAction) {
-            // Trigger Left Swipe (from right side)
-            rightAction(task.id);
+        if (isHorizontalSwipeRef.current) {
+            if (offset > SWIPE_THRESHOLD) {
+                leftAction(task.id);
+            } else if (offset < -SWIPE_THRESHOLD && rightAction) {
+                rightAction(task.id);
+            }
+        } else if (isHorizontalSwipeRef.current === false && downAction) {
+            // Vertical Drop Thresholds
+            if (offsetY > 240) {
+                downAction(task.id, 24 * 60, "Tomorrow");
+            } else if (offsetY > 180) {
+                downAction(task.id, 240, "4 hours");
+            } else if (offsetY > 120) {
+                downAction(task.id, 60, "1 hour");
+            } else if (offsetY > 60) {
+                downAction(task.id, 30, "30 mins");
+            }
         }
 
         // Snap back
         setOffset(0);
+        setOffsetY(0);
         setIsSwiping(false);
         isHorizontalSwipeRef.current = null;
     };
@@ -158,13 +184,28 @@ export function SwipeableTask({
                 )}
             </div>
 
+            {/* Vertical Hold Background */}
+            {downAction && offsetY > 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-start rounded-lg bg-indigo-500/10 text-indigo-500 font-bold tracking-wide pt-4 z-0">
+                    <span className="text-sm">
+                        {offsetY > 240 ? "Holding until Tomorrow" : offsetY > 180 ? "Holding for 4 hours" : offsetY > 120 ? "Holding for 1 hour" : offsetY > 60 ? "Holding for 30 mins" : "Pull to Hold..."}
+                    </span>
+                    <div className="w-1/2 h-1 bg-indigo-500/20 mt-4 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-indigo-500 transition-all duration-100 ease-out"
+                            style={{ width: `${Math.min(100, (offsetY / 240) * 100)}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* Foreground Content */}
             <div
                 className={cn(
                     "relative z-10 w-full rounded-lg",
                     !isSwiping ? "transition-transform duration-300 ease-out" : "" // Animate snap-back only
                 )}
-                style={{ transform: `translateX(${offset}px)` }}
+                style={{ transform: `translate(${offset}px, ${offsetY}px)` }}
             >
                 {children}
             </div>
