@@ -49,13 +49,11 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     };
 
     const handleSignOut = async () => {
-        if (confirm("Are you sure you want to sign out? Your tasks will stop syncing.")) {
-            // Wait for sign out so AuthGuard catches it and kicks us to login
+        if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
             await signOut(auth);
-            // We can also clear local storage if desired, but local-first usually implies 
-            // keeping data on the device until explicitly cleared via handleClearData.
+            localStorage.clear();
             onOpenChange(false);
-            window.location.reload(); // Force a clean slate on auth change
+            window.location.reload();
         }
     };
 
