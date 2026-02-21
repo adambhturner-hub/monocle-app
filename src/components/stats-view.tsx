@@ -1,22 +1,16 @@
-
 'use client';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useStats } from '@/hooks/use-stats';
 import { useMonocleStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { Activity, Clock, Trophy, BarChart3, TrendingUp, PieChart } from 'lucide-react';
+import { Activity, Clock, Trophy, BarChart3, TrendingUp, PieChart, CheckCircle2 } from 'lucide-react';
 import { getIconComponent } from '@/lib/icons';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
 
 export function StatsView() {
     const { activeSheet, setOpenSheet } = useMonocleStore();
-    const stats = useStats(); // Use local hook logic inside component? Or separate? 
-    // Wait, I created useStats logic inside the component file in my thought process, 
-    // but the file created was `src/hooks/use-stats.ts`. 
-    // So import works.
-
-    // Calculate max minutes for chart scaling
-    const maxMinutes = Math.max(...stats.dailyActivity.map(d => d.minutes), 60); // Minimum scale 60m
+    const stats = useStats();
 
     return (
         <Sheet open={activeSheet === 'stats'} onOpenChange={(val) => setOpenSheet(val ? 'stats' : null)}>
@@ -28,12 +22,12 @@ export function StatsView() {
                     </SheetTitle>
                 </SheetHeader>
 
-                <div className="space-y-8">
+                <div className="space-y-8 pb-12">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="bg-card border rounded-xl p-4 shadow-sm flex flex-col gap-1">
                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> Total Focus
+                                <Clock className="h-3 w-3" /> Focus Time
                             </span>
                             <div className="text-2xl font-mono font-bold text-foreground">
                                 {stats.totalFocusHours}<span className="text-sm font-normal text-muted-foreground ml-1">hrs</span>
@@ -41,11 +35,80 @@ export function StatsView() {
                         </div>
                         <div className="bg-card border rounded-xl p-4 shadow-sm flex flex-col gap-1">
                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                <Trophy className="h-3 w-3" /> Current Streak
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Tasks Done
                             </span>
                             <div className="text-2xl font-mono font-bold text-foreground">
-                                {stats.streak}<span className="text-sm font-normal text-muted-foreground ml-1">days</span>
+                                {stats.totalCompletedTasks}
                             </div>
+                        </div>
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                                🐸 Frogs Eaten
+                            </span>
+                            <div className="text-2xl font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                                {stats.totalFrogsEaten}
+                            </div>
+                        </div>
+                        <div className="bg-card border rounded-xl p-4 shadow-sm flex flex-col gap-1">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                <Trophy className="h-3 w-3 text-yellow-500" /> Frog Streak
+                            </span>
+                            <div className="text-2xl font-mono font-bold text-foreground">
+                                {stats.frogStreak}<span className="text-sm font-normal text-muted-foreground ml-1">days</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Productivity Heatmap */}
+                    <div className="space-y-6">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary" />
+                            Productivity Heatmap
+                        </h3>
+                        <div className="h-48 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.productivityHeatmap} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={20} />
+                                    <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <RechartsTooltip
+                                        contentStyle={{ backgroundColor: 'var(--popover)', borderColor: 'var(--border)', borderRadius: '8px', fontSize: '12px' }}
+                                        itemStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
+                                        labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
+                                    />
+                                    <Area type="monotone" dataKey="count" name="Tasks" stroke="var(--chart-3)" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Daily Activity */}
+                    <div className="space-y-6">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4 text-primary" />
+                            Daily Activity (Last 7 Days)
+                        </h3>
+                        <div className="h-56 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.dailyActivity} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                                    <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
+                                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'var(--chart-2)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <RechartsTooltip
+                                        cursor={{ fill: 'var(--muted)', opacity: 0.5 }}
+                                        contentStyle={{ backgroundColor: 'var(--popover)', borderColor: 'var(--border)', borderRadius: '8px', fontSize: '12px' }}
+                                        itemStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
+                                    />
+                                    <Bar yAxisId="left" dataKey="minutes" name="Focus (min)" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
+                                    <Bar yAxisId="right" dataKey="tasksCompleted" name="Tasks" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
@@ -91,44 +154,7 @@ export function StatsView() {
                         </div>
                     </div>
 
-                    {/* Daily Activity Chart */}
-                    <div className="space-y-6">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-primary" />
-                            Daily Activity (Last 7 Days)
-                        </h3>
-                        <div className="h-64 flex items-end justify-between gap-4 p-6 bg-muted/20 border rounded-xl relative">
-                            {/* Y-Axis Grid Lines (Optional, maybe skip for simplicity) */}
-
-                            {stats.dailyActivity.map((day, i) => {
-                                const heightPercentage = (day.minutes / maxMinutes) * 100;
-                                return (
-                                    <div key={i} className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="w-full relative flex-1 flex items-end justify-center">
-                                            <div
-                                                className={cn(
-                                                    "w-full max-w-[24px] rounded-t-sm transition-all duration-500 ease-out group-hover:opacity-80 active:scale-95",
-                                                    day.isToday ? "bg-primary" : "bg-primary/40",
-                                                    day.minutes === 0 && "h-[2px] bg-muted-foreground/20"
-                                                )}
-                                                style={{ height: `${Math.max(day.minutes === 0 ? 0 : 5, heightPercentage)}%` }} // Min visual height 5% unless 0
-                                            >
-                                                {/* Tooltip on hover */}
-                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 border">
-                                                    {day.minutes}m
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span className={cn("text-[10px] font-mono uppercase", day.isToday ? "font-bold text-primary" : "text-muted-foreground")}>
-                                            {day.date}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Completion Breakdown (Outcomes) - Simple List or Badges */}
+                    {/* Completion Breakdown (Outcomes) */}
                     <div className="space-y-6">
                         <h3 className="text-sm font-semibold flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-primary" />
