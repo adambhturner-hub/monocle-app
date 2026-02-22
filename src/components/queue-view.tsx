@@ -508,45 +508,22 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                             <ProjectSelect variant="ghost" className="h-8 text-xs font-semibold uppercase tracking-widest text-muted-foreground bg-transparent border-none shadow-none hover:bg-muted/50 px-2 -ml-2 min-w-0" />
                                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold shrink-0">{activeTasks.length}</span>
                                         </div>
-                                        <div className="flex bg-secondary/50 p-1 rounded-full border border-black/5 shadow-inner">
+                                        <div className="flex">
                                             <button
-                                                onClick={() => setSortMode('manual')}
+                                                onClick={() => {
+                                                    if (sortMode === 'manual') setSortMode('date');
+                                                    else if (sortMode === 'date') setSortMode('priority');
+                                                    else setSortMode('manual');
+                                                }}
                                                 disabled={!!searchQuery}
-                                                className={cn(
-                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
-                                                    sortMode === 'manual'
-                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
-                                                )}
+                                                className="px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5 bg-background text-foreground shadow-sm ring-1 ring-black/5 hover:bg-muted"
                                             >
-                                                <ListFilter className="h-3.5 w-3.5" />
-                                                Manual
-                                            </button>
-                                            <button
-                                                onClick={() => setSortMode('date')}
-                                                disabled={!!searchQuery}
-                                                className={cn(
-                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
-                                                    sortMode === 'date'
-                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
-                                                )}
-                                            >
-                                                <Calendar className="h-3.5 w-3.5" />
-                                                Date
-                                            </button>
-                                            <button
-                                                onClick={() => setSortMode('priority')}
-                                                disabled={!!searchQuery}
-                                                className={cn(
-                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
-                                                    sortMode === 'priority'
-                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
-                                                )}
-                                            >
-                                                <AlertCircle className="h-3.5 w-3.5" />
-                                                Priority
+                                                {sortMode === 'manual' && <ListFilter className="h-3.5 w-3.5" />}
+                                                {sortMode === 'date' && <Calendar className="h-3.5 w-3.5" />}
+                                                {sortMode === 'priority' && <AlertCircle className="h-3.5 w-3.5" />}
+                                                {sortMode.charAt(0).toUpperCase() + sortMode.slice(1)}
+                                                <div className="h-3 w-[1px] bg-border mx-0.5" />
+                                                <span className="text-[10px] text-muted-foreground">Sort</span>
                                             </button>
                                         </div>
                                     </div>
