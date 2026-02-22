@@ -27,10 +27,9 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
-  // Initialize and force capture on load
+  // Initialize and force capture on load, ensuring hydration is complete
   useEffect(() => {
     setIsMounted(true);
-    setView('capture');
 
     // Minimum artificial delay for splash screen branding
     const timer = setTimeout(() => {
@@ -38,7 +37,16 @@ export default function Home() {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [setView]);
+  }, []);
+
+  // Set initial view ONLY after hydration to avoid persist middleware overwriting it
+  useEffect(() => {
+    if (isHydrated && isMounted) {
+      setView('capture');
+    }
+    // We only want this to run once when hydrated becomes true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
 
   // View state side-effects
   useEffect(() => {

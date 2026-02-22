@@ -184,7 +184,7 @@ export const useMonocleStore = create<MonocleState>()(
                 }
 
                 // 1. Overdue (if enabled)
-                if (settings.autoPickOverdue) {
+                if (settings?.autoPickOverdue) {
                     // Find most overdue first
                     const overdue = eligible
                         .filter(t => t.dueDate && t.dueDate < now)
@@ -362,7 +362,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const lastState = [...state.tasks];
 
                     // Play Sound (Global check)
-                    if (state.settings.soundEnabled !== false) {
+                    if (state.settings?.soundEnabled !== false) {
                         if (taskToComplete.isFrog) {
                             soundEngine.playRibbit();
                         } else {
@@ -585,7 +585,7 @@ export const useMonocleStore = create<MonocleState>()(
                         nextTasks.push(updatedTask);
                     }
 
-                    if (state.settings.soundEnabled !== false) {
+                    if (state.settings?.soundEnabled !== false) {
                         soundEngine.playSkip();
                     }
 
@@ -637,7 +637,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
                     const finalTasks = [...otherTasks, updatedTask];
 
-                    if (state.settings.soundEnabled !== false) {
+                    if (state.settings?.soundEnabled !== false) {
                         soundEngine.playHold();
                     }
 
@@ -679,7 +679,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const randomIndex = Math.floor(Math.random() * pool.length);
                     const randomTask = pool[randomIndex];
 
-                    if (state.settings.soundEnabled !== false) {
+                    if (state.settings?.soundEnabled !== false) {
                         soundEngine.playDiceRattle();
                     }
 
@@ -826,7 +826,7 @@ export const useMonocleStore = create<MonocleState>()(
                     status: 'running'
                 };
 
-                if (state.settings.soundEnabled !== false) {
+                if (state.settings?.soundEnabled !== false) {
                     soundEngine.playStart();
                 }
 
@@ -870,7 +870,7 @@ export const useMonocleStore = create<MonocleState>()(
                 // "Complete" (Chord) is usually for success.
                 // "Stop" (Decaying) might be for giving up?
                 // Let's leave this as is for now, assuming only one path is taken.
-                if (outcome === 'complete_task' && state.settings.soundEnabled !== false) {
+                if (outcome === 'complete_task' && state.settings?.soundEnabled !== false) {
                     soundEngine.playComplete();
                 }
 
