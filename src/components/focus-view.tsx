@@ -244,17 +244,17 @@ export function FocusView({ onExit }: FocusViewProps) {
                         rightBgClass="bg-blue-500"
                         rightColorClass="text-blue-600"
 
-                        downAction={activeTask.isFrog ? undefined : () => useMonocleStore.getState().randomTask()}
-                        downIcon={Dices}
-                        downLabel="Random"
-                        downBgClass="bg-indigo-500"
-                        downColorClass="text-indigo-600"
+                        leftAction={activeTask.isFrog ? undefined : () => useMonocleStore.getState().randomTask()}
+                        leftIcon={Dices}
+                        leftLabel="Random"
+                        leftBgClass="bg-indigo-500"
+                        leftColorClass="text-indigo-600"
 
-                        leftThresholdAction={activeTask.isFrog ? undefined : (id, mins, label) => handleHold(mins, label)}
-                        leftIcon={Pause}
-                        leftLabel="Hold"
-                        leftBgClass="bg-orange-500"
-                        leftColorClass="text-orange-600"
+                        downThresholdAction={activeTask.isFrog ? undefined : (id, mins, label) => handleHold(mins, label)}
+                        downIcon={Pause}
+                        downLabel="Hold"
+                        downBgClass="bg-orange-500"
+                        downColorClass="text-orange-600"
                     >
                         <Card
                             className={cn(
