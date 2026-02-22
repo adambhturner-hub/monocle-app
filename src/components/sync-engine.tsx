@@ -84,6 +84,7 @@ export function SyncEngine() {
                                 settings: cloudData.settings,
                                 sessionHistory: cloudData.sessionHistory || [],
                             });
+                            useMonocleStore.getState().setLastSyncTime(Date.now());
                         }
                     } else {
                         // User exists but has no cloud document yet (first login / account creation)
@@ -188,7 +189,9 @@ export function SyncEngine() {
                 // Update our ref so our own snapshot echo doesn't trigger a pull
                 lastSyncedStateStrRef.current = currentStateStr;
 
-                firestoreSetDoc(userDocRef, safePayload, { merge: true }).catch((err: any) => {
+                firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
+                    useMonocleStore.getState().setLastSyncTime(Date.now());
+                }).catch((err: any) => {
                     console.error("Failed to sync to cloud:", err);
                     toast.error(`Sync Failed`, { description: err.message || "Could not save your changes to the cloud. They are saved locally." });
                 });

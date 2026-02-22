@@ -111,6 +111,9 @@ interface MonocleState {
     loadFromCloud: (cloudState: Partial<MonocleState>) => void;
     clearData: () => void;
 
+    lastSyncTime: number | null;
+    setLastSyncTime: (time: number | null) => void;
+
     isHydrated?: boolean;
     setHydrated?: () => void;
 }
@@ -134,6 +137,8 @@ export const useMonocleStore = create<MonocleState>()(
             activeProject: null,
             isHydrated: false,
             setHydrated: () => set({ isHydrated: true }),
+            lastSyncTime: null,
+            setLastSyncTime: (time) => set({ lastSyncTime: time }),
 
             // Settings Defaults
             settings: {

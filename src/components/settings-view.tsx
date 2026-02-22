@@ -21,13 +21,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Moon, Sun, Laptop, Trash2, Download, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity } from 'lucide-react';
+import { Moon, Sun, Laptop, Trash2, Download, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity, RefreshCw } from 'lucide-react';
 import { useMonocleStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { del } from 'idb-keyval';
+import { formatDistanceToNow } from 'date-fns';
 
 interface SettingsViewProps {
     open: boolean;
@@ -36,10 +37,39 @@ interface SettingsViewProps {
 
 export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const { setTheme, theme } = useTheme();
-    const { tasks, projects, settings, updateSettings, clearData } = useMonocleStore();
+    const { tasks, projects, settings, updateSettings, clearData, lastSyncTime } = useMonocleStore();
     const [testSoundPlaying, setTestSoundPlaying] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
-    // Force re-render to update debug info
+    const handleForceSync = async () => {
+        if (!auth.currentUser) return;
+        setIsSyncing(true);
+        try {
+            const toastId = toast.loading("Syncing with cloud...");
+            const { doc, getDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase');
+            const userDocRef = doc(db, 'users', auth.currentUser.uid);
+
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const cloudData = docSnap.data();
+                useMonocleStore.getState().loadFromCloud({
+                    tasks: cloudData.tasks || [],
+                    projects: cloudData.projects || [],
+                    settings: cloudData.settings,
+                    sessionHistory: cloudData.sessionHistory || [],
+                });
+                useMonocleStore.getState().setLastSyncTime(Date.now());
+                toast.success("Sync successful", { id: toastId });
+            } else {
+                toast.success("Ready for push", { id: toastId });
+            }
+        } catch (e: any) {
+            toast.error("Force sync failed", { description: e.message });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
     // const [, setTick] = useState(0);
 
     const handleClearData = async () => {
@@ -174,16 +204,28 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                             <Activity className="h-5 w-5" />
                             <h3>Account & Sync</h3>
                         </div>
-                        <div className="flex items-center justify-between p-4 border rounded-lg bg-emerald-500/5 border-emerald-500/20">
-                            <div className="space-y-0.5">
-                                <Label className="text-base text-emerald-600 dark:text-emerald-400">Cloud Sync Active</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Signed in as <span className="font-medium text-foreground">{auth.currentUser?.email}</span>
-                                </p>
+                        <div className="flex flex-col gap-3 p-4 border rounded-lg bg-emerald-500/5 border-emerald-500/20">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base text-emerald-600 dark:text-emerald-400">Cloud Sync Active</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Signed in as <span className="font-medium text-foreground">{auth.currentUser?.email}</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground/70 flex items-center gap-1 mt-1">
+                                        <RefreshCw className="h-3 w-3" />
+                                        Last synced: {lastSyncTime ? formatDistanceToNow(lastSyncTime, { addSuffix: true }) : 'Never'}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Button variant="default" size="sm" onClick={handleForceSync} disabled={isSyncing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                        {isSyncing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                                        Force Sync
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={handleSignOut}>
+                                        Sign Out
+                                    </Button>
+                                </div>
                             </div>
-                            <Button variant="outline" size="sm" onClick={handleSignOut}>
-                                Sign Out
-                            </Button>
                         </div>
                     </div>
 

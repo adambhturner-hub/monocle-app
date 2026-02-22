@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
@@ -22,16 +22,23 @@ export const metadata: Metadata = {
   title: "Monocle",
   description: "Fancy Focus, One Task At A Time",
   manifest: "/manifest.json",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Monocle",
   },
+  icons: {
+    icon: '/monocle_icon.png',
+    apple: '/monocle_icon.png',
+  }
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
