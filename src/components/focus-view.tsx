@@ -502,6 +502,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                             <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
                                 {/* Secondary Actions */}
                                 <div className="flex items-center justify-center gap-2">
+                                    {/* Random */}
+                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); randomTask(); }} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm flex">
+                                        <Dices className="mr-1.5 h-3.5 w-3.5" /> Random
+                                    </Button>
+
                                     {/* Snooze Dropdown */}
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -549,11 +554,6 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             </DropdownMenuContent>
                                         )}
                                     </DropdownMenu>
-
-                                    {/* Random */}
-                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); randomTask(); }} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm flex">
-                                        <Dices className="mr-1.5 h-3.5 w-3.5" /> Random
-                                    </Button>
 
                                     {/* Skip */}
                                     <Button variant="outline" size="sm" onClick={handleSkip} title="Move to bottom of Queue" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm">
