@@ -29,7 +29,7 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'; // Renamed to avoid collision
 import { AddTaskModal } from './add-task-modal';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -367,22 +367,22 @@ export function FocusView({ onExit }: FocusViewProps) {
                                 <div className="w-10 h-1.5 rounded-full bg-foreground/20 md:hidden"></div>
                             </div>
 
-                            {/* Details Drawer - Holds Description and Metadata */}
-                            <Drawer open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen}>
-                                <DrawerContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]">
-                                    <DrawerHeader className="pb-4">
-                                        <DrawerTitle className="text-center font-bold">
+                            {/* Details Dialog - Holds Description and Metadata */}
+                            <Dialog open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen}>
+                                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-6 h-auto rounded-3xl w-[95vw] max-w-2xl bg-card border shadow-2xl overflow-y-auto max-h-[85vh]">
+                                    <DialogHeader className="pb-4 border-b border-border/50">
+                                        <DialogTitle className="text-center font-bold">
                                             <input
                                                 type="text"
                                                 value={activeTask.title}
                                                 onChange={(e) => updateTask(activeTask.id, { title: e.target.value })}
-                                                className="bg-transparent border-none text-xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
+                                                className="bg-transparent border-none text-2xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
                                                 placeholder="Task Name"
                                             />
-                                        </DrawerTitle>
-                                    </DrawerHeader>
+                                        </DialogTitle>
+                                    </DialogHeader>
 
-                                    <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto items-center">
+                                    <div className="flex flex-col gap-6 w-full pt-4 max-w-2xl mx-auto items-center">
                                         {/* Description */}
                                         <div className="w-full relative group/desc min-h-[40px] shrink-0">
                                             <TextareaAutosize
@@ -495,8 +495,8 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             </div>
                                         ) : null}
                                     </div>
-                                </DrawerContent>
-                            </Drawer>
+                                </DialogContent>
+                            </Dialog>
 
                             {/* Footer Actions - Pinned to bottom of Card */}
                             <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
