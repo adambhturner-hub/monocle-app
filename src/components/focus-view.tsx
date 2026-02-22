@@ -256,11 +256,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                         leftBgClass="bg-indigo-500"
                         leftColorClass="text-indigo-600"
 
-                        downAction={() => { if (onExit) onExit(); else setView('queue'); }}
-                        downIcon={ChevronUp} // Chevron pointing structurally
-                        downLabel="Back to Queue"
-                        downBgClass="bg-background-muted"
-                        downColorClass="text-muted-foreground"
+                        downThresholdAction={activeTask.isFrog ? undefined : (id, mins, label) => handleHold(mins, label)}
+                        downIcon={Pause}
+                        downLabel="Hold"
+                        downBgClass="bg-orange-500"
+                        downColorClass="text-orange-600"
 
                         rightAction={() => handleSkip()}
                         rightIcon={Shuffle}
