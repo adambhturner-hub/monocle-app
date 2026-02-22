@@ -508,44 +508,44 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                             <ProjectSelect variant="ghost" className="h-8 text-xs font-semibold uppercase tracking-widest text-muted-foreground bg-transparent border-none shadow-none hover:bg-muted/50 px-2 -ml-2 min-w-0" />
                                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold shrink-0">{activeTasks.length}</span>
                                         </div>
-                                        <div className="flex bg-muted/50 p-0.5 rounded-lg border">
+                                        <div className="flex bg-secondary/50 p-1 rounded-full border border-black/5 shadow-inner">
                                             <button
                                                 onClick={() => setSortMode('manual')}
                                                 disabled={!!searchQuery}
                                                 className={cn(
-                                                    "px-2 py-1 text-[10px] font-medium rounded-md transition-all flex items-center gap-1.5",
+                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
                                                     sortMode === 'manual'
-                                                        ? "bg-background text-foreground shadow-sm"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                                                 )}
                                             >
-                                                <ListFilter className="h-3 w-3" />
+                                                <ListFilter className="h-3.5 w-3.5" />
                                                 Manual
                                             </button>
                                             <button
                                                 onClick={() => setSortMode('date')}
                                                 disabled={!!searchQuery}
                                                 className={cn(
-                                                    "px-2 py-1 text-[10px] font-medium rounded-md transition-all flex items-center gap-1.5",
+                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
                                                     sortMode === 'date'
-                                                        ? "bg-background text-foreground shadow-sm"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                                                 )}
                                             >
-                                                <Calendar className="h-3 w-3" />
+                                                <Calendar className="h-3.5 w-3.5" />
                                                 Date
                                             </button>
                                             <button
                                                 onClick={() => setSortMode('priority')}
                                                 disabled={!!searchQuery}
                                                 className={cn(
-                                                    "px-2 py-1 text-[10px] font-medium rounded-md transition-all flex items-center gap-1.5",
+                                                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5",
                                                     sortMode === 'priority'
-                                                        ? "bg-background text-foreground shadow-sm"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                        ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                                                 )}
                                             >
-                                                <AlertCircle className="h-3 w-3" />
+                                                <AlertCircle className="h-3.5 w-3.5" />
                                                 Priority
                                             </button>
                                         </div>
