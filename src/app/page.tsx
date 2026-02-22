@@ -65,14 +65,14 @@ export default function Home() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background" />
 
       {/* Header */}
-      <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all">
-        {/* Left: Hamburger */}
-        <div className="flex items-center gap-3">
+      <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all relative">
+        {/* Left: Hamburger (+ extra items for symmetry) */}
+        <div className="flex-1 flex items-center justify-start gap-3 relative z-20">
           <NavMenu />
         </div>
 
         {/* Center: Monocle Logo Focus Trigger */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10 w-auto">
           <button
             onClick={() => setView('focus')}
             className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group"
@@ -83,9 +83,9 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Right: Add + View Selector + Project Dropdown */}
-        <div className="flex items-center gap-2 max-w-[50%] justify-end pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2">
+        {/* Right: Actions, View Selector, Project Dropdown */}
+        <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 relative z-20 max-w-[45vw] lg:max-w-[40vw]">
+          <div className="flex items-center gap-2 shrink-0">
             <AddTaskModal
               open={activeModal === 'add-task'}
               onOpenChange={(val) => setActiveModal(val ? 'add-task' : null)}
@@ -99,23 +99,22 @@ export default function Home() {
             <Button
               onClick={() => setView('capture')}
               size="sm"
-              className="rounded-full shadow-sm bg-primary/90 hover:bg-primary px-3 sm:px-4 shrink-0 transition-transform active:scale-95"
+              className="rounded-full shadow-sm bg-primary/90 hover:bg-primary px-3 sm:px-4 transition-transform active:scale-95 shrink-0"
             >
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Capture</span>
             </Button>
 
-            <div className="hidden sm:block w-px h-6 bg-border mx-1 sm:mx-2" />
-            <div className="hidden sm:block">
+            <div className="hidden sm:block w-px h-6 bg-border mx-1 shrink-0" />
+            <div className="hidden sm:block shrink-0">
               <ViewSelector />
             </div>
-          </div>
-        </div>
 
-        {/* Right: Project Dropdown & Momentum (Desktop Only) */}
-        <div className="hidden sm:flex items-center gap-4">
-          <MomentumMeter />
-          <ProjectSelect />
+            <div className="hidden lg:flex items-center gap-4 shrink-0 pl-1">
+              <MomentumMeter />
+              <ProjectSelect />
+            </div>
+          </div>
         </div>
       </header>
 
