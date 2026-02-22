@@ -5,7 +5,7 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
@@ -63,7 +63,8 @@ export function FocusView({ onExit }: FocusViewProps) {
         settings,
         setView,
         snoozeTask,
-        getAutoPickedTask
+        getAutoPickedTask,
+        setActiveModal
     } = useMonocleStore();
 
     // Edit Modal State
@@ -109,12 +110,17 @@ export function FocusView({ onExit }: FocusViewProps) {
                 <h2 className="text-3xl font-bold tracking-tight text-foreground/80">Queue Empty</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
                     {hasSnoozed
-                        ? "Your active queue is empty, but you have tasks on hold. Return to the Queue to wake them up early, or take a break."
-                        : "Focus Mode requires an active task. Return to the Queue to add your next objective to the engine."}
+                        ? "Your active queue is empty, but tasks are on hold. Take a break or wake them up."
+                        : "Queue empty. Return to the Queue to load your next objective."}
                 </p>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={(e) => { e.stopPropagation(); if (onExit) onExit(); else setView('queue'); }}>Open Queue</Button>
-                    <Button variant="outline" onClick={(e) => { e.stopPropagation(); setOpenSheet('archive'); }}>View Archive</Button>
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                    <Button size="lg" className="rounded-full px-8 shadow-md" onClick={(e) => { e.stopPropagation(); setActiveModal('add-task'); }}>
+                        <Plus className="mr-2 h-5 w-5" /> Capture Task
+                    </Button>
+                    <div className="flex gap-2 justify-center">
+                        <Button variant="outline" className="rounded-full" onClick={(e) => { e.stopPropagation(); if (onExit) onExit(); else setView('queue'); }}>Open Queue</Button>
+                        <Button variant="outline" className="rounded-full" onClick={(e) => { e.stopPropagation(); setOpenSheet('archive'); }}>View Logbook</Button>
+                    </div>
                 </div>
             </div>
         );
@@ -170,7 +176,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     };
     const handleHold = (durationMinutes: number, label: string) => {
         snoozeTask(durationMinutes);
-        toast("Task Snoozed", { description: `Hidden until ${label}`, action: { label: "Undo", onClick: () => undo() } });
+        toast("Task Held", { description: `Held until ${label}`, action: { label: "Undo", onClick: () => undo() } });
     };
     const handleSkip = () => {
         const isFrogSkipping = activeTask?.isFrog;
@@ -238,11 +244,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                     <SwipeableTask
                         task={activeTask}
                         isMobile={isMobile}
-                        upAction={() => handleComplete()}
-                        upIcon={CheckCircle2}
-                        upLabel="Complete"
-                        upBgClass="bg-emerald-500"
-                        upColorClass="text-emerald-600"
+                        upAction={() => { if (onExit) onExit(); else setView('queue'); }}
+                        upIcon={ChevronUp}
+                        upLabel="Back to Queue"
+                        upBgClass="bg-background-muted"
+                        upColorClass="text-muted-foreground"
 
                         leftAction={activeTask.isFrog ? undefined : () => useMonocleStore.getState().randomTask()}
                         leftIcon={Dices}
@@ -250,11 +256,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                         leftBgClass="bg-indigo-500"
                         leftColorClass="text-indigo-600"
 
-                        downThresholdAction={activeTask.isFrog ? undefined : (id, mins, label) => handleHold(mins, label)}
-                        downIcon={Pause}
-                        downLabel="Hold"
-                        downBgClass="bg-orange-500"
-                        downColorClass="text-orange-600"
+                        downAction={() => { if (onExit) onExit(); else setView('queue'); }}
+                        downIcon={ChevronUp} // Chevron pointing structurally
+                        downLabel="Back to Queue"
+                        downBgClass="bg-background-muted"
+                        downColorClass="text-muted-foreground"
 
                         rightAction={() => handleSkip()}
                         rightIcon={Shuffle}
@@ -504,7 +510,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             <div className="text-xs text-muted-foreground/50 font-medium flex gap-3 items-center justify-center">
                                                 {!!activeTask.friction.skips && <span>Skipped: {activeTask.friction.skips}</span>}
                                                 {!!activeTask.friction.skips && !!activeTask.friction.holds && <span>•</span>}
-                                                {!!activeTask.friction.holds && <span>Snoozed: {activeTask.friction.holds}</span>}
+                                                {!!activeTask.friction.holds && <span>Held: {activeTask.friction.holds}</span>}
                                             </div>
                                         ) : null}
                                     </div>
@@ -550,7 +556,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                         </DropdownMenuTrigger>
                                         {!activeTask.isFrog && (
                                             <DropdownMenuContent align="center" className="w-48">
-                                                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Snooze For...</DropdownMenuLabel>
+                                                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Hold For...</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleHold(30, "30 minutes later")}>
                                                     <Clock className="mr-2 h-4 w-4" /> 30 minutes

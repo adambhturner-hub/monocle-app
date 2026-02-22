@@ -264,7 +264,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         if (pendingSnoozeTask) {
             snoozeTask(durationMinutes, pendingSnoozeTask.id);
             toast("Task on hold", {
-                description: `Snoozed for ${label}`,
+                description: `Held for ${label}`,
                 action: { label: "Undo", onClick: () => undo() }
             });
             setPendingSnoozeTask(null);
@@ -824,7 +824,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 </div>
                                                                 {snoozedTasks.length === 0 && (
                                                                     <div className="text-center py-4 px-4 text-muted-foreground/30 italic text-xs border-2 border-dashed border-muted-foreground/10 rounded-xl">
-                                                                        Drop tasks here to snooze them.
+                                                                        Drop tasks here to hold them.
                                                                     </div>
                                                                 )}
                                                                 {snoozedTasks.map((task) => (
@@ -1126,7 +1126,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
                                                         {draftTasks.length === 0 && (
                                                             <div className="text-center py-8 text-muted-foreground/50 italic text-sm border-2 border-dashed rounded-xl">
-                                                                Empty. Add ideas above.
+                                                                No tasks yet. Dump your brain here.
                                                             </div>
                                                         )}
                                                         {draftTasks.map((task, index) => (
@@ -1147,6 +1147,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                             isMobile={isBelowMd}
                                                                             leftAction={(id) => handlePromote(id)}
                                                                             rightAction={(id) => handleDelete(id)}
+                                                                            onTap={(task) => handleEdit(task)}
                                                                             leftIcon={ArrowUpCircle}
                                                                             leftLabel="Promote to Queue"
                                                                             leftBgClass="bg-yellow-500"
@@ -1161,10 +1162,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                 className="group outline-none touch-none"
                                                                             >
                                                                                 <ContextMenu>
-                                                                                    <ContextMenuTrigger className={cn(
-                                                                                        "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono",
-                                                                                        snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
-                                                                                    )}>
+                                                                                    <ContextMenuTrigger
+                                                                                        className={cn(
+                                                                                            "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono cursor-pointer pointer-events-auto",
+                                                                                            snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
+                                                                                        )}>
                                                                                         <Circle className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                                                                                         {(() => {
                                                                                             const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
@@ -1276,7 +1278,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                     <Dialog open={!!pendingSnoozeTask} onOpenChange={(open) => !open && setPendingSnoozeTask(null)}>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
-                                <DialogTitle>Snooze Task</DialogTitle>
+                                <DialogTitle>Hold Task</DialogTitle>
                             </DialogHeader>
                             <div className="grid grid-cols-2 gap-4 py-4">
                                 <Button variant="outline" className="flex flex-col h-auto py-4 gap-2" onClick={() => handleSnoozeDrop(30, "30 minutes")}>
