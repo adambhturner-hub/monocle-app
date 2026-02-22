@@ -48,13 +48,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated]);
 
-  // View state side-effects
-  useEffect(() => {
-    if (view === 'focus' && getVisibleTasks().length === 0) {
-      setView('queue');
-    }
-  }, [view, getVisibleTasks, setView]);
-
   if (!isMounted || showSplash || !isHydrated) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-12 lg:p-24 bg-background relative overflow-hidden">

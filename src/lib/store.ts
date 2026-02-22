@@ -972,6 +972,8 @@ export const useMonocleStore = create<MonocleState>()(
                 return persistedState as MonocleState;
             },
             merge: (persistedState: unknown, currentState: MonocleState) => {
+                if (!persistedState) return currentState;
+
                 const state = persistedState as MonocleState;
 
                 // Onboarding Injection
