@@ -131,34 +131,43 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     };
 
     // Swipe-to-navigate logic for Queue View
-    const queueTouchStartRef = useRef<{ x: number, y: number } | null>(null);
-    const handleQueueTouchStart = (e: React.TouchEvent) => {
-        // Ignore if the user is touching a task card or an active scroll area
-        // We do this by checking if the target is inside our scrollable lists
-        const target = e.target as HTMLElement;
-        const isScrollableArea = target.closest('.overflow-y-auto') || target.closest('[data-rfd-droppable-id]');
+    const queueTouchStartRef = useRef<{ x: number, y: number, isAtTop: boolean, isAtBottom: boolean } | null>(null);
 
-        if (isScrollableArea) {
-            queueTouchStartRef.current = null;
-            return;
+    const handleQueueTouchStart = (e: React.TouchEvent) => {
+        let isAtTop = true;
+        let isAtBottom = true;
+
+        const target = e.target as HTMLElement;
+        const scrollContainer = target.closest('.overflow-y-auto') as HTMLElement;
+
+        if (scrollContainer) {
+            isAtTop = scrollContainer.scrollTop <= 0;
+            // Add a 5px forgiveness margin for fractional pixel scrolling
+            isAtBottom = Math.ceil(scrollContainer.scrollTop + scrollContainer.clientHeight) >= scrollContainer.scrollHeight - 5;
         }
 
-        queueTouchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        queueTouchStartRef.current = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY,
+            isAtTop,
+            isAtBottom
+        };
     };
 
     const handleQueueTouchEnd = (e: React.TouchEvent) => {
         if (!queueTouchStartRef.current) return;
 
-        const deltaY = e.changedTouches[0].clientY - queueTouchStartRef.current.y;
-        const deltaX = Math.abs(e.changedTouches[0].clientX - queueTouchStartRef.current.x);
+        const { x: startX, y: startY, isAtTop, isAtBottom } = queueTouchStartRef.current;
+        const deltaY = e.changedTouches[0].clientY - startY;
+        const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
 
         // Only trigger if it's a strongly vertical swipe and not a lateral scroll
         if (deltaX < 75) {
-            if (deltaY > 150) { // Increased threshold to intentionally require a longer "pull"
-                // Swiped Down (Pulling from top) -> Go to Focus
+            if (deltaY > 150 && isAtTop) {
+                // Swiped Down (Pulling from top) -> Go to Focus while list is at top
                 setView('focus');
-            } else if (deltaY < -150) { // Increased threshold
-                // Swiped Up (Pulling from bottom) -> Go to Capture
+            } else if (deltaY < -150 && isAtBottom) {
+                // Swiped Up (Pulling from bottom) -> Go to Capture while list is at bottom
                 setView('capture');
             }
         }
