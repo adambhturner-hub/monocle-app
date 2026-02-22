@@ -29,6 +29,47 @@ const DEFAULT_SETTINGS: MonocleState['settings'] = {
     hasSeenOnboarding: false
 };
 
+const DEMO_TASKS: Task[] = [
+    {
+        id: generateId(),
+        title: 'Welcome to Monocle 🚀',
+        description: '1. Hit "Focus Mode" to enter the cockpit.\n2. Complete tasks ruthlessly.',
+        status: 'todo',
+        createdAt: Date.now() - 4000,
+        priority: 'medium',
+        isDraft: false
+    },
+    {
+        id: generateId(),
+        title: 'Drop an idea in the Dump',
+        description: 'Swipe me Right or drag me down to promote me to the active Queue!',
+        status: 'todo',
+        createdAt: Date.now() - 3000,
+        priority: 'low',
+        isDraft: true
+    },
+    {
+        id: generateId(),
+        title: 'Add Monocle to your homescreen',
+        description: 'Pro Tip: Tap "Share" > "Add to Home Screen" for the best offline experience.',
+        status: 'todo',
+        createdAt: Date.now() - 2000,
+        priority: 'high',
+        isLightning: true,
+        isDraft: false
+    },
+    {
+        id: generateId(),
+        title: 'Crush your biggest priority',
+        description: 'This is a Frog 🐸. You can only have one active at a time. It cannot be skipped.',
+        status: 'todo',
+        createdAt: Date.now() - 1000,
+        priority: 'high',
+        isFrog: true,
+        isDraft: false
+    }
+];
+
 interface MonocleState {
     tasks: Task[];
     projects: Project[];
@@ -50,6 +91,9 @@ interface MonocleState {
     setOpenSheet: (sheet: 'queue' | 'archive' | 'settings' | 'stats' | null) => void;
     activeModal: 'add-task' | 'project-manager' | null;
     setActiveModal: (modal: 'add-task' | 'project-manager' | null) => void;
+
+    draftTaskData: Partial<Task> | null;
+    setDraftTaskData: (draft: Partial<Task> | null) => void;
 
     view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics';
     setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics') => void;
@@ -73,7 +117,7 @@ interface MonocleState {
     prioritizeTask: () => void; // Sorts queue by priority
     cyclePriority: () => void; // Changes priority of current task
     restoreTask: (id: string) => void;
-    purgeArchivedTasks: () => void;
+    purgeArchivedTasks: (days: number | 'all') => void;
 
     // Settings
     settings: {
@@ -245,12 +289,15 @@ export const useMonocleStore = create<MonocleState>()(
             })),
 
             clearData: () => set({
-                tasks: [],
+                tasks: [...DEMO_TASKS],
                 projects: [],
                 sessionHistory: [],
                 currentSession: null,
                 activeRandomTaskId: null,
-                settings: { ...DEFAULT_SETTINGS, hasSeenOnboarding: false }
+                settings: { ...DEFAULT_SETTINGS, hasSeenOnboarding: false },
+                view: 'queue',
+                activeSheet: null,
+                activeModal: null
             }),
 
             setTask: (tasks) => set({ tasks }),
@@ -289,6 +336,9 @@ export const useMonocleStore = create<MonocleState>()(
 
             activeModal: null,
             setActiveModal: (modal) => set({ activeModal: modal }),
+
+            draftTaskData: null,
+            setDraftTaskData: (draft) => set({ draftTaskData: draft }),
 
             view: 'focus',
             setView: (view) => set({ view }),
@@ -798,14 +848,20 @@ export const useMonocleStore = create<MonocleState>()(
                     return { tasks: otherTasks, lastState };
                 }),
 
-            purgeArchivedTasks: () =>
+            purgeArchivedTasks: (days) =>
                 set((state) => {
                     // Snapshot
                     const lastState = [...state.tasks];
 
-                    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                    if (days === 'all') {
+                        // Keep only tasks that are NOT done
+                        const tasksToKeep = state.tasks.filter(t => t.status !== 'done');
+                        return { tasks: tasksToKeep, lastState };
+                    }
+
+                    const cutoffDate = Date.now() - days * 24 * 60 * 60 * 1000;
                     const tasksToKeep = state.tasks.filter(t => {
-                        if (t.status === 'done' && t.archivedAt && t.archivedAt < thirtyDaysAgo) {
+                        if (t.status === 'done' && t.archivedAt && t.archivedAt < cutoffDate) {
                             return false;
                         }
                         return true;
@@ -983,18 +1039,7 @@ export const useMonocleStore = create<MonocleState>()(
                 let hasSeenOnboarding = state.settings?.hasSeenOnboarding || false;
 
                 if (isFirstTime) {
-                    initialTasks = [{
-                        id: generateId(),
-                        title: 'Welcome to Monocle 🚀',
-                        description: '1. Add your daily tasks below.\n2. Hit "Focus Mode" to enter the cockpit.\n3. Execute them ruthlessly.',
-                        status: 'todo',
-                        createdAt: Date.now(),
-                        projectId: undefined,
-                        priority: 'high',
-                        isFrog: true,
-                        isDraft: false
-                    }];
-                    // Removed automatic hasSeenOnboarding = true; so the slideshow can control it
+                    initialTasks = [...DEMO_TASKS];
                 }
 
                 return {

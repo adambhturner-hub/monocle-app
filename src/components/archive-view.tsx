@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Archive, RotateCcw, Trash2 } from 'lucide-react';
+import { History, RotateCcw, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
     AlertDialog,
@@ -35,6 +35,13 @@ import { Edit2, FileText, CornerUpLeft } from "lucide-react";
 import { AddTaskModal } from './add-task-modal';
 import { useState } from 'react';
 import { Task } from '@/types';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export function ArchiveView() {
     const { tasks, restoreTask, deleteTask, purgeArchivedTasks, activeSheet, setOpenSheet, undo } = useMonocleStore();
@@ -58,10 +65,17 @@ export function ArchiveView() {
         toast("Task permanently deleted");
     };
 
+    const [purgeDuration, setPurgeDuration] = useState<'7' | '30' | '90' | 'all'>('30');
+
     const handlePurge = () => {
-        purgeArchivedTasks();
-        toast("Archive purged", {
-            description: "Removed tasks older than 30 days",
+        const days = purgeDuration === 'all' ? 'all' : parseInt(purgeDuration);
+        purgeArchivedTasks(days);
+
+        let msg = "Purged all logged tasks";
+        if (purgeDuration !== 'all') msg = `Purged tasks older than ${purgeDuration} days`;
+
+        toast("Logbook purged", {
+            description: msg,
             action: {
                 label: "Undo",
                 onClick: () => undo()
@@ -83,7 +97,7 @@ export function ArchiveView() {
             <SheetContent side="left" className="w-[400px] sm:w-[540px] flex flex-col h-full">
                 <SheetHeader className="pb-6 mb-0">
                     <SheetTitle className="flex items-center justify-between">
-                        <span>Archive ({archivedTasks.length})</span>
+                        <span>Logbook ({archivedTasks.length})</span>
                     </SheetTitle>
                     {archivedTasks.length > 0 && (
                         <div className="flex justify-end pt-2">
@@ -100,8 +114,23 @@ export function ArchiveView() {
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Purge Old Tasks?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will permanently delete all archived tasks completed more than 30 days ago. This action cannot be easily undone (except via immediate Undo).
+                                        <AlertDialogDescription className="space-y-4 pt-2">
+                                            <p>This will permanently delete logged tasks. This action cannot be easily undone (except via immediate Undo).</p>
+
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium text-foreground">Delete tasks older than:</span>
+                                                <Select value={purgeDuration} onValueChange={(val: any) => setPurgeDuration(val)}>
+                                                    <SelectTrigger className="w-[120px] h-8">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="7">7 Days</SelectItem>
+                                                        <SelectItem value="30">30 Days</SelectItem>
+                                                        <SelectItem value="90">90 Days</SelectItem>
+                                                        <SelectItem value="all">All Time</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -118,7 +147,7 @@ export function ArchiveView() {
                     <div className="space-y-4 pb-12">
                         {archivedTasks.length === 0 ? (
                             <div className="text-center text-muted-foreground py-8 italic">
-                                No archived tasks.
+                                Logbook is empty.
                             </div>
                         ) : (
                             archivedTasks.map(task => (
