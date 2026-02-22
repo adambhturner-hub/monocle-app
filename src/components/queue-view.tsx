@@ -133,20 +133,32 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     // Swipe-to-navigate logic for Queue View
     const queueTouchStartRef = useRef<{ x: number, y: number } | null>(null);
     const handleQueueTouchStart = (e: React.TouchEvent) => {
+        // Ignore if the user is touching a task card or an active scroll area
+        // We do this by checking if the target is inside our scrollable lists
+        const target = e.target as HTMLElement;
+        const isScrollableArea = target.closest('.overflow-y-auto') || target.closest('[data-rfd-droppable-id]');
+
+        if (isScrollableArea) {
+            queueTouchStartRef.current = null;
+            return;
+        }
+
         queueTouchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     };
+
     const handleQueueTouchEnd = (e: React.TouchEvent) => {
         if (!queueTouchStartRef.current) return;
+
         const deltaY = e.changedTouches[0].clientY - queueTouchStartRef.current.y;
         const deltaX = Math.abs(e.changedTouches[0].clientX - queueTouchStartRef.current.x);
 
         // Only trigger if it's a strongly vertical swipe and not a lateral scroll
         if (deltaX < 75) {
-            if (deltaY > 75) {
-                // Swiped Down -> Go to Focus
+            if (deltaY > 150) { // Increased threshold to intentionally require a longer "pull"
+                // Swiped Down (Pulling from top) -> Go to Focus
                 setView('focus');
-            } else if (deltaY < -75) {
-                // Swiped Up -> Go to Capture
+            } else if (deltaY < -150) { // Increased threshold
+                // Swiped Up (Pulling from bottom) -> Go to Capture
                 setView('capture');
             }
         }
