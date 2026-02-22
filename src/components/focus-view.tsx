@@ -29,7 +29,7 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'; // Renamed to avoid collision
 import { AddTaskModal } from './add-task-modal';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -217,7 +217,13 @@ export function FocusView({ onExit }: FocusViewProps) {
             )}
             <div
                 className="flex flex-col items-center justify-center w-full max-w-5xl mx-auto animate-in fade-in zoom-in duration-300 px-4 h-full cursor-pointer"
-                onClick={() => onExit && onExit()}
+                onClick={() => {
+                    if (isDetailsSheetOpen) {
+                        setIsDetailsSheetOpen(false);
+                    } else if (onExit) {
+                        onExit();
+                    }
+                }}
             >
                 {activeTask && (
                     <AddTaskModal
@@ -238,12 +244,6 @@ export function FocusView({ onExit }: FocusViewProps) {
                         upBgClass="bg-emerald-500"
                         upColorClass="text-emerald-600"
 
-                        rightAction={() => handleSkip()}
-                        rightIcon={Shuffle}
-                        rightLabel="Skip"
-                        rightBgClass="bg-blue-500"
-                        rightColorClass="text-blue-600"
-
                         leftAction={activeTask.isFrog ? undefined : () => useMonocleStore.getState().randomTask()}
                         leftIcon={Dices}
                         leftLabel="Random"
@@ -255,14 +255,26 @@ export function FocusView({ onExit }: FocusViewProps) {
                         downLabel="Hold"
                         downBgClass="bg-orange-500"
                         downColorClass="text-orange-600"
+
+                        rightAction={() => handleSkip()}
+                        rightIcon={Shuffle}
+                        rightLabel="Skip"
+                        rightBgClass="bg-blue-500"
+                        rightColorClass="text-blue-600"
                     >
                         <Card
                             className={cn(
                                 "w-full max-w-3xl h-[calc(100vh-6rem)] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative overflow-hidden flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
                                 activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : "",
-                                activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/50 bg-yellow-500/5" : ""
+                                activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/5 bg-yellow-500/5" : ""
                             )}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                // Default behavior: if sheet isn't open, interact with card (or do nothing)
+                                // If sheet IS open, let the event bubble up so the background handler closes it
+                                if (!isDetailsSheetOpen) {
+                                    e.stopPropagation();
+                                }
+                            }}
                         >
 
                             {/* Focus Atmosphere - Always Visible */}
@@ -368,10 +380,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                             </div>
 
                             {/* Details Dialog - Holds Description and Metadata */}
-                            <Dialog open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen}>
-                                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-6 h-auto rounded-3xl w-[95vw] max-w-2xl bg-card border shadow-2xl overflow-y-auto max-h-[85vh]">
-                                    <DialogHeader className="pb-4 border-b border-border/50">
-                                        <DialogTitle className="text-center font-bold">
+                            {/* Details Drawer - Holds Description and Metadata */}
+                            <Drawer open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen} dismissible={true} modal={false}>
+                                <DrawerContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]">
+                                    <DrawerHeader className="pb-4">
+                                        <DrawerTitle className="text-center font-bold">
                                             <input
                                                 type="text"
                                                 value={activeTask.title}
@@ -379,8 +392,8 @@ export function FocusView({ onExit }: FocusViewProps) {
                                                 className="bg-transparent border-none text-2xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
                                                 placeholder="Task Name"
                                             />
-                                        </DialogTitle>
-                                    </DialogHeader>
+                                        </DrawerTitle>
+                                    </DrawerHeader>
 
                                     <div className="flex flex-col gap-6 w-full pt-4 max-w-2xl mx-auto items-center">
                                         {/* Description */}
@@ -495,8 +508,8 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             </div>
                                         ) : null}
                                     </div>
-                                </DialogContent>
-                            </Dialog>
+                                </DrawerContent>
+                            </Drawer>
 
                             {/* Footer Actions - Pinned to bottom of Card */}
                             <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
