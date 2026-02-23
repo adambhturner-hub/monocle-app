@@ -5,10 +5,11 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
+import { soundEngine } from '@/lib/sound-engine';
 import {
     Tooltip,
     TooltipContent,

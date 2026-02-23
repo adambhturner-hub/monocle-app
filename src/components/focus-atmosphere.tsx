@@ -1,25 +1,28 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Volume2, VolumeX, Waves, Zap, CloudRain, Music2 } from 'lucide-react';
+import { Volume2, VolumeX, Waves, CloudRain, Music2, Headphones, Zap } from 'lucide-react';
 import { soundEngine } from '@/lib/sound-engine';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export function FocusAtmosphere() {
-    const [noiseType, setNoiseType] = useState<'white' | 'pink' | 'brown' | 'off'>('off');
+    const [noiseType, setNoiseType] = useState<'white' | 'pink' | 'brown' | 'rain' | 'space' | 'off'>('off');
     const [volume, setVolume] = useState(50); // 0-100
     const [muted, setMuted] = useState(false);
 
-    // Sync with engine volume
+    // Sync with engine volume for ambient soundscapes
     useEffect(() => {
-        soundEngine.setVolume(muted ? 0 : volume / 100);
+        soundEngine.setAmbientVolume(muted ? 0 : volume / 100);
     }, [volume, muted]);
 
-    const toggleNoise = (type: 'white' | 'pink' | 'brown') => {
+    useEffect(() => {
+        setNoiseType(soundEngine.getNoiseType());
+    }, []);
+
+    const toggleNoise = (type: 'white' | 'pink' | 'brown' | 'rain' | 'space') => {
         if (noiseType === type) {
             soundEngine.stopNoise();
             setNoiseType('off');
@@ -33,7 +36,7 @@ export function FocusAtmosphere() {
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary transition-colors">
-                    {noiseType !== 'off' ? <Waves className="h-5 w-5 text-primary animate-pulse" /> : <Music2 className="h-5 w-5" />}
+                    {noiseType !== 'off' ? <Headphones className="h-5 w-5 text-primary animate-pulse" /> : <Music2 className="h-5 w-5" />}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="end">
@@ -64,7 +67,7 @@ export function FocusAtmosphere() {
                             onClick={() => toggleNoise('white')}
                         >
                             <Zap className="h-4 w-4" />
-                            <span className="text-xs">White</span>
+                            <span className="text-xs text-center leading-tight">White<br />Noise</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -77,7 +80,7 @@ export function FocusAtmosphere() {
                             onClick={() => toggleNoise('pink')}
                         >
                             <Waves className="h-4 w-4" />
-                            <span className="text-xs">Pink</span>
+                            <span className="text-xs text-center leading-tight">Pink<br />Noise</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -89,8 +92,36 @@ export function FocusAtmosphere() {
                             )}
                             onClick={() => toggleNoise('brown')}
                         >
+                            <Waves className="h-4 w-4" />
+                            <span className="text-xs text-center leading-tight">Deep<br />Brown</span>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                "flex flex-col items-center gap-1 h-20 transition-all border-2",
+                                noiseType === 'rain'
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border/50 hover:bg-accent/50 text-muted-foreground"
+                            )}
+                            onClick={() => toggleNoise('rain')}
+                        >
                             <CloudRain className="h-4 w-4" />
-                            <span className="text-xs">Brown</span>
+                            <span className="text-xs text-center leading-tight">Heavy<br />Rain</span>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                "flex flex-col items-center gap-1 h-20 transition-all border-2",
+                                noiseType === 'space'
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border/50 hover:bg-accent/50 text-muted-foreground"
+                            )}
+                            onClick={() => toggleNoise('space')}
+                        >
+                            <Music2 className="h-4 w-4" />
+                            <span className="text-xs text-center leading-tight">Space<br />Drone</span>
                         </Button>
                     </div>
 

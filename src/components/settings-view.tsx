@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import {
     Sheet,
@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Moon, Sun, Laptop, Trash2, Download, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity, RefreshCw } from 'lucide-react';
+import { Moon, Sun, Laptop, Trash2, Download, Upload, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity, RefreshCw } from 'lucide-react';
 import { useMonocleStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
@@ -29,6 +29,7 @@ import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { del } from 'idb-keyval';
 import { formatDistanceToNow } from 'date-fns';
+import { FeedbackModal } from './feedback-modal';
 
 interface SettingsViewProps {
     open: boolean;
@@ -40,6 +41,8 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const { tasks, projects, settings, updateSettings, clearData, lastSyncTime } = useMonocleStore();
     const [testSoundPlaying, setTestSoundPlaying] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleForceSync = async () => {
         if (!auth.currentUser) return;
@@ -127,6 +130,40 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         toast.success("Data exported successfully");
+    };
+
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = JSON.parse(event.target?.result as string);
+
+                // Validate schema loosely
+                if (!Array.isArray(data.tasks) || !Array.isArray(data.projects)) {
+                    throw new Error("Invalid backup file format.");
+                }
+
+                if (confirm("Are you sure? This will overwrite your current local data with the backup.")) {
+                    useMonocleStore.getState().loadFromCloud({
+                        tasks: data.tasks,
+                        projects: data.projects,
+                        settings: useMonocleStore.getState().settings,
+                        sessionHistory: useMonocleStore.getState().sessionHistory,
+                    });
+
+                    toast.success("Backup restored successfully.");
+                }
+            } catch (err) {
+                console.error("Failed to parse backup file", err);
+                toast.error("Failed to import data", { description: "The file might be corrupted or in an invalid format." });
+            }
+            // Reset input so the same file can be selected again
+            e.target.value = '';
+        };
+        reader.readAsText(file);
     };
 
     const handleSoundToggle = (enabled: boolean) => {
@@ -367,17 +404,33 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
 
                             <Separator />
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg bg-secondary/10">
+                            <div className="flex flex-col gap-4 p-4 border rounded-lg bg-secondary/10 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] pointer-events-none" />
                                 <div className="space-y-0.5">
-                                    <Label className="text-base">Export Data</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Download a JSON backup of your tasks and projects.
+                                    <Label className="text-base">Export & Import Data</Label>
+                                    <p className="text-sm text-muted-foreground w-11/12">
+                                        Download a hard JSON backup of your tasks and projects, or restore a previous backup.
                                     </p>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={handleExport}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Export
-                                </Button>
+
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 bg-background hover:bg-secondary/50">
+                                        <Download className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        Export JSON
+                                    </Button>
+
+                                    <input
+                                        type="file"
+                                        accept=".json"
+                                        className="hidden"
+                                        ref={fileInputRef}
+                                        onChange={handleImport}
+                                    />
+                                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 bg-background hover:bg-secondary/50">
+                                        <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        Import JSON
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-between p-4 border rounded-lg border-destructive/20 bg-destructive/5">
@@ -463,16 +516,15 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                     </div>
                                 </div>
 
-                                <Button variant="outline" className="w-full" asChild>
-                                    <a href="mailto:feedback@monocleapp.com?subject=Monocle%20v1.0%20Feedback&body=Did%20this%20reduce%20decision%20fatigue%20for%20you%2C%20yes%2Fno%3F%0A%0AWhere%20did%20you%20hesitate%3F%0A%0A">
-                                        Send Feedback
-                                    </a>
+                                <Button variant="outline" className="w-full" onClick={() => setIsFeedbackOpen(true)}>
+                                    Send Feedback
                                 </Button>
                             </div>
                         </div>
                     </div>
                 </div>
             </SheetContent>
+            <FeedbackModal open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
         </Sheet>
     );
 }

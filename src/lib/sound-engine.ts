@@ -7,9 +7,12 @@ class SoundEngine {
     private noiseSource: AudioBufferSourceNode | null = null;
     private noiseGain: GainNode | null = null;
     private masterGain: GainNode | null = null;
-    private currentNoiseType: 'white' | 'pink' | 'brown' | 'off' = 'off';
+    private ambientMasterGain: GainNode | null = null;
+    private currentNoiseType: 'white' | 'pink' | 'brown' | 'rain' | 'space' | 'off' = 'off';
     private volume: number = 0.5;
+    private ambientVolume: number = 0.5;
     private ribbitBuffer: AudioBuffer | null = null;
+    private extraNodes: AudioNode[] = [];
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -22,9 +25,17 @@ class SoundEngine {
         if (!this.ctx) {
             const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
             this.ctx = new AudioContextClass();
+
+            // UI SFX master
             this.masterGain = this.ctx.createGain();
             this.masterGain.connect(this.ctx.destination);
+
+            // Ambient backgrounds master
+            this.ambientMasterGain = this.ctx.createGain();
+            this.ambientMasterGain.connect(this.ctx.destination);
+
             this.setVolume(this.volume);
+            this.setAmbientVolume(this.ambientVolume);
             this.loadRibbit();
         }
         if (this.ctx.state === 'suspended') {
@@ -42,6 +53,8 @@ class SoundEngine {
             console.error("Failed to play ribbit sound", err);
         }
     }
+
+
 
     public playSkip() {
         this.init();
@@ -118,6 +131,17 @@ class SoundEngine {
         return this.volume;
     }
 
+    public setAmbientVolume(val: number) {
+        this.ambientVolume = Math.max(0, Math.min(1, val));
+        if (this.ambientMasterGain && this.ctx) {
+            this.ambientMasterGain.gain.setTargetAtTime(this.ambientVolume, this.ctx.currentTime, 0.1);
+        }
+    }
+
+    public getAmbientVolume() {
+        return this.ambientVolume;
+    }
+
     // --- Mobile Autoplay Unlock ---
 
     public async unlock(): Promise<void> {
@@ -152,7 +176,7 @@ class SoundEngine {
 
     // --- Noise Generators ---
 
-    public playNoise(type: 'white' | 'pink' | 'brown') {
+    public playNoise(type: 'white' | 'pink' | 'brown' | 'rain' | 'space') {
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
@@ -185,7 +209,7 @@ class SoundEngine {
                 output[i] *= 0.11; // (roughly) compensate for gain
                 b6 = white * 0.115926;
             }
-        } else if (type === 'brown') {
+        } else if (type === 'brown' || type === 'rain' || type === 'space') {
             let lastOut = 0;
             for (let i = 0; i < bufferSize; i++) {
                 const white = Math.random() * 2 - 1;
@@ -199,18 +223,63 @@ class SoundEngine {
         this.noiseSource.buffer = buffer;
         this.noiseSource.loop = true;
 
-        // Lowpass filter to soften edges
+        // Base filter
         const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = type === 'white' ? 1000 : 800;
 
-        // Specific gain for noise to balance with SFX
+        // Base gain
         this.noiseGain = this.ctx.createGain();
         this.noiseGain.gain.value = 0.5;
 
         this.noiseSource.connect(filter);
-        filter.connect(this.noiseGain);
-        this.noiseGain.connect(this.masterGain);
+        let finalNode: AudioNode = filter;
+
+        if (type === 'white') {
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+        } else if (type === 'pink') {
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+        } else if (type === 'brown') {
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+        } else if (type === 'rain') {
+            // Muffled brown noise with highpass to cut rumble acts like rain
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+
+            const hp = this.ctx.createBiquadFilter();
+            hp.type = 'highpass';
+            hp.frequency.value = 250;
+
+            filter.connect(hp);
+            finalNode = hp;
+            this.extraNodes.push(hp);
+
+            this.noiseGain.gain.value = 0.8;
+        } else if (type === 'space') {
+            // Dark, sweeping brown noise
+            filter.type = 'lowpass';
+            filter.frequency.value = 100;
+            filter.Q.value = 5;
+
+            // Deep sine wave oscillator
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 55; // Low A
+
+            const oscGain = this.ctx.createGain();
+            oscGain.gain.value = 0.3; // Gentle thrum
+
+            osc.connect(oscGain);
+            oscGain.connect(this.noiseGain);
+            osc.start();
+
+            this.extraNodes.push(osc, oscGain);
+            this.noiseGain.gain.value = 0.9;
+        }
+
+        finalNode.connect(this.noiseGain);
+        this.noiseGain.connect(this.ambientMasterGain || this.masterGain!);
 
         this.noiseSource.start();
     }
@@ -224,11 +293,22 @@ class SoundEngine {
                     this.noiseSource?.stop();
                     this.noiseSource?.disconnect();
                     this.noiseSource = null;
+
+                    this.extraNodes.forEach(node => {
+                        if (node instanceof OscillatorNode) node.stop();
+                        node.disconnect();
+                    });
+                    this.extraNodes = [];
                 }, 1000);
             } else {
                 this.noiseSource.stop();
                 this.noiseSource.disconnect();
                 this.noiseSource = null;
+                this.extraNodes.forEach(node => {
+                    if (node instanceof OscillatorNode) node.stop();
+                    node.disconnect();
+                });
+                this.extraNodes = [];
             }
         }
         this.currentNoiseType = 'off';
@@ -237,6 +317,8 @@ class SoundEngine {
     public getNoiseType() {
         return this.currentNoiseType;
     }
+
+
 
     // --- Sound Effects ---
 
