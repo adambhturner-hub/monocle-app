@@ -111,16 +111,24 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8">
                     <HeroLogo />
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] text-balance md:text-left">
-                        Monocle. <br className="hidden md:block" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1">The fancy</span> focus app.
-                    </h1>
+                    <div className="text-center md:text-left">
+                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[1]">
+                            Monocle.
+                        </h1>
+                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1 mt-2">
+                            The fancy focus app.
+                        </span>
+                    </div>
                 </div>
 
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-12 leading-relaxed">
                     One task at a time.<br className="hidden md:block" />
                     Because you don't need another list — you need a lens.<br className="hidden md:block" />
                     <strong>Capture. Prioritize. Execute.</strong>
+                </p>
+
+                <p className="mt-8 mb-6 text-3xl font-serif italic text-foreground text-center">
+                    Focus, properly.
                 </p>
 
                 <Button
@@ -138,17 +146,19 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     </svg>
                     Continue with Google
                 </Button>
+            </main>
 
-                <p className="mt-8 text-sm font-medium text-muted-foreground/60 w-full text-center max-w-md">
-                    Focus, properly.<br />
+            {/* Dark Strip Quote */}
+            <div className="w-full bg-foreground text-background py-8 md:py-10">
+                <p className="text-center font-bold tracking-[0.2em] uppercase text-xs md:text-sm px-6">
                     When your list is endless, elegance is restraint.
                 </p>
-            </main>
+            </div>
 
             {/* Features Grid */}
             <section className="bg-secondary/30 border-t py-24 px-6 md:px-12">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
 
                         {/* Feature 1 */}
                         <div className="flex flex-col gap-4">
@@ -184,7 +194,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                         </div>
 
                         {/* Feature 4 */}
-                        <div className="flex flex-col gap-4 md:col-span-3 lg:col-span-3 items-center text-center max-w-2xl mx-auto mt-8">
+                        <div className="flex flex-col gap-4">
                             <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500 mb-2">
                                 <Zap className="h-6 w-6" />
                             </div>
@@ -196,13 +206,22 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
 
                     </div>
 
-                    <div className="mt-24 text-center max-w-2xl mx-auto border-t pt-16">
-                        <p className="text-xl font-serif italic text-muted-foreground mb-8 text-balance">
-                            "For the over-organized.<br />
-                            For the list rewriters.<br />
-                            For the ambitious — and occasionally overwhelmed.<br />
-                            <strong>Put on the monocle.</strong>"
-                        </p>
+                    <div className="mt-32 max-w-4xl mx-auto border-t pt-24 pb-12 flex flex-col md:flex-row items-center md:items-start gap-12 text-center md:text-left">
+                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shrink-0 shadow-2xl border border-border">
+                            <img src="/founder.jpg" alt="Founder" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center h-full pt-2">
+                            <p className="text-2xl md:text-3xl font-serif italic text-foreground mb-8 text-balance leading-relaxed">
+                                "For the over-organized.<br />
+                                For the list rewriters.<br />
+                                For the ambitious — and occasionally overwhelmed.<br />
+                                <strong className="text-primary">Put on the monocle.</strong>"
+                            </p>
+                            <div className="flex flex-col mt-auto">
+                                <span className="font-bold text-lg text-foreground">Rev. Col. Adam B.H. Turner</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">Founder</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
