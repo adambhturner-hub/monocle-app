@@ -135,15 +135,17 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     }
                 `}</style>
 
-                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-12 leading-relaxed">
-                    One task at a time.<br className="hidden md:block" />
-                    Because you don't need another list — you need a lens.<br className="hidden md:block" />
-                    <strong>Capture. Prioritize. Execute.</strong>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-8 leading-relaxed font-medium">
+                    One task at a time.<br /><br />
+                    Because you don't need another list —<br />you need a lens.<br /><br />
+                    <strong>Capture.<br />Prioritize.<br />Execute.</strong>
                 </p>
 
-                <p className="mt-8 mb-6 text-3xl font-serif italic text-foreground text-center">
-                    Focus, properly.
-                </p>
+                <div className="mt-8 mb-12">
+                    <p className="text-4xl md:text-5xl lg:text-6xl font-serif italic text-foreground text-center tracking-tight">
+                        Focus, properly.
+                    </p>
+                </div>
 
                 <Button
                     size="lg"
@@ -181,7 +183,10 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             </div>
                             <h3 className="text-xl font-bold">Meet the Frog. Eat the Frog.</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                There can only be one. Tag your single most important task for the day. Everything else politely waits. A frog a day keeps the panic away.
+                                There can only be one.<br /><br />
+                                Tag your most important task.<br />
+                                Everything else politely waits.<br /><br />
+                                A frog a day keeps the panic away.
                             </p>
                         </div>
 
@@ -203,7 +208,11 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             </div>
                             <h3 className="text-xl font-bold">Swipe with Intent</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Skip, hold, complete… Or let fate (the Dice) decide. Elegant. Decisive. Slightly dramatic.
+                                Skip. Hold. Complete.<br />
+                                Or let fate (the Dice) decide.<br /><br />
+                                Elegant.<br />
+                                Decisive.<br />
+                                Slightly dramatic.
                             </p>
                         </div>
 
@@ -233,7 +242,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             </p>
                             <div className="flex flex-col mt-auto">
                                 <span className="font-bold text-lg text-foreground">Rev. Col. Adam B.H. Turner</span>
-                                <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">Founder</span>
+                                <span className="text-sm text-muted-foreground mt-1">Founder, Monocle</span>
                             </div>
                         </div>
                     </div>
