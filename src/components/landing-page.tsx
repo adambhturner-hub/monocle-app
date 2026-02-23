@@ -2,9 +2,34 @@
 
 import { LogoSmall } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat, X, Pause, Music, Check } from 'lucide-react';
+import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat, X, Pause, Music, Check, MoreHorizontal, ChevronUp, Timer, Dices } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+const MOCK_TASKS = [
+    { title: "Crush your biggest priority", project: "No Project", type: "frog" },
+    { title: "Finalize the Q3 corporate strategy deck", project: "Board Meeting", type: "urgent" },
+    { title: "Review new design assets for v2.0", project: "Design", type: "normal" }
+];
 
 function CockpitMockup() {
+    const [taskIndex, setTaskIndex] = useState(0);
+    const [isVisible, setIsVisible] = useState(true);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIsVisible(false);
+            setTimeout(() => {
+                setTaskIndex((prev) => (prev + 1) % MOCK_TASKS.length);
+                setIsVisible(true);
+            }, 300);
+        }, 4000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const task = MOCK_TASKS[taskIndex];
+    const isFrog = task.type === "frog";
+
     return (
         <div className="w-full max-w-5xl mx-auto mt-24 mb-8 px-6 relative z-10 hidden md:block group perspective-[2000px]">
             {/* Ambient Background Glow */}
@@ -12,38 +37,54 @@ function CockpitMockup() {
 
             {/* The Floating UI Window */}
             <div
-                className="relative rounded-[2rem] bg-background/80 md:bg-background/40 border border-primary/10 shadow-2xl shadow-primary/5 overflow-hidden backdrop-blur-xl aspect-[16/10] transition-all duration-700 ease-out hover:scale-[1.02] hover:-translate-y-2 hover:shadow-primary/20 hover:border-primary/20 flex flex-col pointer-events-none"
+                className={`relative rounded-[2.5rem] bg-background/95 border-2 shadow-2xl overflow-hidden backdrop-blur-xl aspect-[16/10] transition-all duration-1000 ease-out flex flex-col pointer-events-none hover:scale-[1.02] hover:-translate-y-2 ${isFrog ? 'border-emerald-500/30 shadow-emerald-500/10' : 'border-primary/10 shadow-primary/5 hover:border-primary/20'}`}
                 style={{ transformStyle: 'preserve-3d', transform: 'rotateX(2deg)' }}
             >
                 {/* Header mimicking a sleek app window */}
-                <div className="h-16 w-full flex items-center justify-between px-6 border-b border-primary/5 shrink-0">
+                <div className="h-16 w-full flex items-center justify-between px-8 shrink-0">
                     <Music className="w-5 h-5 text-muted-foreground/30" />
-                    <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
-                        <X className="w-5 h-5 text-muted-foreground" />
-                    </div>
+                    <MoreHorizontal className="w-5 h-5 text-muted-foreground/30" />
                 </div>
 
                 {/* The 'Cockpit' Internals */}
-                <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-                    {/* Project Label */}
-                    <div className="px-4 py-1.5 rounded-full border border-border/50 text-xs font-medium text-muted-foreground mb-10 flex items-center gap-2 bg-background/50 shadow-sm">
-                        <div className="w-2 h-2 rounded-full bg-primary/50" />
-                        Board Meeting
+                <div className="flex-1 flex flex-col items-center p-8 relative">
+                    <div className={`transition-all duration-500 flex flex-col items-center w-full min-h-[300px] ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-6 scale-[0.98]'}`}>
+                        {/* Conditional Frog Header */}
+                        {isFrog && (
+                            <div className="flex flex-col items-center mb-6">
+                                <div className="text-5xl mb-3">🐸</div>
+                                <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">Eat the Frog</span>
+                            </div>
+                        )}
+
+                        {/* Project Label */}
+                        <div className="px-5 py-1.5 rounded-full border border-border/50 text-xs font-medium text-muted-foreground mb-8 flex items-center gap-2 bg-background/50 shadow-sm transition-all duration-500">
+                            {!isFrog && (
+                                <div className={`w-2 h-2 rounded-full ${task.type === 'urgent' ? 'bg-rose-500' : 'bg-blue-500'}`} />
+                            )}
+                            {task.project}
+                        </div>
+
+                        {/* Imposing Task Text */}
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-center max-w-3xl text-balance leading-[1.1] mb-12 drop-shadow-sm text-foreground/90 transition-all duration-500">
+                            {task.title}
+                        </h2>
+
+                        {/* Timer Icon */}
+                        <div className="w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-4 transition-all duration-500">
+                            <Timer className="w-5 h-5 text-muted-foreground" />
+                        </div>
                     </div>
 
-                    {/* Imposing Task Text */}
-                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-center max-w-2xl text-balance leading-tight mb-auto drop-shadow-sm text-foreground/90">
-                        Finalize the Q3 corporate strategy deck
-                    </h2>
-
-                    {/* Faux Buttons Area */}
-                    <div className="w-full flex flex-col items-center gap-5 mt-16">
+                    {/* Faux Buttons Area (Static) */}
+                    <div className="w-full flex flex-col items-center gap-6 mt-auto pb-4">
+                        <ChevronUp className="w-5 h-5 text-muted-foreground/30 animate-pulse" />
                         <div className="flex gap-4">
                             <div className="px-6 py-2.5 rounded-full border border-border/50 bg-background/50 flex items-center gap-2 text-muted-foreground font-medium shadow-sm">
-                                <Shuffle className="w-4 h-4" /> Skip
+                                <Dices className="w-4 h-4" /> Random
                             </div>
                             <div className="px-6 py-2.5 rounded-full border border-border/50 bg-background/50 flex items-center gap-2 text-muted-foreground font-medium shadow-sm">
-                                <Pause className="w-4 h-4" /> Hold
+                                <Shuffle className="w-4 h-4" /> Skip
                             </div>
                         </div>
                         <div className="w-full max-w-sm h-14 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg shadow-xl shadow-foreground/20">
@@ -55,7 +96,6 @@ function CockpitMockup() {
         </div>
     );
 }
-import { useEffect, useState } from 'react';
 
 function HeroLogo() {
     const [rotation, setRotation] = useState({ x: 0, y: 0 });
