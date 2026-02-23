@@ -6,9 +6,9 @@ import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat, X, Pause, Music, 
 import { useEffect, useState } from 'react';
 
 const MOCK_TASKS = [
-    { title: "Crush your biggest priority", project: "No Project", type: "frog" },
-    { title: "Finalize the Q3 corporate strategy deck", project: "Board Meeting", type: "urgent" },
-    { title: "Review new design assets for v2.0", project: "Design", type: "normal" }
+    { title: "Crush your biggest priority", project: "No Project", type: "frog", timerActive: false, musicActive: false },
+    { title: "Review new design assets for v2.0", project: "Design", type: "normal", timerActive: true, musicActive: false },
+    { title: "Finalize the Q3 corporate strategy deck", project: "Board Meeting", type: "urgent", timerActive: false, musicActive: true }
 ];
 
 function CockpitMockup() {
@@ -31,19 +31,19 @@ function CockpitMockup() {
     const isFrog = task.type === "frog";
 
     return (
-        <div className="w-full max-w-5xl mx-auto mt-24 mb-8 px-6 relative z-10 hidden md:block group perspective-[2000px]">
+        <div className="w-full max-w-lg mx-auto mt-24 mb-16 px-6 relative z-10 hidden md:block group perspective-[2000px]">
             {/* Ambient Background Glow */}
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent blur-3xl -z-10 rounded-[3rem] opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
 
             {/* The Floating UI Window */}
             <div
-                className={`relative rounded-[2.5rem] bg-background/95 border-2 shadow-2xl overflow-hidden backdrop-blur-xl aspect-[16/10] transition-all duration-1000 ease-out flex flex-col pointer-events-none hover:scale-[1.02] hover:-translate-y-2 ${isFrog ? 'border-emerald-500/30 shadow-emerald-500/10' : 'border-primary/10 shadow-primary/5 hover:border-primary/20'}`}
+                className={`relative rounded-[2.5rem] bg-background border-2 shadow-2xl overflow-hidden aspect-[3/4] transition-all duration-1000 ease-out flex flex-col pointer-events-none hover:scale-[1.02] hover:-translate-y-2 ${isFrog ? 'border-emerald-500/20 shadow-emerald-500/10' : 'border-primary/10 shadow-primary/5 hover:border-primary/20'}`}
                 style={{ transformStyle: 'preserve-3d', transform: 'rotateX(2deg)' }}
             >
                 {/* Header mimicking a sleek app window */}
-                <div className="h-16 w-full flex items-center justify-between px-8 shrink-0">
-                    <Music className="w-5 h-5 text-muted-foreground/30" />
-                    <MoreHorizontal className="w-5 h-5 text-muted-foreground/30" />
+                <div className="h-20 w-full flex items-center justify-between px-8 shrink-0">
+                    <Music className={`w-5 h-5 transition-colors duration-500 ${task.musicActive ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-muted-foreground/30'}`} />
+                    <MoreHorizontal className="w-6 h-6 text-muted-foreground/30" />
                 </div>
 
                 {/* The 'Cockpit' Internals */}
@@ -58,7 +58,7 @@ function CockpitMockup() {
                         )}
 
                         {/* Project Label */}
-                        <div className="px-5 py-1.5 rounded-full border border-border/50 text-xs font-medium text-muted-foreground mb-8 flex items-center gap-2 bg-background/50 shadow-sm transition-all duration-500">
+                        <div className="px-5 py-2 rounded-full border border-border/50 text-xs font-medium text-muted-foreground mb-12 flex items-center gap-2 bg-background shadow-sm transition-all duration-500">
                             {!isFrog && (
                                 <div className={`w-2 h-2 rounded-full ${task.type === 'urgent' ? 'bg-rose-500' : 'bg-blue-500'}`} />
                             )}
@@ -66,18 +66,27 @@ function CockpitMockup() {
                         </div>
 
                         {/* Imposing Task Text */}
-                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-center max-w-3xl text-balance leading-[1.1] mb-12 drop-shadow-sm text-foreground/90 transition-all duration-500">
+                        <h2 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-center max-w-4xl text-balance leading-[1.05] mb-16 drop-shadow-sm text-foreground/90 transition-all duration-500 px-8">
                             {task.title}
                         </h2>
 
-                        {/* Timer Icon */}
-                        <div className="w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-4 transition-all duration-500">
-                            <Timer className="w-5 h-5 text-muted-foreground" />
+                        {/* Interactive Timer State */}
+                        <div className="flex flex-col items-center justify-center transition-all duration-500">
+                            {task.timerActive ? (
+                                <div className="flex items-center gap-4 bg-background border shadow-sm px-6 py-3 rounded-full animate-in fade-in zoom-in duration-500">
+                                    <span className="text-xl font-bold tabular-nums tracking-tight">24:59</span>
+                                    <div className="w-4 h-4 rounded-sm bg-rose-500" />
+                                </div>
+                            ) : (
+                                <div className="w-14 h-14 rounded-full bg-secondary/50 flex items-center justify-center mb-4 transition-all duration-500">
+                                    <Timer className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Faux Buttons Area (Static) */}
-                    <div className="w-full flex flex-col items-center gap-6 mt-auto pb-4">
+                    <div className="w-full flex flex-col items-center gap-8 mt-auto pb-6">
                         <ChevronUp className="w-5 h-5 text-muted-foreground/30 animate-pulse" />
                         <div className="flex gap-4">
                             <div className="px-6 py-2.5 rounded-full border border-border/50 bg-background/50 flex items-center gap-2 text-muted-foreground font-medium shadow-sm">
