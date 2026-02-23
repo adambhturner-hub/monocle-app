@@ -197,7 +197,10 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             </div>
                             <h3 className="text-xl font-bold">Singular Focus</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                This is not a dashboard. This is a monocle. One task fills the screen. You cannot multitask with one eye.
+                                This is not a dashboard.<br />
+                                This is a monocle.<br /><br />
+                                One task fills the screen.<br />
+                                You cannot multitask with one eye.
                             </p>
                         </div>
 
@@ -223,7 +226,12 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             </div>
                             <h3 className="text-xl font-bold">Capture at the Speed of Thought</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Type naturally. Dates parse instantly. No folders. No ceremony. Brain dump first. Organize later.
+                                Type naturally.<br />
+                                Dates parse instantly.<br /><br />
+                                No folders.<br />
+                                No ceremony.<br /><br />
+                                Brain dump first.<br />
+                                Organize later.
                             </p>
                         </div>
 
