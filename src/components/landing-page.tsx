@@ -3,7 +3,7 @@
 import { LogoSmall } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat, X, Pause, Music, Check, MoreHorizontal, ChevronUp, Timer, Dices } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const MOCK_TASKS = [
     { title: "Crush your biggest priority", project: "No Project", type: "frog" },
@@ -98,17 +98,25 @@ function CockpitMockup() {
 }
 
 function HeroLogo() {
-    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+    const logoRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        let ticking = false;
         const handleMouseMove = (e: MouseEvent) => {
-            // Calculate rotation based on mouse position relative to center of screen
-            const x = (e.clientX / window.innerWidth - 0.5) * 40; // max 20deg
-            const y = (e.clientY / window.innerHeight - 0.5) * -40; // inverted, max 20deg
-            setRotation({ x: y, y: x });
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    if (logoRef.current) {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 40;
+                        const y = (e.clientY / window.innerHeight - 0.5) * -40;
+                        logoRef.current.style.transform = `rotateX(${y}deg) rotateY(${x}deg)`;
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
         };
 
-        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mousemove', handleMouseMove, { passive: true });
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
@@ -117,9 +125,9 @@ function HeroLogo() {
             className="relative w-32 h-32 md:w-48 md:h-48 mb-6 perspective-[1000px] group flex-shrink-0"
         >
             <div
+                ref={logoRef}
                 className="w-full h-full relative transition-transform duration-200 ease-out"
                 style={{
-                    transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
                     transformStyle: 'preserve-3d'
                 }}
             >
@@ -208,24 +216,17 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             <span className="text-foreground">Monocle.</span>
                             {/* Overlay Shine on Title */}
                             <span
-                                className="absolute inset-0 bg-clip-text text-transparent bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.8)_50%,transparent_75%)] bg-[length:200%_100%] animate-[shine_4s_ease-in-out_infinite]"
+                                className="absolute inset-0 bg-clip-text text-transparent bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.8)_50%,transparent_75%)] bg-[length:200%_100%]"
                                 aria-hidden="true"
                             >
                                 Monocle.
                             </span>
                         </h1>
-                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground via-muted-foreground/50 to-foreground bg-[length:200%_100%] animate-[shine_6s_ease-in-out_infinite_reverse] mr-1 mt-2">
+                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground via-muted-foreground/50 to-foreground bg-[length:200%_100%] mr-1 mt-2">
                             The fancy focus app.
                         </span>
                     </div>
                 </div>
-
-                <style jsx>{`
-                    @keyframes shine {
-                        0% { background-position: 200% center; }
-                        100% { background-position: -200% center; }
-                    }
-                `}</style>
 
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-8 leading-relaxed font-medium">
                     One task at a time.<br /><br />
