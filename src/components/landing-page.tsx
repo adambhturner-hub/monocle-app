@@ -112,13 +112,15 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                 <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8">
                     <HeroLogo />
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] text-balance md:text-left">
-                        The brutalist <br className="hidden md:block" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1">execution</span> engine.
+                        Monocle. <br className="hidden md:block" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1">The fancy</span> focus app.
                     </h1>
                 </div>
 
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-12 leading-relaxed">
-                    Not another planning tool. Monocle is a tactile, offline-first environment designed to cure decision fatigue. One task at a time. No escape hatches.
+                    One task at a time.<br className="hidden md:block" />
+                    Because you don't need another list — you need a lens.<br className="hidden md:block" />
+                    <strong>Capture. Prioritize. Execute.</strong>
                 </p>
 
                 <Button
@@ -136,6 +138,11 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     </svg>
                     Continue with Google
                 </Button>
+
+                <p className="mt-8 text-sm font-medium text-muted-foreground/60 w-full text-center max-w-md">
+                    Focus, properly.<br />
+                    When your list is endless, elegance is restraint.
+                </p>
             </main>
 
             {/* Features Grid */}
@@ -145,37 +152,57 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
 
                         {/* Feature 1 */}
                         <div className="flex flex-col gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2">
-                                <Target className="h-6 w-6" />
+                            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-500 mb-2 text-2xl">
+                                🐸
                             </div>
-                            <h3 className="text-xl font-bold">The Highlander Rule</h3>
+                            <h3 className="text-xl font-bold">Meet the Frog. Eat the Frog.</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                There can only be one <strong>Frog</strong>. Tag your single most important task. All other dates and priorities are stripped away until you eat it.
+                                There can only be one. Tag your single most important task for the day. Everything else politely waits. A frog a day keeps the panic away.
                             </p>
                         </div>
 
                         {/* Feature 2 */}
                         <div className="flex flex-col gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-foreground text-background flex items-center justify-center border shadow-md mb-2">
-                                <Shuffle className="h-6 w-6" />
+                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2">
+                                <Target className="h-6 w-6" />
                             </div>
-                            <h3 className="text-xl font-bold">Tinder for Tasks</h3>
+                            <h3 className="text-xl font-bold">🧐 Singular Focus</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Physical, tactile gestures. Swipe right to complete. Swipe left to hold. Let the Randomizer pick your next move when paralyzed by choice.
+                                This is not a dashboard. This is a monocle. One task fills the screen. You cannot multitask with one eye.
                             </p>
                         </div>
 
                         {/* Feature 3 */}
                         <div className="flex flex-col gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500 mb-2">
-                                <Zap className="h-6 w-6" />
+                            <div className="h-12 w-12 rounded-2xl bg-foreground text-background flex items-center justify-center border shadow-md mb-2">
+                                <Shuffle className="h-6 w-6" />
                             </div>
-                            <h3 className="text-xl font-bold">Instant Capture</h3>
+                            <h3 className="text-xl font-bold">⚡ Swipe with Intent</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                Offline-first architecture means zero loading screens. Smart NLP parses your dates and folders instantly as you type. Brain dump at the speed of thought.
+                                Skip, hold, complete… Or let fate (the Dice) decide. Elegant. Decisive. Slightly dramatic.
                             </p>
                         </div>
 
+                        {/* Feature 4 */}
+                        <div className="flex flex-col gap-4 md:col-span-3 lg:col-span-3 items-center text-center max-w-2xl mx-auto mt-8">
+                            <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500 mb-2">
+                                <Zap className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold">🧠 Capture at the Speed of Thought</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Type naturally. Dates parse instantly. No folders. No ceremony. Brain dump first. Organize later.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div className="mt-24 text-center max-w-2xl mx-auto border-t pt-16">
+                        <p className="text-xl font-serif italic text-muted-foreground mb-8 text-balance">
+                            "For the over-organized.<br />
+                            For the list rewriters.<br />
+                            For the ambitious — and occasionally overwhelmed.<br />
+                            <strong>Put on the monocle.</strong>"
+                        </p>
                     </div>
                 </div>
             </section>
@@ -184,7 +211,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
             <footer className="border-t py-12 px-6 md:px-12 text-center flex flex-col items-center gap-6">
                 <LogoSmall showText={false} className="w-6 h-6 opacity-30 grayscale" />
                 <p className="text-sm text-muted-foreground/60">
-                    &copy; {new Date().getFullYear()} Monocle App. Built for radical focus.
+                    &copy; {new Date().getFullYear()} Cherrymoon Media. Built for radical focus.
                 </p>
             </footer>
         </div>
