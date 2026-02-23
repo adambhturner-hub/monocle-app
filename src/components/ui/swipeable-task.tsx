@@ -33,6 +33,7 @@ interface SwipeableTaskProps {
     upColorClass?: string;
     upBgClass?: string;
     isMobile: boolean; // Only enable swipes on mobile layout
+    onTap?: (task: Task) => void;
 }
 
 export function SwipeableTask({
@@ -60,7 +61,8 @@ export function SwipeableTask({
     upLabel = "Up",
     upColorClass = "text-indigo-500",
     upBgClass = "bg-indigo-500",
-    isMobile
+    isMobile,
+    onTap
 }: SwipeableTaskProps) {
     const [offset, setOffset] = useState(0);
     const [offsetY, setOffsetY] = useState(0);
@@ -179,6 +181,11 @@ export function SwipeableTask({
             } else if (upAction && offsetY < -SWIPE_THRESHOLD) {
                 upAction(task.id);
             }
+        }
+
+        // Detect Tap
+        if (onTap && Math.abs(offset) < 10 && Math.abs(offsetY) < 10) {
+            onTap(task);
         }
 
         // Snap back

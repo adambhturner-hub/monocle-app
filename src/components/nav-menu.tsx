@@ -76,7 +76,7 @@ export function NavMenu() {
 
                     <Button variant="ghost" className="justify-start w-full hover:bg-secondary/50" onClick={() => handleNavigation(() => setOpenSheet('archive'))}>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Archive
+                        Logbook
                     </Button>
 
                     <Button variant="ghost" className="justify-start w-full hover:bg-secondary/50" onClick={() => handleNavigation(() => setOpenSheet('stats'))}>
@@ -96,8 +96,10 @@ export function NavMenu() {
                         <ProjectSelect />
                     </div>
 
-                    <div className="mt-auto pt-4 text-xs text-center text-muted-foreground">
-                        v0.13.0 (Sprint 13)
+                    <div className="w-full pt-4 border-t flex flex-col items-center justify-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono">
+                            v1.0.0 (Launch)
+                        </span>
                     </div>
                 </div>
             </SheetContent>

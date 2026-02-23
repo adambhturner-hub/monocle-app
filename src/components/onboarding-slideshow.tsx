@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, Target, ListTodo, Hand, Timer } from 'lucide-react';
@@ -9,6 +9,14 @@ export function OnboardingSlideshow() {
     const { settings, updateSettings, isHydrated } = useMonocleStore();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isExiting, setIsExiting] = useState(false);
+
+    // Reset local state if data is wiped and onboarding needs to show again
+    useEffect(() => {
+        if (settings && !settings.hasSeenOnboarding) {
+            setIsExiting(false);
+            setCurrentSlide(0);
+        }
+    }, [settings?.hasSeenOnboarding]);
 
     // Swipe tracking
     const touchStartX = useRef<number | null>(null);
@@ -22,7 +30,7 @@ export function OnboardingSlideshow() {
     const slides = [
         {
             title: "Welcome to Monocle",
-            description: "Not another to-do list. This is an execution engine designed for radical focus.",
+            description: "Not another to-do list. This is an execution chamber designed for radical focus.",
             icon: <LogoSmall className="scale-150 mb-6" showText={false} />
         },
         {
@@ -37,11 +45,11 @@ export function OnboardingSlideshow() {
         },
         {
             title: "Radical Focus",
-            description: "When you're ready to work, hit Focus Mode to enter the cockpit. One task. No distractions.",
+            description: "When you're ready to work, hit Focus Mode to enter the cockpit. One task. No drift.",
             icon: <Target className="h-16 w-16 text-primary mb-6" />
         },
         {
-            title: "Choose Your Sprint",
+            title: "Choose Your Mode",
             description: (
                 <div className="flex flex-col gap-4 text-left w-full mt-2">
                     <p className="text-center text-base">
@@ -50,8 +58,8 @@ export function OnboardingSlideshow() {
                     </p>
                     <div className="flex flex-col gap-3 bg-secondary/20 p-4 rounded-xl border border-secondary/30 text-sm">
                         <div className="flex items-center gap-3"><span className="text-xl">⚡</span> <span className="font-semibold text-foreground">Lightning</span> <span className="text-muted-foreground ml-auto">2-min ignition</span></div>
-                        <div className="flex items-center gap-3"><span className="text-xl">🏃</span> <span className="font-semibold text-foreground">Micro-Sprint</span> <span className="text-muted-foreground ml-auto">5-min burst</span></div>
-                        <div className="flex items-center gap-3"><span className="text-xl">🍅</span> <span className="font-semibold text-foreground">Pomodoro</span> <span className="text-muted-foreground ml-auto">25-min sprint</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🏃</span> <span className="font-semibold text-foreground">Quick Mode</span> <span className="text-muted-foreground ml-auto">5-min burst</span></div>
+                        <div className="flex items-center gap-3"><span className="text-xl">🍅</span> <span className="font-semibold text-foreground">Pomodoro</span> <span className="text-muted-foreground ml-auto">25-min mode</span></div>
                         <div className="flex items-center gap-3"><span className="text-xl">🌊</span> <span className="font-semibold text-foreground">Flow State</span> <span className="text-muted-foreground ml-auto">45-min immersion</span></div>
                         <div className="flex items-center gap-3"><span className="text-xl">🔋</span> <span className="font-semibold text-foreground">Ultradian</span> <span className="text-muted-foreground ml-auto">90-min deep session</span></div>
                     </div>
@@ -73,6 +81,21 @@ export function OnboardingSlideshow() {
                 </div>
             ),
             icon: <div className="text-7xl mb-6 leading-none">🐸</div>
+        },
+        {
+            title: "Install Monocle",
+            description: (
+                <div className="flex flex-col gap-4 text-center w-full mt-2">
+                    <p className="text-base text-foreground">
+                        For the best experience, install Monocle to your home screen.
+                    </p>
+                    <div className="text-sm text-muted-foreground bg-secondary/10 p-4 rounded-xl border border-border/50 text-left">
+                        <strong>iOS:</strong> Tap Share <span className="text-xl inline-block translate-y-1">↑</span> then "Add to Home Screen"<br />
+                        <strong>Android:</strong> Tap Menu ⋮ then "Install app"
+                    </div>
+                </div>
+            ),
+            icon: <div className="text-7xl mb-6 leading-none">📲</div>
         }
     ];
 

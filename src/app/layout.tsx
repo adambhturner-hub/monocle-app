@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Monocle",
-  description: "Fancy Focus, One Task At A Time",
+  description: "Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

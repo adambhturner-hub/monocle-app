@@ -89,7 +89,7 @@ export function FocusTimer({ taskId }: { taskId: string }) {
     const getPresetBrand = (min: number) => {
         switch (min) {
             case 2: return "⚡️ Lightning";
-            case 5: return "🏃 Micro-Sprint";
+            case 5: return "🏃 Quick Mode";
             case 25: return "🍅 Pomodoro";
             case 45: return "🌊 Flow State";
             case 60: return "🧠 Deep Work";

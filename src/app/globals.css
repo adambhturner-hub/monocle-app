@@ -120,7 +120,8 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground overflow-x-hidden touch-pan-y;
+    @apply bg-background text-foreground overflow-x-hidden touch-pan-y overscroll-none;
   }
 }

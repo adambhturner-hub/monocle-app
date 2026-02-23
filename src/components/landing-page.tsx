@@ -190,7 +190,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2">
                                 <Target className="h-6 w-6" />
                             </div>
-                            <h3 className="text-xl font-bold">🧐 Singular Focus</h3>
+                            <h3 className="text-xl font-bold">Singular Focus</h3>
                             <p className="text-muted-foreground leading-relaxed">
                                 This is not a dashboard. This is a monocle. One task fills the screen. You cannot multitask with one eye.
                             </p>
@@ -201,7 +201,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             <div className="h-12 w-12 rounded-2xl bg-foreground text-background flex items-center justify-center border shadow-md mb-2">
                                 <Shuffle className="h-6 w-6" />
                             </div>
-                            <h3 className="text-xl font-bold">⚡ Swipe with Intent</h3>
+                            <h3 className="text-xl font-bold">Swipe with Intent</h3>
                             <p className="text-muted-foreground leading-relaxed">
                                 Skip, hold, complete… Or let fate (the Dice) decide. Elegant. Decisive. Slightly dramatic.
                             </p>
@@ -212,7 +212,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                             <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500 mb-2">
                                 <Zap className="h-6 w-6" />
                             </div>
-                            <h3 className="text-xl font-bold">🧠 Capture at the Speed of Thought</h3>
+                            <h3 className="text-xl font-bold">Capture at the Speed of Thought</h3>
                             <p className="text-muted-foreground leading-relaxed">
                                 Type naturally. Dates parse instantly. No folders. No ceremony. Brain dump first. Organize later.
                             </p>

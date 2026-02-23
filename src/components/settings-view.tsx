@@ -74,8 +74,13 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
 
     const handleClearData = async () => {
         if (confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
-            try {
-                if (auth.currentUser) {
+            // 1. Immediately wipe local state so UI reflects it immediately
+            // Do NOT call reload() as it aborts pending IndexedDB transactions on iOS WebKit
+            clearData();
+            toast.success("Execution chamber wiped.");
+
+            if (auth.currentUser) {
+                try {
                     const { doc, setDoc } = await import('firebase/firestore');
                     const { db } = await import('@/lib/firebase');
                     const userDocRef = doc(db, 'users', auth.currentUser.uid);
@@ -86,13 +91,9 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                         settings: { ...settings, hasSeenOnboarding: false },
                         updatedAt: Date.now()
                     });
+                } catch (e) {
+                    console.error("Failed to wipe cloud document", e);
                 }
-            } catch (e) {
-                console.error("Failed to wipe cloud document", e);
-            } finally {
-                clearData();
-                await del('monocle-storage');
-                window.location.reload();
             }
         }
     };
@@ -100,12 +101,12 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const handleSignOut = async () => {
         if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
             try {
+                // Clear state using Zustand instead of raw IDB access to avoid overlapping transactions
                 clearData();
-                await del('monocle-storage');
                 await signOut(auth);
-            } finally {
-                // ... window reload handles closing and wiping anyway
-                window.location.reload();
+                toast.success("Signed out successfully.");
+            } catch (error) {
+                console.error("Sign out failed", error);
             }
         }
     };
@@ -439,15 +440,35 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                         <div className="space-y-2 text-sm text-muted-foreground">
                             <div className="flex justify-between py-2 border-b border-border/50">
                                 <span>Version</span>
-                                <span className="font-mono text-foreground">v0.12.0 (Beta)</span>
+                                <span className="font-mono text-foreground">v1.0.0 (Launch)</span>
                             </div>
-                            <div className="flex justify-between py-2 border-b border-border/50">
-                                <span>Build</span>
-                                <span className="font-mono text-foreground">Sprint 22</span>
+
+                            <div className="pt-4 leading-relaxed flex flex-col gap-4">
+                                <p>
+                                    Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.
+                                </p>
+
+                                <div className="p-4 bg-muted/30 border rounded-lg text-xs leading-relaxed space-y-3">
+                                    <div>
+                                        <span className="font-semibold text-foreground block mb-1">Known Limitations</span>
+                                        <ul className="list-disc pl-4 text-muted-foreground space-y-1">
+                                            <li><span className="text-foreground font-medium">Offline-first by design:</span> Data is stored locally on this device via IndexedDB.</li>
+                                            <li>Cross-device sync is planned for a future release.</li>
+                                            <li>Best experienced in Focus Mode.</li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-2 border-t border-border/50">
+                                        <span className="font-semibold text-foreground block mb-1">Privacy Guarantee</span>
+                                        Monocle stores your data locally in your browser. No data is sold. No tracking. We respect your focus and your data.
+                                    </div>
+                                </div>
+
+                                <Button variant="outline" className="w-full" asChild>
+                                    <a href="mailto:feedback@monocleapp.com?subject=Monocle%20v1.0%20Feedback&body=Did%20this%20reduce%20decision%20fatigue%20for%20you%2C%20yes%2Fno%3F%0A%0AWhere%20did%20you%20hesitate%3F%0A%0A">
+                                        Send Feedback
+                                    </a>
+                                </Button>
                             </div>
-                            <p className="pt-4 leading-relaxed">
-                                Monocle is designed to help you focus on one task at a time.
-                            </p>
                         </div>
                     </div>
                 </div>
