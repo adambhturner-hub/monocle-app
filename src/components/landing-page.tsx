@@ -37,13 +37,29 @@ function CockpitMockup() {
 
             {/* The Floating UI Window */}
             <div
-                className={`relative rounded-[2.5rem] bg-background border-2 shadow-2xl overflow-hidden aspect-[3/4] transition-all duration-1000 ease-out flex flex-col pointer-events-none hover:scale-[1.02] hover:-translate-y-2 ${isFrog ? 'border-emerald-500/20 shadow-emerald-500/10' : 'border-primary/10 shadow-primary/5 hover:border-primary/20'}`}
+                className={`relative rounded-[2.5rem] bg-background border-2 shadow-2xl overflow-hidden h-[750px] max-w-md mx-auto transition-all duration-1000 ease-out flex flex-col pointer-events-none hover:scale-[1.02] hover:-translate-y-2 ${isFrog ? 'border-emerald-500/20 shadow-emerald-500/10' : 'border-primary/10 shadow-primary/5 hover:border-primary/20'}`}
                 style={{ transformStyle: 'preserve-3d', transform: 'rotateX(2deg)' }}
             >
                 {/* Header mimicking a sleek app window */}
-                <div className="h-20 w-full flex items-center justify-between px-8 shrink-0">
+                <div className="h-20 w-full flex items-center justify-between px-8 shrink-0 relative">
                     <Music className={`w-5 h-5 transition-colors duration-500 ${task.musicActive ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-muted-foreground/30'}`} />
                     <MoreHorizontal className="w-6 h-6 text-muted-foreground/30" />
+
+                    {/* Faux White Noise Dropdown */}
+                    {task.musicActive && (
+                        <div className="absolute top-16 left-6 bg-background border border-border/50 shadow-xl rounded-2xl p-2 w-48 flex flex-col gap-1 z-30 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70 px-2 py-1">Soundscapes</div>
+                            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium text-sm">
+                                <div className="flex items-center gap-3">
+                                    <Music className="w-4 h-4" /> Brown Noise
+                                </div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            </div>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground text-sm">
+                                <Music className="w-4 h-4 opacity-50" /> Deep Space
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* The 'Cockpit' Internals */}
@@ -71,15 +87,27 @@ function CockpitMockup() {
                         </h2>
 
                         {/* Interactive Timer State */}
-                        <div className="flex flex-col items-center justify-center transition-all duration-500">
-                            {task.timerActive ? (
-                                <div className="flex items-center gap-4 bg-background border shadow-sm px-6 py-3 rounded-full animate-in fade-in zoom-in duration-500">
-                                    <span className="text-xl font-bold tabular-nums tracking-tight">24:59</span>
-                                    <div className="w-4 h-4 rounded-sm bg-rose-500" />
-                                </div>
-                            ) : (
-                                <div className="w-14 h-14 rounded-full bg-secondary/50 flex items-center justify-center mb-4 transition-all duration-500">
-                                    <Timer className="w-6 h-6 text-muted-foreground" />
+                        <div className="flex flex-col items-center justify-center transition-all duration-500 relative">
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-all duration-500 ${task.timerActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110' : 'bg-secondary/50 text-muted-foreground'}`}>
+                                <Timer className="w-6 h-6" />
+                            </div>
+
+                            {/* Faux Timer Dropdown */}
+                            {task.timerActive && (
+                                <div className="absolute bottom-20 bg-background border border-border/50 shadow-2xl rounded-2xl p-2 w-64 flex flex-col gap-2 z-30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="p-3 rounded-xl bg-primary/10 text-primary flex flex-col items-center justify-center border border-primary/20">
+                                            <span className="text-xl font-black">25</span>
+                                            <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Min</span>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-secondary/50 text-muted-foreground flex flex-col items-center justify-center">
+                                            <span className="text-xl font-black">15</span>
+                                            <span className="text-[10px] uppercase font-bold tracking-widest opacity-80">Min</span>
+                                        </div>
+                                    </div>
+                                    <div className="px-4 py-3 w-full rounded-xl bg-foreground text-background font-bold text-center text-sm shadow-md">
+                                        Start Focus
+                                    </div>
                                 </div>
                             )}
                         </div>
