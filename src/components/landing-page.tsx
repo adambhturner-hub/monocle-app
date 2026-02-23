@@ -33,7 +33,7 @@ function CockpitMockup() {
     return (
         <div className="w-full max-w-3xl mx-auto mt-24 mb-16 px-6 relative z-10 hidden md:block group perspective-[2000px]">
             {/* Ambient Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent blur-3xl -z-10 rounded-[3rem] opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent -z-10 rounded-[3rem] opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
 
             {/* The Floating UI Window */}
             <div
@@ -194,7 +194,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
             {/* Hero Section */}
             <main className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-24 md:pt-32 md:pb-40 text-center relative max-w-5xl mx-auto w-full">
                 {/* Background Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-full point-events-none -z-10 opacity-50 hidden md:block" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none -z-10 opacity-50 hidden md:block" style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 50%)' }} />
 
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold uppercase tracking-widest mb-8 border shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -344,7 +344,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
 
             {/* 5. Final CTA */}
             <section className="bg-background border-t py-32 md:py-48 px-6 md:px-12 relative overflow-hidden flex flex-col items-center justify-center text-center">
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent blur-[100px] -z-10 opacity-60 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent -z-10 opacity-60 pointer-events-none" />
 
                 <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif italic tracking-tight text-foreground mb-2">
                     Put on the monocle.
