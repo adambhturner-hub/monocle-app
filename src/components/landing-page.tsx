@@ -109,17 +109,31 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     v1.0 is Live
                 </div>
 
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8 relative">
                     <HeroLogo />
                     <div className="text-center md:text-left">
-                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[1]">
-                            Monocle.
+                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[1] relative inline-block">
+                            <span className="text-foreground">Monocle.</span>
+                            {/* Overlay Shine on Title */}
+                            <span
+                                className="absolute inset-0 bg-clip-text text-transparent bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.8)_50%,transparent_75%)] bg-[length:200%_100%] animate-[shine_4s_ease-in-out_infinite]"
+                                aria-hidden="true"
+                            >
+                                Monocle.
+                            </span>
                         </h1>
-                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1 mt-2">
+                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground via-muted-foreground/50 to-foreground bg-[length:200%_100%] animate-[shine_6s_ease-in-out_infinite_reverse] mr-1 mt-2">
                             The fancy focus app.
                         </span>
                     </div>
                 </div>
+
+                <style jsx>{`
+                    @keyframes shine {
+                        0% { background-position: 200% center; }
+                        100% { background-position: -200% center; }
+                    }
+                `}</style>
 
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-12 leading-relaxed">
                     One task at a time.<br className="hidden md:block" />
