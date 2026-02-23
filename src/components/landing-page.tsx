@@ -3,6 +3,74 @@
 import { LogoSmall } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+function HeroLogo() {
+    const [rotation, setRotation] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            // Calculate rotation based on mouse position relative to center of screen
+            const x = (e.clientX / window.innerWidth - 0.5) * 40; // max 20deg
+            const y = (e.clientY / window.innerHeight - 0.5) * -40; // inverted, max 20deg
+            setRotation({ x: y, y: x });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    return (
+        <div
+            className="relative w-32 h-32 md:w-48 md:h-48 mb-6 perspective-[1000px] group flex-shrink-0"
+        >
+            <div
+                className="w-full h-full relative transition-transform duration-200 ease-out"
+                style={{
+                    transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                    transformStyle: 'preserve-3d'
+                }}
+            >
+                {/* The Monocle Glass */}
+                <div
+                    className="absolute inset-0 rounded-full border-[8px] md:border-[12px] border-foreground shadow-[0_20px_50px_rgba(0,0,0,0.5)] dark:shadow-[0_20px_50px_rgba(255,255,255,0.1)] flex items-center justify-center overflow-hidden"
+                    style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)',
+                        backdropFilter: 'blur(4px)',
+                        transform: 'translateZ(20px)'
+                    }}
+                >
+                    {/* Shiny Glint Sweep */}
+                    <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" style={{ transform: 'skewX(-20deg)' }} />
+                </div>
+
+                {/* Static Inner Glint (like LogoSmall) */}
+                <div
+                    className="absolute top-[15%] left-[15%] w-[30%] h-[20%] border-t-[4px] border-l-[4px] border-foreground rounded-tl-full opacity-60"
+                    style={{ transform: 'translateZ(30px)' }}
+                />
+
+                {/* The Monocle Chain / Handle Line */}
+                <div
+                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-1.5 md:h-2 bg-foreground rounded-full"
+                    style={{ transform: 'translateZ(10px)' }}
+                />
+
+                {/* 3D Depth layers to make the rim look thick */}
+                <div className="absolute inset-0 rounded-full border-[8px] md:border-[12px] border-foreground/50" style={{ transform: 'translateZ(10px)' }} />
+                <div className="absolute inset-0 rounded-full border-[8px] md:border-[12px] border-foreground/20" style={{ transform: 'translateZ(0px)' }} />
+            </div>
+
+            <style jsx>{`
+                @keyframes shimmer {
+                    100% {
+                        transform: translateX(100%) skewX(-20deg);
+                    }
+                }
+            `}</style>
+        </div>
+    );
+}
 
 interface LandingPageProps {
     onGoogleSignIn: () => void;
@@ -19,9 +87,9 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     <span className="font-bold text-xl tracking-tight">Monocle</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button 
-                        variant="default" 
-                        size="sm" 
+                    <Button
+                        variant="default"
+                        size="sm"
                         className="rounded-full font-semibold px-6 shadow-lg shadow-primary/20"
                         onClick={onGoogleSignIn}
                         disabled={isSubmitting}
@@ -40,18 +108,21 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     v1.0 is Live
                 </div>
-                
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] mb-8 text-balance">
-                    The brutalist <br className="hidden md:block" />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1">execution</span> engine.
-                </h1>
-                
+
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8">
+                    <HeroLogo />
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.1] text-balance md:text-left">
+                        The brutalist <br className="hidden md:block" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground mr-1">execution</span> engine.
+                    </h1>
+                </div>
+
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl text-balance mb-12 leading-relaxed">
                     Not another planning tool. Monocle is a tactile, offline-first environment designed to cure decision fatigue. One task at a time. No escape hatches.
                 </p>
 
-                <Button 
-                    size="lg" 
+                <Button
+                    size="lg"
                     className="h-14 px-8 text-lg rounded-full font-bold shadow-xl shadow-primary/20 flex items-center gap-3 group relative overflow-hidden transition-all hover:scale-105 active:scale-95"
                     onClick={onGoogleSignIn}
                     disabled={isSubmitting}
@@ -71,7 +142,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
             <section className="bg-secondary/30 border-t py-24 px-6 md:px-12">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
-                        
+
                         {/* Feature 1 */}
                         <div className="flex flex-col gap-4">
                             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2">
