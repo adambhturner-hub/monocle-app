@@ -4,6 +4,7 @@ import { LogoSmall } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Target, ListTodo, Zap, CheckCircle2, Shuffle, Repeat, X, Pause, Music, Check, MoreHorizontal, ChevronUp, Timer, Dices, Play } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 
 const MOCK_TASKS = [
     { title: "Crush your biggest priority", project: "No Project", type: "frog" },
@@ -392,9 +393,15 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
             </section>
 
             {/* Footer */}
-            <footer className="border-t py-12 px-6 md:px-12 text-center flex flex-col items-center gap-6">
-                <LogoSmall showText={false} className="w-6 h-6 opacity-30 grayscale" />
-                <p className="text-sm text-muted-foreground/60">
+            <footer className="border-t py-12 px-6 md:px-12 flex flex-col items-center gap-6">
+                <LogoSmall showText={false} className="w-8 h-8 opacity-30 grayscale" />
+
+                <div className="flex gap-6 text-sm font-medium text-muted-foreground/60">
+                    <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+                    <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+                </div>
+
+                <p className="text-sm text-muted-foreground/40 mt-4 text-center">
                     &copy; {new Date().getFullYear()} Cherrymoon Media. Built for radical focus.
                 </p>
             </footer>
