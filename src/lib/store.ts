@@ -296,7 +296,7 @@ export const useMonocleStore = create<MonocleState>()(
                 sessionHistory: [],
                 currentSession: null,
                 activeRandomTaskId: null,
-                settings: { ...DEFAULT_SETTINGS, hasSeenOnboarding: false },
+                settings: { ...DEFAULT_SETTINGS, hasSeenOnboarding: true },
                 view: 'queue',
                 activeSheet: null,
                 activeModal: null

@@ -77,11 +77,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
 
     const handleClearData = async () => {
         if (confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
-            // 1. Immediately wipe local state so UI reflects it immediately
-            // Do NOT call reload() as it aborts pending IndexedDB transactions on iOS WebKit
-            clearData();
-            toast.success("Execution chamber wiped.");
-
+            // 1. Wipe cloud state first to prevent SyncEngine from pulling old data back
             if (auth.currentUser) {
                 try {
                     const { doc, setDoc } = await import('firebase/firestore');
@@ -91,13 +87,19 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                         tasks: [],
                         projects: [],
                         sessionHistory: [],
-                        settings: { ...settings, hasSeenOnboarding: false },
+                        settings: { ...settings, hasSeenOnboarding: true },
+                        deletedIds: [],
                         updatedAt: Date.now()
-                    });
+                    }); // No { merge: true } to force overwrite arrays
                 } catch (e) {
                     console.error("Failed to wipe cloud document", e);
                 }
             }
+
+            // 2. Wipe local state so UI reflects it immediately
+            // The SyncEngine will see this matches the cloud state and do nothing
+            clearData();
+            toast.success("Execution chamber wiped.");
         }
     };
 
