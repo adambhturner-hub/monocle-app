@@ -9,10 +9,13 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Keyboard, Command } from "lucide-react"
+import { useMonocleStore } from "@/lib/store"
 
 export function ShortcutsHelp() {
+    const { activeModal, setActiveModal } = useMonocleStore();
+
     return (
-        <Dialog>
+        <Dialog open={activeModal === 'shortcuts-help'} onOpenChange={(open) => setActiveModal(open ? 'shortcuts-help' : null)}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="fixed bottom-4 right-4 h-10 w-10 rounded-full bg-background border shadow-md text-muted-foreground hover:text-foreground z-50 hidden sm:flex">
                     <Keyboard className="h-5 w-5" />

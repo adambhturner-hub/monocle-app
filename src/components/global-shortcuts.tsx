@@ -123,9 +123,10 @@ export function GlobalShortcuts() {
                 }
             }
 
-            // ?: Open Settings
+            // ?: Open Shortcuts Help
             if (e.key === '?' && !hasModifier) {
-                setOpenSheet('settings');
+                e.preventDefault();
+                setActiveModal('shortcuts-help');
                 toast.dismiss();
             }
         };

@@ -330,7 +330,9 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                         </div>
                     </div>
 
-                    {/* Auto-Pick Section */}
+
+
+                    {/* Focus Engine Section */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
                             <Target className="h-5 w-5" />
@@ -339,38 +341,17 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="overdue" className="flex flex-col gap-1">
-                                    <span>Prioritize Overdue</span>
-                                    <span className="font-normal text-muted-foreground text-xs">Always show overdue tasks first in Focus Mode</span>
+                                <Label htmlFor="night-shift" className="flex flex-col gap-1">
+                                    <span>Night Shift Sweep</span>
+                                    <span className="font-normal text-muted-foreground text-xs pr-4">
+                                        Automatically move uncompleted Active tasks back to the Idea Dump at midnight for a pristine morning queue.
+                                    </span>
                                 </Label>
                                 <Switch
-                                    id="overdue"
-                                    checked={settings.autoPickOverdue}
-                                    onCheckedChange={(checked) => updateSettings({ autoPickOverdue: checked })}
+                                    id="night-shift"
+                                    checked={settings.nightShiftSweep}
+                                    onCheckedChange={(checked) => updateSettings({ nightShiftSweep: checked })}
                                 />
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="cooldown" className="flex flex-col gap-1">
-                                    <span>Skip Cooldown</span>
-                                    <span className="font-normal text-muted-foreground text-xs">Hide skipped tasks from Focus Mode for...</span>
-                                </Label>
-                                <Select
-                                    value={settings.skipCooldown.toString()}
-                                    onValueChange={(val) => updateSettings({ skipCooldown: parseInt(val) })}
-                                >
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Select cooldown" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="0">Disabled (Instant)</SelectItem>
-                                        <SelectItem value="60">1 Hour</SelectItem>
-                                        <SelectItem value="180">3 Hours</SelectItem>
-                                        <SelectItem value="360">6 Hours</SelectItem>
-                                        <SelectItem value="720">12 Hours</SelectItem>
-                                        <SelectItem value="1440">24 Hours</SelectItem>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </div>
                     </div>
@@ -447,41 +428,6 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                     Reset App
                                 </Button>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Shortcuts Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                            <Keyboard className="h-5 w-5" />
-                            <h3>Keyboard Shortcuts</h3>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                            {/* Navigation */}
-                            <div className="col-span-2 text-xs font-semibold text-muted-foreground mt-2">Navigation</div>
-                            <div className="flex justify-between items-center p-2 rounded bg-muted/50">
-                                <span>Command Palette</span>
-                                <div className="flex gap-1">
-                                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">⌘P</kbd>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center p-2 rounded bg-muted/50">
-                                <span>Focus Mode</span>
-                                <div className="flex gap-1">
-                                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">F</kbd>
-                                    <span className="text-muted-foreground/50">/</span>
-                                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">⌘1</kbd>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center p-2 rounded bg-muted/50">
-                                <span>Queue View</span>
-                                <div className="flex gap-1">
-                                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">Q</kbd>
-                                    <span className="text-muted-foreground/50">/</span>
-                                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">⌘2</kbd>
-                                </div>
-                            </div>
-                            {/* ... (Other shortcuts can be added back if needed, but this is a good start) */}
                         </div>
                     </div>
 

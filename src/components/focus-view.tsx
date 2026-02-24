@@ -40,6 +40,8 @@ import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
 import { HoldButton } from './ui/hold-button';
 import { getIconComponent } from '@/lib/icons';
+import { AnimatedLogo } from './animated-logo';
+import { FormattedText } from './ui/formatted-text';
 
 interface FocusViewProps {
     onExit?: () => void;
@@ -99,32 +101,39 @@ export function FocusView({ onExit }: FocusViewProps) {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
+    // Empty State
     const renderEmptyState = () => {
-        const snoozedTasks = tasks.filter(t => !t.isDraft && t.status !== 'done' && (activeProject ? t.projectId === activeProject : true) && (t.skippedUntil && t.skippedUntil > Date.now()));
-        const hasSnoozed = snoozedTasks.length > 0;
+        const victoryPhrases = [
+            "The desk is clear.",
+            "Execution complete.",
+            "All frogs eaten.",
+            "Mission accomplished.",
+            "Zero tasks left."
+        ];
+
+        // Pick a stable random phrase per render based on task count to avoid flickering
+        // Since task count is 0 here, it'll just be static until they add/complete next time.
+        // Actually picking purely random is fine here because this component mounts/unmounts.
+        const [phrase] = React.useState(() => victoryPhrases[Math.floor(Math.random() * victoryPhrases.length)]);
 
         return (
-            <div
-                className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6 animate-in fade-in zoom-in duration-500 w-full max-w-3xl cursor-default"
-                onClick={(e) => e.stopPropagation()} // Prevent exit when clicking the empty state itself
-            >
-                <div className="p-8 rounded-full bg-secondary/30 mb-4 shadow-inner">
-                    <Check className="h-12 w-12 text-muted-foreground/40" />
+            <div className="flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <AnimatedLogo />
+                <div className="space-y-4 max-w-sm">
+                    <h3 className="text-xl font-medium tracking-tight text-foreground">{phrase}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Add a new objective, or check the Idea Dump.
+                    </p>
                 </div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground/80">Queue Empty</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    {hasSnoozed
-                        ? "Your active queue is empty, but tasks are on hold. Take a break or wake them up."
-                        : "Queue empty. Return to the Queue to load your next objective."}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                    <Button size="lg" className="rounded-full px-8 shadow-md" onClick={(e) => { e.stopPropagation(); setActiveModal('add-task'); }}>
-                        <Plus className="mr-2 h-5 w-5" /> Capture Task
+                <div className="flex gap-4 pt-4">
+                    <Button onClick={() => setView('capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Capture Task
                     </Button>
-                    <div className="flex gap-2 justify-center">
-                        <Button variant="outline" className="rounded-full" onClick={(e) => { e.stopPropagation(); if (onExit) onExit(); else setView('queue'); }}>Open Queue</Button>
-                        <Button variant="outline" className="rounded-full" onClick={(e) => { e.stopPropagation(); setOpenSheet('archive'); }}>View Logbook</Button>
-                    </div>
+                    <Button variant="outline" onClick={() => setView('ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
+                        <Archive className="mr-2 h-4 w-4" />
+                        Idea Dump
+                    </Button>
                 </div>
             </div>
         );
@@ -414,7 +423,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             isCompleting && "line-through text-muted-foreground/50 opacity-50 scale-105"
                                         )}
                                     >
-                                        {activeTask.title}
+                                        <FormattedText text={activeTask.title} />
                                     </h1>
                                 </div>
 

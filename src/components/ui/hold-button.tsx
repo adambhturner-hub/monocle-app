@@ -36,11 +36,17 @@ export function HoldButton({
                 animationFrameRef.current = requestAnimationFrame(updateProgress);
             } else {
                 setIsHolding(false);
+                setProgress(0);
+                startTimeRef.current = null;
                 onComplete();
             }
         };
 
         animationFrameRef.current = requestAnimationFrame(updateProgress);
+    };
+
+    const handleContextMenu = (e: React.MouseEvent | React.TouchEvent) => {
+        e.preventDefault();
     };
 
     const endHold = () => {
@@ -99,10 +105,13 @@ export function HoldButton({
                 onMouseLeave={endHold}
                 onTouchStart={startHold}
                 onTouchEnd={endHold}
+                onTouchCancel={endHold}
+                onContextMenu={handleContextMenu}
                 className={cn(
-                    "w-32 h-32 rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-200",
+                    "w-32 h-32 rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-200 select-none",
                     isHolding ? "scale-95 shadow-inner bg-secondary" : "hover:scale-105 shadow-md",
                 )}
+                style={{ touchAction: 'none' }}
                 variant="outline"
                 {...props}
             >

@@ -42,6 +42,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { FormattedText } from './ui/formatted-text';
 
 export function ArchiveView() {
     const { tasks, restoreTask, deleteTask, purgeArchivedTasks, activeSheet, setOpenSheet, undo } = useMonocleStore();
@@ -155,7 +156,7 @@ export function ArchiveView() {
                                     <ContextMenuTrigger>
                                         <div className="p-4 rounded-lg bg-muted/50 flex flex-col gap-2 group hover:bg-muted transition-colors select-none">
                                             <div className="flex items-start justify-between">
-                                                <span className="font-medium line-through text-muted-foreground decoration-muted-foreground/50">{task.title}</span>
+                                                <span className="font-medium line-through text-muted-foreground decoration-muted-foreground/50"><FormattedText text={task.title} /></span>
                                                 <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-background hover:text-primary" onClick={(e) => { e.stopPropagation(); handleRestore(task.id); }} title="Restore">
                                                         <RotateCcw className="h-4 w-4" />

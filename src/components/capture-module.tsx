@@ -247,7 +247,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 dueDate: finalDueDate,
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
                 isLightning,
-                isFrog: isFrog,
                 isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
                 status: destination === 'archive' ? 'done' : taskToEdit.status,
             });
@@ -278,7 +277,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             dueDate: finalDueDate,
             recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
             isDraft: destination === 'idea' ? true : false,
-            isFrog: isFrog,
+            isFrog: false, // Will be made true securely by toggleFrog if requested
             isLightning: isLightning,
             createdAt: Date.now(),
         };
@@ -357,7 +356,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
     const innerContent = (
         <>
-            <div className="w-full px-8 md:px-16 flex flex-col items-center justify-center relative flex-1 min-h-[50vh]">
+            <div className="w-full px-8 md:px-16 flex flex-col items-center justify-center relative flex-1 py-6">
                 <div className={cn("mb-6 animate-in fade-in slide-in-from-top-4 duration-500", isModal && "mt-12")}>
                     {(() => {
                         const isAll = projectId === 'all';
@@ -491,9 +490,23 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     maxLength={120}
                 />
 
+
+
+                {isMentionsOpen && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 z-[100]">
+                        <MentionsList
+                            options={mentionOptions}
+                            selectedIndex={mentionSelectedIndex}
+                            onSelect={handleMentionSelect}
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
                 {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence) && (
-                    <div className="absolute -bottom-12 flex items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4">
+                    <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.dueDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
                                 <CalendarIcon className="w-3 h-3" /> {format(parsedData.dueDate, 'MMM d')}
@@ -515,18 +528,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     </div>
                 )}
 
-                {isMentionsOpen && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 z-[100]">
-                        <MentionsList
-                            options={mentionOptions}
-                            selectedIndex={mentionSelectedIndex}
-                            onSelect={handleMentionSelect}
-                        />
-                    </div>
-                )}
-            </div>
-
-            <div className={cn("w-full px-6 flex flex-col gap-4 z-10", isModal ? "pb-0 shrink-0" : "mt-auto pb-6")}>
                 <div className="flex justify-center">
                     <button
                         onClick={() => setAdvancedOpen(!advancedOpen)}
@@ -736,7 +737,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             upBgClass="bg-indigo-500"
             upColorClass="text-indigo-600"
         >
-            <Card className="w-full max-w-2xl h-[calc(100vh-10rem)] md:h-[600px] shadow-2xl border bg-card/95 backdrop-blur-xl relative flex flex-col items-center justify-center text-center rounded-[2rem] group transition-all duration-500 overflow-hidden ring-1 ring-white/5">
+            <Card className="w-full max-w-2xl h-auto min-h-[70vh] md:min-h-[600px] shadow-2xl border bg-card/95 backdrop-blur-xl relative flex flex-col items-center justify-between text-center rounded-[2rem] group transition-all duration-500 overflow-y-auto overflow-x-hidden ring-1 ring-white/5 scrollbar-none">
                 {innerContent}
             </Card>
         </SwipeableTask>

@@ -21,6 +21,7 @@ import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
 import { Plus, Command } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
+import { SyncIndicator } from '@/components/ui/sync-indicator';
 
 export default function Home() {
   const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated } = useMonocleStore();
@@ -69,6 +70,8 @@ export default function Home() {
         {/* Left: Hamburger (+ extra items for symmetry) */}
         <div className="flex-1 basis-0 min-w-0 flex items-center justify-start gap-3 relative z-20">
           <NavMenu />
+
+          <SyncIndicator />
 
           <div className="hidden sm:block w-px h-6 bg-border mx-1 shrink-0" />
 

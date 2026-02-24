@@ -49,6 +49,25 @@ export function SyncEngine() {
     // snapshot from the cloud, otherwise LocalStorage hydration will overwrite the cloud instantly.
     const isCloudReadyRef = useRef<boolean>(false);
 
+    // 0. Listen to Hardware Network Connectivity
+    useEffect(() => {
+        const handleOnline = () => store.setSyncStatus('idle');
+        const handleOffline = () => store.setSyncStatus('offline');
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        // Initial check
+        if (!navigator.onLine) {
+            store.setSyncStatus('offline');
+        }
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [store]);
+
     // 1. Listen to Cloud Changes
     useEffect(() => {
         if (!isHydrated) return;
@@ -129,13 +148,17 @@ export function SyncEngine() {
                             sessionHistory: state.sessionHistory
                         });
 
-                        firestoreSetDoc(userDocRef, safePayload, { merge: true }).catch(err => {
+                        firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
+                            useMonocleStore.getState().setSyncStatus('idle');
+                        }).catch(err => {
                             console.error("Failed to initialize cloud document:", err);
+                            useMonocleStore.getState().setSyncStatus('error');
                             toast.error("Sync Error", { description: "Failed to initialize cloud document. Check Firebase rules." });
                         });
                     }
                 }, (error) => {
                     console.error("Firestore Snapshot Error:", error);
+                    useMonocleStore.getState().setSyncStatus('error');
                     toast.error("Sync Disconnected", { description: "You don't have permission to read from the cloud. Check Firebase Rules." });
                 });
 
@@ -192,14 +215,17 @@ export function SyncEngine() {
 
                 const safePayload = removeUndefined(rawPayload);
                 console.log("[Monocle Sync] Pushing payload to Firestore");
+                useMonocleStore.getState().setSyncStatus('syncing');
 
                 // Update our ref so our own snapshot echo doesn't trigger a pull
                 lastSyncedStateStrRef.current = currentStateStr;
 
                 firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
                     useMonocleStore.getState().setLastSyncTime(Date.now());
+                    useMonocleStore.getState().setSyncStatus('idle');
                 }).catch((err: any) => {
                     console.error("Failed to sync to cloud:", err);
+                    useMonocleStore.getState().setSyncStatus('error');
                     toast.error(`Sync Failed`, { description: err.message || "Could not save your changes to the cloud. They are saved locally." });
                 });
             }

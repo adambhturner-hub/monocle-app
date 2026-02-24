@@ -23,6 +23,7 @@ import { parseTaskInput } from '@/lib/smart-parser';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SwipeableTask } from '@/components/ui/swipeable-task';
+import { FormattedText } from './ui/formatted-text';
 import { soundEngine } from '@/lib/sound-engine';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from '@/components/mentions-list';
@@ -632,9 +633,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                         <div className="flex">
                                             <button
                                                 onClick={() => {
-                                                    if (sortMode === 'manual') setSortMode('date');
-                                                    else if (sortMode === 'date') setSortMode('priority');
-                                                    else setSortMode('manual');
+                                                    let newSortMode: 'manual' | 'date' | 'priority' = 'manual';
+                                                    if (sortMode === 'manual') newSortMode = 'date';
+                                                    else if (sortMode === 'date') newSortMode = 'priority';
+
+                                                    setSortMode(newSortMode);
+                                                    useMonocleStore.getState().updateSettings({ sortMode: newSortMode });
                                                 }}
                                                 disabled={!!searchQuery}
                                                 className="px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5 bg-background text-foreground shadow-sm ring-1 ring-black/5 hover:bg-muted"
@@ -809,7 +813,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                         task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
                                                                                                         task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
                                                                                                     )}>
-                                                                                                        {task.title}
+                                                                                                        <FormattedText text={task.title} />
                                                                                                     </p>
                                                                                                     {task.isFrog && (
                                                                                                         <span className="text-sm leading-none shrink-0">🐸</span>
@@ -826,7 +830,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                             </p>
                                                                                                         </TooltipTrigger>
                                                                                                         <TooltipContent side="bottom" align="start" className="max-w-[300px]">
-                                                                                                            <p className="text-xs whitespace-pre-wrap">{task.description}</p>
+                                                                                                            <FormattedText text={task.description} className="text-xs" />
                                                                                                         </TooltipContent>
                                                                                                     </Tooltip>
                                                                                                 )}
@@ -955,7 +959,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                         <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                             <div className="flex items-center gap-2">
                                                                                 <p className="text-sm font-medium truncate">
-                                                                                    {task.title}
+                                                                                    <FormattedText text={task.title} />
                                                                                 </p>
                                                                             </div>
                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
@@ -1012,7 +1016,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             {activeTasks.map(task => (
                                                                 <div key={task.id} className="group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className="text-sm font-medium truncate">{task.title}</p>
+                                                                        <FormattedText text={task.title} className="text-sm font-medium truncate" />
                                                                     </div>
                                                                     <div className="flex items-center gap-1 opacity-0 md:group-hover:opacity-100 transition-all z-50 shrink-0">
                                                                         <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleFocusNow(task.id); }} title="Promote to Focus"><CornerUpLeft className="h-3 w-3" /></Button>
@@ -1079,7 +1083,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                             </div>
                                                                                                         );
                                                                                                     })()}
-                                                                                                    <p className={cn("text-sm font-medium truncate shrink-0 max-w-full", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")}>{task.title}</p>
+                                                                                                    <FormattedText text={task.title} className={cn("text-sm font-medium truncate shrink-0 max-w-full", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")} />
                                                                                                 </div>
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                     {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
@@ -1154,7 +1158,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                 >
                                                                                     <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20")}>
                                                                                         <div className="flex-1 min-w-0">
-                                                                                            <p className={cn("text-sm font-medium truncate", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold")}>{task.title}</p>
+                                                                                            <FormattedText text={task.title} className={cn("text-sm font-medium truncate", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold")} />
                                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                 {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
                                                                                             </div>

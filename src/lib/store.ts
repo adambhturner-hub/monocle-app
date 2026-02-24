@@ -18,13 +18,45 @@ export const idbStorage: StateStorage = {
 import { Task, Project, FocusSession, SessionOutcome } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
 import { generateId } from '@/lib/utils';
+import { fetchUrlMeta } from '@/app/actions/unfurl';
+import * as linkify from 'linkifyjs';
 
-// Define defaults outside
+async function autoUnfurlTask(store: any, taskId: string, text: string, field: 'title' | 'description') {
+    if (!text) return;
+    const links = linkify.find(text).filter(l => l.type === 'url' && l.isLink);
+    if (links.length === 0) return;
+
+    for (const link of links) {
+        // Skip if already inside a markdown link: e.g. [Title](url)
+        if (text[link.start - 1] === '(' && text[link.end] === ')') {
+            continue;
+        }
+
+        // Skip if formatted with pipe syntax: e.g. url | label
+        const textAfter = text.slice(link.end);
+        if (/^\s+\|/.test(textAfter)) {
+            continue;
+        }
+
+        try {
+            const meta = await fetchUrlMeta(link.href);
+            if (meta && meta.title && !meta.error) {
+                // Safely reconstruct the string using exact positional indices,
+                // formatting exactly one link per pass to avoid shifting bugs.
+                const processedText = text.slice(0, link.start) + `[${meta.title}](${link.href})` + text.slice(link.end);
+                store.getState().updateTask(taskId, { [field]: processedText });
+                return; // Exit after one successful unfurl. Subsequent updates will trigger another pass.
+            }
+        } catch (e) {
+            console.error("Failed to unfurl", link.href, e);
+        }
+    }
+}
+
 const DEFAULT_SETTINGS: MonocleState['settings'] = {
     sortMode: 'manual',
     archiveRetention: 30,
-    autoPickOverdue: true,
-    skipCooldown: 360,
+    nightShiftSweep: false,
     soundEnabled: true,
     hasSeenOnboarding: false
 };
@@ -90,8 +122,8 @@ interface MonocleState {
     // UI State
     activeSheet: 'queue' | 'archive' | 'settings' | 'stats' | null;
     setOpenSheet: (sheet: 'queue' | 'archive' | 'settings' | 'stats' | null) => void;
-    activeModal: 'add-task' | 'project-manager' | null;
-    setActiveModal: (modal: 'add-task' | 'project-manager' | null) => void;
+    activeModal: 'add-task' | 'project-manager' | 'shortcuts-help' | null;
+    setActiveModal: (modal: 'add-task' | 'project-manager' | 'shortcuts-help' | null) => void;
 
     draftTaskData: Partial<Task> | null;
     setDraftTaskData: (draft: Partial<Task> | null) => void;
@@ -124,8 +156,7 @@ interface MonocleState {
     settings: {
         sortMode: 'manual' | 'date' | 'priority';
         archiveRetention: number; // days
-        autoPickOverdue: boolean;
-        skipCooldown: number; // minutes
+        nightShiftSweep: boolean;
         soundEnabled?: boolean;
         hasSeenOnboarding: boolean;
     };
@@ -144,8 +175,10 @@ interface MonocleState {
     getAutoPickedTask: () => Task | null;
     getCompletedTodayCount: () => number;
     toggleFrog: (id: string) => void;
-    frogDetourActive?: boolean;
-    activeRandomTaskId?: string | null;
+    frogDetourActive: boolean;
+    activeRandomTaskId: string | null;
+
+    lastActiveDate?: string; // YYYY-MM-DD string to track day rollovers
 
     // Command Palette Power Features
     recentCommands: RecentCommand[];
@@ -158,6 +191,8 @@ interface MonocleState {
 
     lastSyncTime: number | null;
     setLastSyncTime: (time: number | null) => void;
+    syncStatus: 'idle' | 'syncing' | 'error' | 'offline';
+    setSyncStatus: (status: 'idle' | 'syncing' | 'error' | 'offline') => void;
 
     isHydrated?: boolean;
     setHydrated?: () => void;
@@ -185,13 +220,17 @@ export const useMonocleStore = create<MonocleState>()(
             setHydrated: () => set({ isHydrated: true }),
             lastSyncTime: null,
             setLastSyncTime: (time) => set({ lastSyncTime: time }),
+            syncStatus: 'idle',
+            setSyncStatus: (status) => set({ syncStatus: status }),
+            frogDetourActive: false,
+            activeRandomTaskId: null,
+            lastActiveDate: new Date().toISOString().split('T')[0],
 
             // Settings Defaults
             settings: {
                 sortMode: 'manual',
                 archiveRetention: 30,
-                autoPickOverdue: true,
-                skipCooldown: 6 * 60, // 6 hours default
+                nightShiftSweep: false,
                 hasSeenOnboarding: false,
                 soundEnabled: true
             },
@@ -210,8 +249,7 @@ export const useMonocleStore = create<MonocleState>()(
                 const eligible = tasks.filter(t =>
                     !t.isDraft &&
                     t.status !== 'done' &&
-                    (!activeProject || t.projectId === activeProject) &&
-                    (!t.skippedUntil || t.skippedUntil < now) // Respect skip cooldown
+                    (!activeProject || t.projectId === activeProject)
                 );
 
                 if (eligible.length === 0) return null;
@@ -233,19 +271,31 @@ export const useMonocleStore = create<MonocleState>()(
                     return frog;
                 }
 
-                // 1. Overdue (if enabled)
-                if (settings?.autoPickOverdue) {
-                    // Find most overdue first
-                    const overdue = eligible
-                        .filter(t => t.dueDate && t.dueDate < now)
-                        .sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0)); // Ascending (oldest due date first)
+                if (settings?.sortMode === 'priority') {
+                    const priorityWeight: Record<string, number> = { high: 0, medium: 1, low: 2 };
+                    const sorted = [...eligible].sort((a, b) => {
+                        const wA = priorityWeight[a.priority || 'low'] ?? 2;
+                        const wB = priorityWeight[b.priority || 'low'] ?? 2;
+                        if (wA !== wB) return wA - wB;
 
-                    if (overdue.length > 0) return overdue[0];
+                        // Sub-sort by date within same priority
+                        if (!a.dueDate && b.dueDate) return 1;
+                        if (a.dueDate && !b.dueDate) return -1;
+                        if (a.dueDate && b.dueDate) return a.dueDate - b.dueDate;
+                        return 0;
+                    });
+                    return sorted[0];
                 }
 
-                // 2. High Priority
-                const high = eligible.find(t => t.priority === 'high');
-                if (high) return high;
+                if (settings?.sortMode === 'date') {
+                    const sorted = [...eligible].sort((a, b) => {
+                        if (!a.dueDate && b.dueDate) return 1;
+                        if (a.dueDate && !b.dueDate) return -1;
+                        if (a.dueDate && b.dueDate) return a.dueDate - b.dueDate;
+                        return 0;
+                    });
+                    return sorted[0];
+                }
 
                 // 3. Medium Priority (optional, but good for flow)
                 // const medium = eligible.find(t => t.priority === 'medium');
@@ -304,14 +354,23 @@ export const useMonocleStore = create<MonocleState>()(
 
             setTask: (tasks) => set({ tasks }),
 
-            addTask: (task) => set((state) => ({
-                tasks: [...state.tasks, { ...task, updatedAt: Date.now() }]
-            })),
+            addTask: (task) => {
+                set((state) => ({
+                    tasks: [...state.tasks, { ...task, updatedAt: Date.now() }]
+                }));
+                autoUnfurlTask(useMonocleStore, task.id, task.title, 'title');
+                if (task.description) {
+                    autoUnfurlTask(useMonocleStore, task.id, task.description, 'description');
+                }
+            },
 
-            updateTask: (id, updates) =>
+            updateTask: (id, updates) => {
                 set((state) => ({
                     tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)),
-                })),
+                }));
+                if (updates.title) autoUnfurlTask(useMonocleStore, id, updates.title, 'title');
+                if (updates.description) autoUnfurlTask(useMonocleStore, id, updates.description, 'description');
+            },
 
             deleteTask: (id) =>
                 set((state) => ({
@@ -1062,10 +1121,34 @@ export const useMonocleStore = create<MonocleState>()(
                     initialTasks = [...DEMO_TASKS];
                 }
 
+                // -------------------------------------------------------------
+                // Night Shift Sweep Logic
+                // -------------------------------------------------------------
+                const todayStr = new Date().toISOString().split('T')[0];
+                let sweptTasks = initialTasks;
+
+                if (state.settings?.nightShiftSweep && state.lastActiveDate && state.lastActiveDate !== todayStr) {
+                    sweptTasks = sweptTasks.map(t => {
+                        // If it's active (not done) and in the queue (not a draft), demote it
+                        if (t.status !== 'done' && !t.isDraft) {
+                            return {
+                                ...t,
+                                isDraft: true, // Send back to Idea Dump
+                                isFrog: false, // Strip Frog status
+                                isLightning: false, // Strip Lightning status
+                                updatedAt: Date.now()
+                            };
+                        }
+                        return t;
+                    });
+                }
+                // -------------------------------------------------------------
+
                 return {
                     ...currentState,
                     ...state,
-                    tasks: initialTasks,
+                    tasks: sweptTasks,
+                    lastActiveDate: todayStr, // Always update to today when hydrating
                     settings: {
                         ...currentState.settings,
                         ...DEFAULT_SETTINGS,
