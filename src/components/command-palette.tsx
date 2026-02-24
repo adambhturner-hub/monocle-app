@@ -43,10 +43,7 @@ export function CommandPalette() {
         setView,
         setOpenSheet,
         setActiveModal,
-        startSession,
-        recentCommands,
-        addRecentCommand,
-        jumpToTask
+        startSession
     } = useMonocleStore();
     const { setTheme } = useTheme();
     const router = useRouter();
@@ -62,22 +59,24 @@ export function CommandPalette() {
                 e.preventDefault();
                 setOpen((open) => !open);
             }
+            // Standard Cmd+K
+            if (e.key === 'k' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+                e.preventDefault();
+                setOpen((open) => !open);
+            }
         };
 
         document.addEventListener('keydown', down);
         return () => document.removeEventListener('keydown', down);
     }, []);
 
-    const runCommand = React.useCallback((command: () => unknown, trace?: { id: string, type: 'task' | 'project' | 'action', label: string, payload?: any }) => {
+    const runCommand = React.useCallback((command: () => unknown) => {
         setOpen(false);
-        if (trace) {
-            addRecentCommand(trace);
-        }
         command();
-    }, [addRecentCommand]);
+    }, []);
 
     // Filter tasks for search (exclude done)
-    const searchableTasks = tasks.filter(t => !t.isDraft && t.status !== 'done');
+    const searchableTasks = tasks.filter((t: any) => !t.isDraft && t.status !== 'done');
 
     return (
         <CommandDialog open={open} onOpenChange={setOpen}>
@@ -85,84 +84,39 @@ export function CommandPalette() {
             <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>
 
-                {recentCommands.length > 0 && (
-                    <>
-                        <CommandGroup heading="Recent">
-                            {recentCommands.map((cmd) => (
-                                <CommandItem
-                                    key={cmd.id}
-                                    onSelect={() => runCommand(() => {
-                                        // Re-execute logic based on type/payload
-                                        if (cmd.type === 'action') {
-                                            // Mapping back IDs to actions is tricky if we don't store the function.
-                                            // We stored 'label' and 'payload'.
-                                            // We rely on the ID being descriptive or using a lookup?
-                                            // Simple switch for now:
-                                            switch (cmd.id) {
-                                                case 'add-task': setView('capture'); break;
-                                                case 'focus-mode': setView('focus'); break;
-                                                case 'queue-view': setView('queue'); break;
-                                                case 'settings': setOpenSheet('settings'); break;
-                                                case 'archive': setOpenSheet('archive'); break;
-                                                case 'theme-light': setTheme('light'); break;
-                                                case 'theme-dark': setTheme('dark'); break;
-                                                case 'theme-system': setTheme('system'); break;
-                                            }
-                                        } else if (cmd.type === 'project') {
-                                            setActiveProject(cmd.payload?.projectId || null);
-                                        } else if (cmd.type === 'task') {
-                                            jumpToTask(cmd.payload?.taskId);
-                                        }
-                                    }, cmd)} // Re-add to top
-                                >
-                                    <span className="mr-2 text-muted-foreground opacity-70">
-                                        ↺
-                                    </span>
-                                    <span>{cmd.label}</span>
-                                    <span className="ml-2 text-xs text-muted-foreground opacity-50 capitalize">
-                                        ({cmd.type})
-                                    </span>
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                        <CommandSeparator />
-                    </>
-                )}
-
                 <CommandGroup heading="Actions">
                     <CommandItem
-                        onSelect={() => runCommand(() => setView('capture'), { id: 'add-task', type: 'action', label: 'Capture Task' })}
+                        onSelect={() => runCommand(() => setView('capture'))}
                     >
                         <Zap className="mr-2 h-4 w-4" />
                         <span>Capture Task</span>
                         <CommandShortcut>⌘K</CommandShortcut>
                     </CommandItem>
                     <CommandItem
-                        onSelect={() => runCommand(() => setView('focus'), { id: 'focus-mode', type: 'action', label: 'Go to Focus Mode' })}
+                        onSelect={() => runCommand(() => setView('focus'))}
                     >
                         <CheckSquare className="mr-2 h-4 w-4" />
                         <span>Go to Focus Mode</span>
                         <CommandShortcut>F</CommandShortcut>
                     </CommandItem>
                     <CommandItem
-                        onSelect={() => runCommand(() => setView('queue'), { id: 'queue-view', type: 'action', label: 'Go to Queue' })}
+                        onSelect={() => runCommand(() => setView('queue'))}
                     >
                         <LayoutGrid className="mr-2 h-4 w-4" />
                         <span>Go to Queue</span>
                         <CommandShortcut>Q</CommandShortcut>
                     </CommandItem>
                     <CommandItem
-                        onSelect={() => runCommand(() => setOpenSheet('settings'), { id: 'settings', type: 'action', label: 'Open Settings' })}
+                        onSelect={() => runCommand(() => setView('ideas'))}
+                    >
+                        <Archive className="mr-2 h-4 w-4" />
+                        <span>Idea Dump</span>
+                    </CommandItem>
+                    <CommandItem
+                        onSelect={() => runCommand(() => setOpenSheet('settings'))}
                     >
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Open Settings</span>
-                    </CommandItem>
-                    <CommandItem
-                        onSelect={() => runCommand(() => setOpenSheet('archive'), { id: 'archive', type: 'action', label: 'Open Archive' })}
-                    >
-                        <Archive className="mr-2 h-4 w-4" />
-                        <span>Open Archive</span>
-                        <CommandShortcut>⌘3</CommandShortcut>
                     </CommandItem>
                 </CommandGroup>
 
@@ -170,15 +124,15 @@ export function CommandPalette() {
 
                 <CommandGroup heading="Projects">
                     <CommandItem
-                        onSelect={() => runCommand(() => setActiveProject(null), { id: 'project-all', type: 'project', label: 'All Projects', payload: { projectId: null } })}
+                        onSelect={() => runCommand(() => setActiveProject(null))}
                     >
                         <Folder className="mr-2 h-4 w-4" />
                         <span>All Projects</span>
                     </CommandItem>
-                    {projects.map((project) => (
+                    {projects.map((project: any) => (
                         <CommandItem
                             key={project.id}
-                            onSelect={() => runCommand(() => setActiveProject(project.id), { id: `project-${project.id}`, type: 'project', label: project.name, payload: { projectId: project.id } })}
+                            onSelect={() => runCommand(() => setActiveProject(project.id))}
                             value={`project ${project.name}`}
                         >
                             <div
@@ -198,16 +152,19 @@ export function CommandPalette() {
                 <CommandSeparator />
 
                 <CommandGroup heading="Tasks">
-                    {searchableTasks.slice(0, 10).map((task) => (
+                    {searchableTasks.slice(0, 10).map((task: any) => (
                         <CommandItem
                             key={task.id}
-                            onSelect={() => runCommand(() => jumpToTask(task.id), { id: `task-${task.id}`, type: 'task', label: task.title, payload: { taskId: task.id } })}
+                            onSelect={() => runCommand(() => {
+                                // Jump to task isn't in store, so just switch to queue
+                                setView('queue');
+                            })}
                             value={task.title}
                         >
                             <span className="truncate">{task.title}</span>
                             {task.projectId && (
                                 <span className="ml-2 text-xs text-muted-foreground">
-                                    in {projects.find(p => p.id === task.projectId)?.name}
+                                    in {projects.find((p: any) => p.id === task.projectId)?.name}
                                 </span>
                             )}
                         </CommandItem>
@@ -218,21 +175,21 @@ export function CommandPalette() {
 
                 <CommandGroup heading="Theme">
                     <CommandItem
-                        onSelect={() => runCommand(() => setTheme("light"), { id: 'theme-light', type: 'action', label: 'Theme: Light' })}
+                        onSelect={() => runCommand(() => setTheme("light"))}
                         value="theme light"
                     >
                         <Sun className="mr-2 h-4 w-4" />
                         <span>Light</span>
                     </CommandItem>
                     <CommandItem
-                        onSelect={() => runCommand(() => setTheme("dark"), { id: 'theme-dark', type: 'action', label: 'Theme: Dark' })}
+                        onSelect={() => runCommand(() => setTheme("dark"))}
                         value="theme dark"
                     >
                         <Moon className="mr-2 h-4 w-4" />
                         <span>Dark</span>
                     </CommandItem>
                     <CommandItem
-                        onSelect={() => runCommand(() => setTheme("system"), { id: 'theme-system', type: 'action', label: 'Theme: System' })}
+                        onSelect={() => runCommand(() => setTheme("system"))}
                         value="theme system"
                     >
                         <Laptop className="mr-2 h-4 w-4" />

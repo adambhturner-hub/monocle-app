@@ -9,6 +9,7 @@ import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock,
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
+import confetti from 'canvas-confetti';
 import { soundEngine } from '@/lib/sound-engine';
 import {
     Tooltip,
@@ -72,6 +73,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     const [editModalOpen, setEditModalOpen] = React.useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
     const [isDetailsSheetOpen, setIsDetailsSheetOpen] = React.useState(false);
+    const [isCompleting, setIsCompleting] = React.useState(false);
 
     const [renderTick, setRenderTick] = React.useState(0);
 
@@ -158,22 +160,61 @@ export function FocusView({ onExit }: FocusViewProps) {
 
     // Action Wrappers
     const handleComplete = () => {
-        if (!activeTask) return;
-        const result = completeTask();
+        if (!activeTask || isCompleting) return;
+        setIsCompleting(true);
 
-        if (result?.nextTask) {
-            toast("Recurring task completed", {
-                description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
-                action: { label: "Undo", onClick: () => undo() },
-                duration: 5000
-            });
+        // Visual reward
+        if (activeTask.isFrog) {
+            const duration = 2000;
+            const end = Date.now() + duration;
+
+            const frame = () => {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#10b981', '#34d399', '#059669']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#10b981', '#34d399', '#059669']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            };
+            frame();
         } else {
-            toast("Task completed", {
-                description: activeTask.title,
-                action: { label: "Undo", onClick: () => undo() },
-                duration: 5000
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
             });
         }
+
+        setTimeout(() => {
+            const result = completeTask();
+            setIsCompleting(false);
+
+            if (result?.nextTask) {
+                toast("Recurring task completed", {
+                    description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
+                    action: { label: "Undo", onClick: () => undo() },
+                    duration: 5000
+                });
+            } else {
+                toast("Task completed", {
+                    description: activeTask.title,
+                    action: { label: "Undo", onClick: () => undo() },
+                    duration: 5000
+                });
+            }
+        }, 600); // Wait for the card animation to finish before removing the item from DOM
     };
     const handleHold = (durationMinutes: number, label: string) => {
         snoozeTask(durationMinutes);
@@ -271,9 +312,10 @@ export function FocusView({ onExit }: FocusViewProps) {
                     >
                         <Card
                             className={cn(
-                                "w-full max-w-3xl h-[calc(100vh-6rem)] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative overflow-hidden flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
+                                "w-full max-w-3xl min-h-[500px] h-[calc(100vh-6rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
                                 activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : "",
-                                activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/5 bg-yellow-500/5" : ""
+                                activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/5 bg-yellow-500/5" : "",
+                                isCompleting && "scale-95 opacity-0 translate-y-8 duration-500 ease-in pointer-events-none"
                             )}
                             onClick={(e) => {
                                 // Default behavior: if sheet isn't open, interact with card (or do nothing)
@@ -321,7 +363,7 @@ export function FocusView({ onExit }: FocusViewProps) {
 
                             {/* Tappable Background Area for the Details Sheet */}
                             <div
-                                className="flex-1 flex flex-col items-center justify-center w-full gap-2 md:gap-6 overflow-y-auto cursor-pointer"
+                                className="flex-1 flex flex-col items-center justify-center w-full gap-2 md:gap-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-pointer"
                                 onClick={() => setIsDetailsSheetOpen(true)}
                             >
 
@@ -366,8 +408,9 @@ export function FocusView({ onExit }: FocusViewProps) {
                                 >
                                     <h1
                                         className={cn(
-                                            "bg-transparent border-none text-3xl md:text-5xl font-bold tracking-tight leading-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1",
-                                            activeTask.isLightning && !activeTask.isFrog ? "text-yellow-600 dark:text-yellow-400" : "text-foreground"
+                                            "bg-transparent border-none text-3xl md:text-5xl font-bold tracking-tight leading-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 transition-all duration-500",
+                                            activeTask.isLightning && !activeTask.isFrog ? "text-yellow-600 dark:text-yellow-400" : "text-foreground",
+                                            isCompleting && "line-through text-muted-foreground/50 opacity-50 scale-105"
                                         )}
                                     >
                                         {activeTask.title}

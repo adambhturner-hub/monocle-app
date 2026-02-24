@@ -24,6 +24,7 @@ export interface Task {
   };
   isFrog?: boolean;
   isLightning?: boolean;
+  updatedAt?: number;
 }
 
 export interface Project {
@@ -31,6 +32,7 @@ export interface Project {
   name: string;
   color: string;
   icon?: string;
+  updatedAt?: number;
 }
 
 export type SessionStatus = 'idle' | 'running' | 'paused' | 'completed';
@@ -47,4 +49,5 @@ export interface FocusSession {
   lastPausedAt?: number;
   status: SessionStatus;
   outcome?: SessionOutcome;
+  updatedAt?: number;
 }

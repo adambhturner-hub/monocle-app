@@ -37,46 +37,37 @@ export default function Image() {
                 />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-                    {/* Logo SVG equivalent to the Monocle icon */}
-                    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="140"
-                            height="140"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#ffffff"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        {/* Glint effect */}
-                        <div
-                            style={{
+                    {/* Logo Flat Icon */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', width: '120px', height: '120px', marginTop: '10px' }}>
+                        <div style={{
+                            width: '85%',
+                            height: '85%',
+                            borderRadius: '50%',
+                            border: '12px solid #ffffff',
+                            position: 'relative',
+                            display: 'flex'
+                        }}>
+                            {/* Glint effect */}
+                            <div style={{
                                 position: 'absolute',
-                                top: '20px',
-                                left: '20px',
-                                width: '32px',
-                                height: '24px',
-                                borderTop: '5px solid rgba(255, 255, 255, 0.6)',
-                                borderLeft: '5px solid rgba(255, 255, 255, 0.6)',
-                                borderTopLeftRadius: '100%',
-                            }}
-                        />
+                                top: '15px',
+                                left: '15px',
+                                width: '35%',
+                                height: '35%',
+                                borderTop: '6px solid rgba(255, 255, 255, 0.6)',
+                                borderLeft: '6px solid rgba(255, 255, 255, 0.6)',
+                                borderTopLeftRadius: '100%'
+                            }} />
+                        </div>
                         {/* Handle/Chain underline */}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                bottom: '-8px',
-                                left: '20px',
-                                width: '100px',
-                                height: '8px',
-                                backgroundColor: '#ffffff',
-                                borderRadius: '9999px',
-                            }}
-                        />
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '-4px',
+                            width: '50%',
+                            height: '10px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '9999px',
+                        }} />
                     </div>
 
                     <div
@@ -96,13 +87,12 @@ export default function Image() {
                     style={{
                         marginTop: '32px',
                         fontSize: '56px',
-                        fontStyle: 'italic',
-                        fontWeight: 700,
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontWeight: 500,
+                        color: 'rgba(255, 255, 255, 0.8)',
                         letterSpacing: '-0.02em',
                     }}
                 >
-                    Focus, properly.
+                    The fancy focus app.
                 </div>
             </div>
         ),

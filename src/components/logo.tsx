@@ -3,31 +3,29 @@ import { Circle } from "lucide-react";
 export function Logo({ className = "", showSlogan = true }: { className?: string, showSlogan?: boolean }) {
     return (
         <div className={`flex flex-col items-center ${className}`}>
-            <div className="flex items-center gap-2 relative">
+            <div className="flex items-center gap-3 relative">
                 {/* Monocle Icon */}
-                <div className="relative">
-                    <Circle className="h-10 w-10 text-foreground stroke-[2.5px]" />
-                    {/* Glint */}
-                    <div className="absolute top-2 left-2 w-3 h-2 border-t-2 border-l-2 border-foreground rounded-tl-full opacity-60" />
-                    {/* Monocle Handle/Underline - simplified as an underline for the whole logo or just the icon? 
-                        The image shows a line under the 'o' or the icon. Let's do a small line under the icon. */}
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-foreground rounded-full" />
+                <div className="relative flex flex-col items-center w-10 h-10 mt-auto">
+                    <div className="w-[85%] h-[85%] rounded-full border-[3px] border-foreground flex items-start justify-start p-[15%] relative">
+                        {/* Glint */}
+                        <div className="w-[50%] h-[50%] border-t-[2px] border-l-[2px] border-foreground rounded-tl-full opacity-60" />
+                    </div>
+                    {/* Handle */}
+                    <div className="absolute -bottom-1 w-[50%] h-[2px] bg-foreground rounded-full" />
                 </div>
 
                 {/* Text */}
-                <span className="text-4xl font-bold tracking-tight text-foreground relative top-[-2px]">
-                    Monocle
+                <span className="text-4xl font-black tracking-tighter text-foreground relative top-[-1px]">
+                    Monocle.
                 </span>
             </div>
 
             {/* Slogan */}
             {showSlogan && (
                 <div className="flex items-center gap-3 mt-1 w-full justify-center opacity-60">
-                    <div className="h-[1px] bg-border flex-1" />
-                    <span className="text-[10px] tracking-[0.2em] font-medium uppercase text-muted-foreground whitespace-nowrap">
-                        One Task At A Time
+                    <span className="text-[12px] tracking-wide font-medium text-foreground whitespace-nowrap">
+                        The fancy focus app.
                     </span>
-                    <div className="h-[1px] bg-border flex-1" />
                 </div>
             )}
         </div>
@@ -38,11 +36,13 @@ export function Logo({ className = "", showSlogan = true }: { className?: string
 export function LogoSmall({ className = "", showText = true }: { className?: string, showText?: boolean }) {
     return (
         <div className={`flex items-center gap-2 ${className}`}>
-            <div className="relative">
-                <Circle className="h-6 w-6 text-foreground stroke-2" />
-                <div className="absolute top-1 left-1 w-2 h-1.5 border-t border-l border-foreground rounded-tl-full opacity-60" />
+            <div className="relative flex flex-col items-center w-6 h-6 mt-0.5">
+                <div className="w-[85%] h-[85%] rounded-full border-2 border-foreground flex items-start justify-start p-[15%] relative">
+                    <div className="w-[50%] h-[50%] border-t border-l border-foreground rounded-tl-full opacity-60" />
+                </div>
+                <div className="absolute -bottom-[3px] w-[50%] h-[1.5px] bg-foreground rounded-full" />
             </div>
-            {showText && <span className="text-lg font-bold tracking-tight">Monocle</span>}
+            {showText && <span className="text-lg font-bold tracking-tight">Monocle.</span>}
         </div>
     );
 }

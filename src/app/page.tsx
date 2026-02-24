@@ -19,7 +19,7 @@ import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Command } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 
 export default function Home() {
@@ -67,12 +67,25 @@ export default function Home() {
       {/* Header */}
       <header className="w-full h-16 border-b flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-10 transition-all relative">
         {/* Left: Hamburger (+ extra items for symmetry) */}
-        <div className="flex-1 flex items-center justify-start gap-3 relative z-20">
+        <div className="flex-1 basis-0 min-w-0 flex items-center justify-start gap-3 relative z-20">
           <NavMenu />
+
+          <div className="hidden sm:block w-px h-6 bg-border mx-1 shrink-0" />
+
+          <button
+            onClick={() => {
+              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+            title="Command Palette"
+          >
+            <Command className="h-4 w-4" />
+            <span>K</span>
+          </button>
         </div>
 
         {/* Center: Monocle Logo Focus Trigger */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10 w-auto">
+        <div className="shrink-0 flex items-center justify-center pointer-events-auto z-30 relative px-4">
           <button
             onClick={() => setView('focus')}
             className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group"
@@ -84,7 +97,7 @@ export default function Home() {
         </div>
 
         {/* Right: Actions, View Selector, Project Dropdown */}
-        <div className="flex-1 flex items-center justify-end gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 relative z-20 max-w-[45vw] lg:max-w-[40vw]">
+        <div className="flex-1 basis-0 min-w-0 flex items-center justify-end gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 relative z-20">
           <div className="flex items-center gap-2 shrink-0">
             <AddTaskModal
               open={activeModal === 'add-task'}

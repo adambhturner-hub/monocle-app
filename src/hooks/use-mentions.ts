@@ -1,6 +1,6 @@
 import { useState, useEffect, RefObject, useCallback } from 'react';
 
-type Trigger = '@' | '!' | null;
+type Trigger = '@' | '!' | '#' | null;
 
 interface UseMentionsProps {
     inputRef: RefObject<HTMLInputElement | null>;
@@ -25,15 +25,16 @@ export function useMentions({ inputRef }: UseMentionsProps) {
         // Find last occurrence of @ or !
         const lastAt = textBeforeCursor.lastIndexOf('@');
         const lastExcl = textBeforeCursor.lastIndexOf('!');
+        const lastHash = textBeforeCursor.lastIndexOf('#');
 
-        const lastTriggerIndex = Math.max(lastAt, lastExcl);
+        const lastTriggerIndex = Math.max(lastAt, lastExcl, lastHash);
 
         if (lastTriggerIndex === -1) {
             setActiveTrigger(null);
             return;
         }
 
-        const triggerChar = textBeforeCursor[lastTriggerIndex] as '@' | '!';
+        const triggerChar = textBeforeCursor[lastTriggerIndex] as '@' | '!' | '#';
         const textAfterTrigger = textBeforeCursor.slice(lastTriggerIndex + 1);
 
         // Conditions to be a valid mention:

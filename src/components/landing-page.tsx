@@ -145,7 +145,7 @@ function HeroLogo() {
                     <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" style={{ transform: 'skewX(-20deg)' }} />
                 </div>
 
-                {/* Static Inner Glint (like LogoSmall) */}
+                {/* Static Inner Glint */}
                 <div
                     className="absolute top-[15%] left-[15%] w-[30%] h-[20%] border-t-[4px] border-l-[4px] border-foreground rounded-tl-full opacity-60"
                     style={{ transform: 'translateZ(30px)' }}
@@ -157,7 +157,7 @@ function HeroLogo() {
                     style={{ transform: 'translateZ(10px)' }}
                 />
 
-                {/* 3D Depth layers to make the rim look thick */}
+                {/* 3D Depth layers */}
                 <div className="absolute inset-0 rounded-full border-[8px] md:border-[12px] border-foreground/50" style={{ transform: 'translateZ(10px)' }} />
                 <div className="absolute inset-0 rounded-full border-[8px] md:border-[12px] border-foreground/20" style={{ transform: 'translateZ(0px)' }} />
             </div>
@@ -225,7 +225,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                                 Monocle.
                             </span>
                         </h1>
-                        <span className="block text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground via-muted-foreground/50 to-foreground bg-[length:200%_100%] mr-1 mt-2">
+                        <span className="block text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-foreground/80 mt-2 text-left md:ml-1">
                             The fancy focus app.
                         </span>
                     </div>
@@ -238,7 +238,7 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                 </p>
 
                 <div className="mt-8 mb-12">
-                    <p className="text-4xl md:text-5xl lg:text-6xl font-serif italic text-foreground text-center tracking-tight">
+                    <p className="text-4xl md:text-5xl lg:text-6xl font-medium text-foreground text-center tracking-tight">
                         Focus, properly.
                     </p>
                 </div>
@@ -283,6 +283,68 @@ export function LandingPage({ onGoogleSignIn, isSubmitting }: LandingPageProps) 
                     When your list is endless, elegance is restraint.
                 </p>
             </div>
+
+            {/* Features Grid */}
+            <section className="bg-secondary/30 border-t py-24 px-6 md:px-12">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
+                        <div className="flex flex-col gap-4">
+                            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-500 mb-2">
+                                <CheckCircle2 className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold">Meet the Frog. Eat the Frog.</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                There can only be one. Tag your single most important task for the day. Everything else politely waits. A frog a day keeps the panic away.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary mb-2">
+                                <Target className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold">Singular Focus</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                This is not a dashboard. This is a monocle. One task fills the screen. You cannot multitask with one eye.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="h-12 w-12 rounded-2xl bg-foreground text-background flex items-center justify-center border shadow-md mb-2">
+                                <Shuffle className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold">Swipe with Intent</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Skip, hold, complete… Or let fate (the Dice) decide. Elegant. Decisive. Slightly dramatic.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500 mb-2">
+                                <Zap className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold">Capture at the Speed of Thought</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                Type naturally. Dates parse instantly. No folders. No ceremony. Brain dump first. Organize later.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-32 max-w-4xl mx-auto border-t pt-24 pb-12 flex flex-col md:flex-row items-center md:items-start gap-12 text-center md:text-left">
+                        <div className="w-48 h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shrink-0 shadow-2xl border border-border">
+                            <img src="/founder.jpg" alt="Founder" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center h-full pt-2">
+                            <p className="text-2xl md:text-3xl font-serif italic text-foreground mb-8 text-balance leading-relaxed">
+                                "For the over-organized.<br />
+                                For the list rewriters.<br />
+                                For the ambitious — and occasionally overwhelmed.<br />
+                                <strong className="text-primary">Put on the monocle.</strong>"
+                            </p>
+                            <div className="flex flex-col mt-auto">
+                                <span className="font-bold text-lg text-foreground">Rev. Col. Adam B.H. Turner</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">Founder</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             {/* 1. How It Works */}
             <section className="bg-background border-t py-24 md:py-32 px-6 md:px-12 relative overflow-hidden">

@@ -104,9 +104,9 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
     const handleSignOut = async () => {
         if (confirm("Are you sure you want to sign out? This will clear local data to protect your privacy.")) {
             try {
-                // Clear state using Zustand instead of raw IDB access to avoid overlapping transactions
-                clearData();
                 await signOut(auth);
+                // Clear state using Zustand after signing out so the sync engine doesn't push the wipe to the cloud
+                clearData();
                 toast.success("Signed out successfully.");
             } catch (error) {
                 console.error("Sign out failed", error);

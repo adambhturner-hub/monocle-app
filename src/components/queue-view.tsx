@@ -24,6 +24,9 @@ import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SwipeableTask } from '@/components/ui/swipeable-task';
 import { soundEngine } from '@/lib/sound-engine';
+import { useMentions } from '@/hooks/use-mentions';
+import { MentionsList, MentionOption } from '@/components/mentions-list';
+import { Plus } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -72,6 +75,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchActive, setIsSearchActive] = useState(false);
     const [quickAddValue, setQuickAddValue] = useState('');
+    const [quickAddProjectId, setQuickAddProjectId] = useState<string | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     // Initialize sortMode from settings
     const [sortMode, setSortMode] = useState<'manual' | 'date' | 'priority'>(settings.sortMode);
 
@@ -128,6 +133,100 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     const handleEdit = (task: Task) => {
         setEditingTask(task);
         setEditModalOpen(true);
+    };
+
+    // Mentions logic
+    const { activeTrigger, filterText, isOpen: isMentionsOpen, onInputChange: onMentionChange, triggerIndex, closeMentions } = useMentions({ inputRef });
+    const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
+
+    const mentionOptions: MentionOption[] = useMemo(() => {
+        if (!activeTrigger) return [];
+        if (activeTrigger === '#') {
+            const lowerFilter = filterText.toLowerCase();
+            const matches = projects
+                .filter(p => p.name.toLowerCase().includes(lowerFilter))
+                .slice(0, 5)
+                .map(p => ({
+                    label: p.name,
+                    value: p.id,
+                    icon: <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                }));
+
+            const exactMatch = projects.find(p => p.name.toLowerCase() === lowerFilter);
+            if (lowerFilter.length > 0 && !exactMatch) {
+                matches.unshift({
+                    label: `Create "${filterText}"...`,
+                    value: `create_${filterText}`,
+                    icon: <Plus className="w-3 h-3 text-muted-foreground" />
+                });
+            }
+            return matches;
+        }
+        return [];
+    }, [activeTrigger, filterText, projects]);
+
+    useEffect(() => {
+        setMentionSelectedIndex(0);
+    }, [mentionOptions.length, activeTrigger]);
+
+    const handleMentionSelect = (option: MentionOption) => {
+        const input = inputRef.current;
+        if (!input || !activeTrigger) return;
+
+        const text = input.value;
+        const before = text.slice(0, triggerIndex);
+        const after = text.slice(triggerIndex + 1 + filterText.length);
+
+        if (activeTrigger === '#') {
+            const isCreatingNew = option.value.startsWith('create_');
+            if (isCreatingNew) {
+                const newProjectName = option.value.replace('create_', '');
+                const newProjectId = generateId();
+                useMonocleStore.getState().addProject({
+                    id: newProjectId,
+                    name: newProjectName,
+                    color: '#6366f1',
+                    icon: 'Folder'
+                });
+                setQuickAddProjectId(newProjectId);
+                toast.success(`Created project "${newProjectName}"`);
+            } else {
+                setQuickAddProjectId(option.value);
+            }
+
+            const newValue = before + after;
+            setQuickAddValue(newValue);
+
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(before.length, before.length);
+            }, 0);
+        }
+        closeMentions();
+    };
+
+    const handleQuickAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            if (isMentionsOpen && mentionOptions.length > 0) {
+                e.preventDefault();
+                handleMentionSelect(mentionOptions[mentionSelectedIndex]);
+                return;
+            }
+            const isDraft = mode === ('drafts' as any) ? !e.shiftKey : e.shiftKey;
+            handleQuickAdd(isDraft);
+        }
+
+        if (isMentionsOpen) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionSelectedIndex(prev => (prev + 1) % mentionOptions.length);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionSelectedIndex(prev => (prev - 1 + mentionOptions.length) % mentionOptions.length);
+            } else if (e.key === 'Escape') {
+                closeMentions();
+            }
+        }
     };
 
     // Swipe-to-navigate logic for Queue View
@@ -304,7 +403,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             description: '',
             status: 'todo',
             priority: parsedResult.priority || 'medium',
-            projectId: parsedResult.projectId || activeProject || undefined,
+            projectId: quickAddProjectId || parsedResult.projectId || activeProject || undefined,
             dueDate: parsedResult.dueDate,
             recurrence: parsedResult.recurrence,
             duration: parsedResult.duration,
@@ -313,6 +412,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         };
         useMonocleStore.getState().addTask(newTask);
         setQuickAddValue('');
+        setQuickAddProjectId(null);
         toast(isDraft ? "Added to Idea Dump" : "Added to Queue", { description: newTask.title });
     };
 
@@ -553,9 +653,23 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                     {!searchQuery && (
                                         <div className="px-4 pb-4">
                                             <div className="relative">
+                                                {/* Hidden indicator if a project was selected inline */}
+                                                {quickAddProjectId && (
+                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                        {(() => {
+                                                            const p = projects.find(p => p.id === quickAddProjectId);
+                                                            if (!p) return null;
+                                                            return <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />;
+                                                        })()}
+                                                    </div>
+                                                )}
                                                 <Input
+                                                    ref={inputRef}
                                                     value={quickAddValue}
-                                                    onChange={(e) => setQuickAddValue(e.target.value)}
+                                                    onChange={(e) => {
+                                                        setQuickAddValue(e.target.value);
+                                                        onMentionChange();
+                                                    }}
                                                     onPaste={(e) => {
                                                         const text = e.clipboardData.getData('text');
                                                         const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
@@ -564,15 +678,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             setPendingPaste(lines);
                                                         }
                                                     }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            const isDraft = mode === ('drafts' as any) ? !e.shiftKey : e.shiftKey;
-                                                            handleQuickAdd(isDraft);
-                                                        }
-                                                    }}
+                                                    onKeyDown={handleQuickAddKeyDown}
                                                     placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
                                                     className={cn(
                                                         "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all",
+                                                        quickAddProjectId ? "pl-7" : "",
                                                         tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
                                                     )}
                                                 />
@@ -597,6 +707,15 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         <CornerDownLeft className="h-4 w-4" />
                                                     </Button>
                                                 </div>
+                                                {isMentionsOpen && (
+                                                    <div className="absolute top-[calc(100%+4px)] left-0 z-50">
+                                                        <MentionsList
+                                                            options={mentionOptions}
+                                                            onSelect={handleMentionSelect}
+                                                            selectedIndex={mentionSelectedIndex}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}

@@ -66,6 +66,7 @@ export function SyncEngine() {
                         const incomingStateStr = deepStringify({
                             tasks: cloudData.tasks || [],
                             projects: cloudData.projects || [],
+                            deletedIds: cloudData.deletedIds || [],
                             settings: cloudData.settings,
                             sessionHistory: cloudData.sessionHistory || []
                         });
@@ -81,6 +82,7 @@ export function SyncEngine() {
                             useMonocleStore.getState().loadFromCloud({
                                 tasks: cloudData.tasks || [],
                                 projects: cloudData.projects || [],
+                                deletedIds: cloudData.deletedIds || [],
                                 settings: cloudData.settings,
                                 sessionHistory: cloudData.sessionHistory || [],
                             });
@@ -110,6 +112,7 @@ export function SyncEngine() {
                         const rawPayload = {
                             tasks: state.tasks,
                             projects: state.projects,
+                            deletedIds: state.deletedIds,
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
                             updatedAt: Date.now()
@@ -121,6 +124,7 @@ export function SyncEngine() {
                         lastSyncedStateStrRef.current = deepStringify({
                             tasks: state.tasks,
                             projects: state.projects,
+                            deletedIds: state.deletedIds,
                             settings: state.settings,
                             sessionHistory: state.sessionHistory
                         });
@@ -154,6 +158,7 @@ export function SyncEngine() {
             const didSyncableDataChange =
                 state.tasks !== prevState.tasks ||
                 state.projects !== prevState.projects ||
+                state.deletedIds !== prevState.deletedIds ||
                 state.settings !== prevState.settings ||
                 state.sessionHistory !== prevState.sessionHistory;
 
@@ -163,6 +168,7 @@ export function SyncEngine() {
                 const currentStateStr = deepStringify({
                     tasks: state.tasks,
                     projects: state.projects,
+                    deletedIds: state.deletedIds,
                     settings: state.settings,
                     sessionHistory: state.sessionHistory
                 });
@@ -178,6 +184,7 @@ export function SyncEngine() {
                 const rawPayload = {
                     tasks: state.tasks,
                     projects: state.projects,
+                    deletedIds: state.deletedIds,
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
                     updatedAt: Date.now()

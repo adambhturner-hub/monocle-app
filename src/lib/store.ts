@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { get, set, del } from 'idb-keyval';
-import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, isToday } from 'date-fns';
 
 // Custom IndexedDB storage adapter
 export const idbStorage: StateStorage = {
@@ -73,6 +73,7 @@ const DEMO_TASKS: Task[] = [
 interface MonocleState {
     tasks: Task[];
     projects: Project[];
+    deletedIds: string[];
     activeProject: string | null; // 'null' means All Projects
 
     // Actions
@@ -178,6 +179,7 @@ export const useMonocleStore = create<MonocleState>()(
         (set, get) => ({
             tasks: [],
             projects: [],
+            deletedIds: [],
             activeProject: null,
             isHydrated: false,
             setHydrated: () => set({ isHydrated: true }),
@@ -197,7 +199,6 @@ export const useMonocleStore = create<MonocleState>()(
             // Helper Getter
             getCompletedTodayCount: () => {
                 const { tasks } = get();
-                const { isToday } = require('date-fns');
                 return tasks.filter(t => t.status === 'done' && t.completedAt && isToday(t.completedAt)).length;
             },
 
@@ -291,6 +292,7 @@ export const useMonocleStore = create<MonocleState>()(
             clearData: () => set({
                 tasks: [...DEMO_TASKS],
                 projects: [],
+                deletedIds: [],
                 sessionHistory: [],
                 currentSession: null,
                 activeRandomTaskId: null,
@@ -302,28 +304,36 @@ export const useMonocleStore = create<MonocleState>()(
 
             setTask: (tasks) => set({ tasks }),
 
-            addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
+            addTask: (task) => set((state) => ({
+                tasks: [...state.tasks, { ...task, updatedAt: Date.now() }]
+            })),
 
             updateTask: (id, updates) =>
                 set((state) => ({
-                    tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+                    tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)),
                 })),
 
             deleteTask: (id) =>
-                set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) })),
+                set((state) => ({
+                    tasks: state.tasks.filter((t) => t.id !== id),
+                    deletedIds: [...(state.deletedIds || []), id]
+                })),
 
-            addProject: (project) => set((state) => ({ projects: [...state.projects, project] })),
+            addProject: (project) => set((state) => ({
+                projects: [...state.projects, { ...project, updatedAt: Date.now() }]
+            })),
 
             updateProject: (id, updates) =>
                 set((state) => ({
-                    projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+                    projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)),
                 })),
 
             deleteProject: (id) =>
                 set((state) => ({
                     projects: state.projects.filter((p) => p.id !== id),
+                    deletedIds: [...(state.deletedIds || []), id],
                     // Remove project reference from all tasks that had it
-                    tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: undefined } : t),
+                    tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: undefined, updatedAt: Date.now() } : t),
                     // If the active project is the one being deleted, switch to 'All Projects'
                     activeProject: state.activeProject === id ? null : state.activeProject
                 })),
@@ -364,13 +374,14 @@ export const useMonocleStore = create<MonocleState>()(
                     isDraft: true, // Duplicate as draft
                     archivedAt: undefined, // Clear archive data
                     completedAt: undefined, // Clear completion data
+                    updatedAt: Date.now() // Sync timestamp
                 };
 
                 return { tasks: [...state.tasks, newTask] };
             }),
 
             toggleDraft: (id) => set((state) => ({
-                tasks: state.tasks.map(t => t.id === id ? { ...t, isDraft: !t.isDraft } : t)
+                tasks: state.tasks.map(t => t.id === id ? { ...t, isDraft: !t.isDraft, updatedAt: Date.now() } : t)
             })),
 
             toggleFrog: (id) =>
@@ -384,13 +395,14 @@ export const useMonocleStore = create<MonocleState>()(
                     const newTasks = state.tasks.map(t => {
                         if (t.id === id) {
                             if (isBecomingFrog) {
-                                return { ...t, isFrog: true, dueDate: undefined, priority: 'medium' as const };
+                                return { ...t, isFrog: true, dueDate: undefined, priority: 'medium' as const, updatedAt: Date.now() };
                             } else {
-                                return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const };
+                                return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                             }
                         }
+                        // Demote ALL other frogs if we are becoming the frog
                         if (isBecomingFrog && t.isFrog) {
-                            return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const };
+                            return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                         }
                         return t;
                     });
@@ -447,7 +459,8 @@ export const useMonocleStore = create<MonocleState>()(
                         ...taskToComplete,
                         status: 'done' as const,
                         completedAt: Date.now(),
-                        archivedAt: Date.now()
+                        archivedAt: Date.now(),
+                        updatedAt: Date.now()
                     };
 
                     const otherTasks = state.tasks.filter(t => t.id !== taskToComplete.id);
@@ -488,7 +501,8 @@ export const useMonocleStore = create<MonocleState>()(
                             // Wash metadata clean
                             isFrog: false,
                             isLightning: false,
-                            friction: { skips: 0, holds: 0 }
+                            friction: { skips: 0, holds: 0 },
+                            updatedAt: Date.now()
                         };
 
                         generatedTask = nextTask;
@@ -514,7 +528,8 @@ export const useMonocleStore = create<MonocleState>()(
                         ...taskToArchive,
                         status: 'done' as const,
                         completedAt: Date.now(),
-                        archivedAt: Date.now()
+                        archivedAt: Date.now(),
+                        updatedAt: Date.now()
                     };
 
                     const otherTasks = state.tasks.filter(t => t.id !== id);
@@ -555,7 +570,8 @@ export const useMonocleStore = create<MonocleState>()(
                             status: 'todo',
                             createdAt: Date.now(),
                             completedAt: undefined,
-                            archivedAt: undefined
+                            archivedAt: undefined,
+                            updatedAt: Date.now()
                         };
 
                         generatedTask = nextTask;
@@ -626,7 +642,8 @@ export const useMonocleStore = create<MonocleState>()(
                         friction: {
                             skips: (currentTask.friction?.skips || 0) + 1,
                             holds: currentTask.friction?.holds || 0
-                        }
+                        },
+                        updatedAt: Date.now()
                     };
 
                     let nextTasks = [...state.tasks];
@@ -681,12 +698,13 @@ export const useMonocleStore = create<MonocleState>()(
 
                     const updatedTask = {
                         ...currentTask,
-                        skippedUntil: Date.now() + durationMinutes * 60000,
+                        skippedUntil,
                         isFrog: false,
                         friction: {
                             skips: currentTask.friction?.skips || 0,
                             holds: (currentTask.friction?.holds || 0) + 1
-                        }
+                        },
+                        updatedAt: Date.now()
                     };
 
                     const otherTasks = state.tasks.filter(t => t.id !== currentTask.id);
@@ -705,7 +723,7 @@ export const useMonocleStore = create<MonocleState>()(
                     if (!task) return {};
 
                     const lastState = [...state.tasks];
-                    const updatedTask = { ...task, skippedUntil: undefined };
+                    const updatedTask = { ...task, skippedUntil: undefined, updatedAt: Date.now() };
 
                     const otherTasks = state.tasks.filter(t => t.id !== id);
                     otherTasks.unshift(updatedTask);
@@ -750,7 +768,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const lastState = [...state.tasks];
 
                     const otherTasks = state.tasks.filter(t => t.id !== id);
-                    const updatedTask = { ...task, isDraft: false };
+                    const updatedTask = { ...task, isDraft: false, updatedAt: Date.now() };
                     otherTasks.push(updatedTask);
                     return { tasks: otherTasks, lastState };
                 }),
@@ -800,7 +818,7 @@ export const useMonocleStore = create<MonocleState>()(
                     }[currentTask.priority] as 'low' | 'medium' | 'high';
 
                     const newTasks = state.tasks.map(t =>
-                        t.id === currentTask.id ? { ...t, priority: nextPriority } : t
+                        t.id === currentTask.id ? { ...t, priority: nextPriority, updatedAt: Date.now() } : t
                     );
 
                     return { tasks: newTasks, lastState };
@@ -828,6 +846,7 @@ export const useMonocleStore = create<MonocleState>()(
                         // Optional: keep completedAt for history, but typically restoration implies it wasn't done?
                         // User said: "Clear archivedAt (and optionally keep completedAt for history)"
                         // Let's keep completedAt.
+                        updatedAt: Date.now()
                     };
 
                     // Insert at Position #2
@@ -939,7 +958,8 @@ export const useMonocleStore = create<MonocleState>()(
                     ...state.currentSession,
                     endTime: Date.now(),
                     status: 'completed',
-                    outcome
+                    outcome,
+                    updatedAt: Date.now()
                 };
 
                 return {

@@ -16,11 +16,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenu
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { getIconComponent } from '@/lib/icons';
+import { getIconComponent, PROJECT_ICONS } from '@/lib/icons';
 import { Textarea } from './ui/textarea';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
+
+const COLORS = [
+    '#ef4444', // Red 500
+    '#f97316', // Orange 500
+    '#eab308', // Yellow 500
+    '#22c55e', // Green 500
+    '#06b6d4', // Cyan 500
+    '#3b82f6', // Blue 500
+    '#8b5cf6', // Violet 500
+    '#d946ef', // Fuchsia 500
+    '#64748b', // Slate 500
+];
 
 export interface CaptureModuleProps {
     taskToEdit?: Task;
@@ -29,7 +41,7 @@ export interface CaptureModuleProps {
 }
 
 export function CaptureModule({ taskToEdit, onComplete, isModal = false }: CaptureModuleProps) {
-    const { addTask, updateTask, projects, setView, deleteTask, draftTaskData, setDraftTaskData, activeProject, setActiveModal } = useMonocleStore();
+    const { addTask, updateTask, updateProject, projects, setView, deleteTask, draftTaskData, setDraftTaskData, activeProject, setActiveModal } = useMonocleStore();
 
     const isEditMode = !!taskToEdit;
 
@@ -98,8 +110,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         if (!activeTrigger) return [];
         const lowerFilter = filterText.toLowerCase();
 
-        if (activeTrigger === '@') {
-            return projects
+        if (activeTrigger === '#') {
+            const matches = projects
                 .filter(p => p.name.toLowerCase().includes(lowerFilter))
                 .slice(0, 5)
                 .map(p => ({
@@ -107,6 +119,19 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     value: p.id,
                     icon: <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
                 }));
+
+            // Check if exact match exists
+            const exactMatch = projects.find(p => p.name.toLowerCase() === lowerFilter);
+            if (lowerFilter.length > 0 && !exactMatch) {
+                // Add a "create new" option
+                matches.unshift({
+                    label: `Create "${filterText}"...`,
+                    value: `create_${filterText}`,
+                    icon: <Plus className="w-3 h-3 text-muted-foreground" />
+                });
+            }
+
+            return matches;
         }
         if (activeTrigger === '!') {
             const priorities = [
@@ -130,16 +155,43 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         const text = input.value;
         const before = text.slice(0, triggerIndex);
         const after = text.slice(triggerIndex + 1 + filterText.length);
-        const insertion = activeTrigger + option.label + ' ';
-        const newValue = before + insertion + after;
 
-        setTitle(newValue);
+        if (activeTrigger === '#') {
+            const isCreatingNew = option.value.startsWith('create_');
+            if (isCreatingNew) {
+                const newProjectName = option.value.replace('create_', '');
+                const newProjectId = generateId();
+                useMonocleStore.getState().addProject({
+                    id: newProjectId,
+                    name: newProjectName,
+                    color: '#6366f1', // Default indigo
+                    icon: 'Folder'
+                });
+                setProjectId(newProjectId);
+                toast.success(`Created project "${newProjectName}"`);
+            } else {
+                setProjectId(option.value);
+            }
 
-        setTimeout(() => {
-            input.focus();
-            const newCursorPos = before.length + insertion.length;
-            input.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
+            // Replace the hashtag string with nothing to strip it out
+            const newValue = before + after;
+            setTitle(newValue);
+
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(before.length, before.length);
+            }, 0);
+        } else {
+            const insertion = activeTrigger + option.label + ' ';
+            const newValue = before + insertion + after;
+            setTitle(newValue);
+
+            setTimeout(() => {
+                input.focus();
+                const newCursorPos = before.length + insertion.length;
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }, 0);
+        }
 
         closeMentions();
     };
@@ -182,6 +234,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             if (priority === 'medium' && parsedData.priority) finalPriority = parsedData.priority;
             if (!dueDate && parsedData.dueDate) finalDueDate = parsedData.dueDate;
             if (recurrence === 'none' && parsedData.recurrence) finalRecurrence = parsedData.recurrence;
+            // Only auto-apply parsed project if the user hasn't manually selected one via hashtag or dropdown
             if (projectId === 'all' && parsedData.projectId) finalProjectId = parsedData.projectId;
         }
 
@@ -306,61 +359,118 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         <>
             <div className="w-full px-8 md:px-16 flex flex-col items-center justify-center relative flex-1 min-h-[50vh]">
                 <div className={cn("mb-6 animate-in fade-in slide-in-from-top-4 duration-500", isModal && "mt-12")}>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <button className="w-fit inline-flex justify-center h-9 px-4 rounded-full border border-border/50 text-xs font-semibold flex items-center gap-2 transition-all bg-secondary/50 hover:bg-secondary text-muted-foreground focus:ring-0 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                                {(() => {
-                                    if (projectId === 'all') {
-                                        return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
-                                    }
-                                    const proj = projects.find(p => p.id === projectId);
-                                    if (!proj) return <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>;
-                                    const IconCmp = getIconComponent(proj.icon);
-                                    return (
-                                        <div className="flex items-center gap-2 min-w-0 pointer-events-none">
-                                            <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                    {(() => {
+                        const isAll = projectId === 'all';
+                        const proj = !isAll ? projects.find(p => p.id === projectId) : null;
+
+                        return (
+                            <div className="flex items-center bg-secondary/50 rounded-full border border-border/50 shadow-sm h-9 hover:bg-secondary transition-all w-fit">
+                                {!isAll && proj && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button className="h-full pl-3 pr-2 flex items-center justify-center rounded-l-full hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                    {(() => {
+                                                        const IconCmp = getIconComponent(proj.icon);
+                                                        return <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />;
+                                                    })()}
+                                                </div>
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent align="start" className="w-64 p-3 z-[100] flex flex-col gap-3">
+                                            <div className="flex items-center justify-between pb-2 border-b">
+                                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Edit Project</span>
                                             </div>
-                                            <span className="truncate max-w-[120px] text-foreground">{proj.name}</span>
-                                        </div>
-                                    );
-                                })()}
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent align="center" className="w-56 p-1 z-[100]">
-                            <div className="text-[10px] font-bold px-2 py-1.5 text-muted-foreground uppercase tracking-widest mb-1">
-                                Assign Project
-                            </div>
-                            <button
-                                onClick={() => setProjectId('all')}
-                                className={cn(
-                                    "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
-                                    projectId === 'all' && "bg-secondary text-primary font-medium"
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-widest">Color</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {COLORS.map(c => (
+                                                        <button
+                                                            key={c}
+                                                            className={cn("w-5 h-5 rounded-full hover:scale-110 transition-transform", proj.color === c && "ring-2 ring-offset-2 ring-primary")}
+                                                            style={{ backgroundColor: c }}
+                                                            onClick={async () => {
+                                                                updateProject(proj.id, { color: c });
+                                                                setTimeout(() => inputRef.current?.focus(), 10);
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground mb-1.5 uppercase tracking-widest">Icon</p>
+                                                <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-1 scrollbar-none">
+                                                    {Object.keys(PROJECT_ICONS).map(iconName => {
+                                                        const IconCmp = PROJECT_ICONS[iconName as keyof typeof PROJECT_ICONS];
+                                                        return (
+                                                            <button
+                                                                key={iconName}
+                                                                className={cn("w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors", proj.icon === iconName && "bg-secondary text-primary ring-1 ring-primary")}
+                                                                onClick={async () => {
+                                                                    updateProject(proj.id, { icon: iconName });
+                                                                    setTimeout(() => inputRef.current?.focus(), 10);
+                                                                }}
+                                                            >
+                                                                <IconCmp className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 )}
-                            >
-                                <Folder className="h-4 w-4 text-muted-foreground opacity-60" />
-                                No Project
-                            </button>
-                            {projects.map(p => {
-                                const IconCmp = getIconComponent(p.icon);
-                                return (
-                                    <button
-                                        key={p.id}
-                                        onClick={() => setProjectId(p.id)}
-                                        className={cn(
-                                            "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
-                                            projectId === p.id && "bg-secondary text-primary font-medium"
-                                        )}
-                                    >
-                                        <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
-                                            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button className={cn(
+                                            "h-full text-xs font-semibold flex items-center gap-2 text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                            !isAll && proj ? "pr-4 pl-1 rounded-r-full" : "px-4 rounded-full"
+                                        )}>
+                                            {isAll || !proj ? (
+                                                <><Folder className="h-4 w-4 shrink-0 opacity-60" /> <span className="truncate max-w-[120px]">Project</span></>
+                                            ) : (
+                                                <span className="truncate max-w-[120px] text-foreground hover:text-primary transition-colors">{proj.name}</span>
+                                            )}
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="center" className="w-56 p-1 z-[100]">
+                                        <div className="text-[10px] font-bold px-2 py-1.5 text-muted-foreground uppercase tracking-widest mb-1">
+                                            Assign Project
                                         </div>
-                                        <span className="truncate">{p.name}</span>
-                                    </button>
-                                );
-                            })}
-                        </PopoverContent>
-                    </Popover>
+                                        <button
+                                            onClick={() => setProjectId('all')}
+                                            className={cn(
+                                                "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
+                                                projectId === 'all' && "bg-secondary text-primary font-medium"
+                                            )}
+                                        >
+                                            <Folder className="h-4 w-4 text-muted-foreground opacity-60" />
+                                            No Project
+                                        </button>
+                                        {projects.map(p => {
+                                            const IconCmp = getIconComponent(p.icon);
+                                            return (
+                                                <button
+                                                    key={p.id}
+                                                    onClick={() => setProjectId(p.id)}
+                                                    className={cn(
+                                                        "w-full text-left flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-muted transition-colors",
+                                                        projectId === p.id && "bg-secondary text-primary font-medium"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: p.color }}>
+                                                        <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                    </div>
+                                                    <span className="truncate">{p.name}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <TextareaAutosize
