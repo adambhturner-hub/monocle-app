@@ -38,6 +38,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { RecurrenceInterval } from '@/types';
 import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
+import { HoldButton } from './ui/hold-button';
 import { getIconComponent } from '@/lib/icons';
 
 interface FocusViewProps {
@@ -625,10 +626,18 @@ export function FocusView({ onExit }: FocusViewProps) {
                                 </div>
 
                                 {/* Complete Button - Prominent */}
-                                <div className="w-full max-w-xs mx-auto">
-                                    <Button variant="default" size="lg" onClick={handleComplete} className="w-full h-11 rounded-full text-sm font-semibold shadow-md hover:shadow-xl hover:scale-105 transition-all">
-                                        <Check className="mr-2 h-4 w-4" /> Complete Task
-                                    </Button>
+                                <div className="w-full max-w-xs mx-auto flex justify-center">
+                                    {activeTask.isFrog ? (
+                                        <HoldButton
+                                            onComplete={handleComplete}
+                                            holdTime={1500}
+                                            label="Hold to Win"
+                                        />
+                                    ) : (
+                                        <Button variant="default" size="lg" onClick={handleComplete} className="w-full h-11 rounded-full text-sm font-semibold shadow-md hover:shadow-xl hover:scale-105 transition-all">
+                                            <Check className="mr-2 h-4 w-4" /> Complete Task
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
 

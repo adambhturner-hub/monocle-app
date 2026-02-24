@@ -290,7 +290,7 @@ export const useMonocleStore = create<MonocleState>()(
             })),
 
             clearData: () => set({
-                tasks: [...DEMO_TASKS],
+                tasks: [],
                 projects: [],
                 deletedIds: [],
                 sessionHistory: [],
