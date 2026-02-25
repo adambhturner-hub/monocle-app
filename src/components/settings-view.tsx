@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Moon, Sun, Laptop, Trash2, Download, Upload, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity, RefreshCw } from 'lucide-react';
+import { Moon, Sun, Laptop, Trash2, Download, Upload, Info, Keyboard, List, Calendar, Clock, Target, Volume2, Mic, Activity, RefreshCw, PlaySquare } from 'lucide-react';
 import { useMonocleStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
@@ -120,6 +120,8 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
         const data = {
             tasks,
             projects,
+            sessionHistory: useMonocleStore.getState().sessionHistory,
+            settings: useMonocleStore.getState().settings,
             exportedAt: new Date().toISOString(),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -152,8 +154,8 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                     useMonocleStore.getState().loadFromCloud({
                         tasks: data.tasks,
                         projects: data.projects,
-                        settings: useMonocleStore.getState().settings,
-                        sessionHistory: useMonocleStore.getState().sessionHistory,
+                        settings: data.settings || useMonocleStore.getState().settings,
+                        sessionHistory: data.sessionHistory || useMonocleStore.getState().sessionHistory,
                     });
 
                     toast.success("Backup restored successfully.");
@@ -293,6 +295,26 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                         <SelectItem value="date">Date (Due Date)</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            <Separator />
+
+                            <div className="flex items-center justify-between">
+                                <Label className="flex flex-col gap-1">
+                                    <span>Interactive Tutorial</span>
+                                    <span className="font-normal text-muted-foreground text-xs">Replay the onboarding sequence</span>
+                                </Label>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        updateSettings({ hasSeenOnboarding: false });
+                                        onOpenChange(false);
+                                    }}
+                                >
+                                    <PlaySquare className="h-4 w-4 mr-2" />
+                                    Replay
+                                </Button>
                             </div>
                         </div>
                     </div>

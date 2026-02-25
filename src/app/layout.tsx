@@ -4,9 +4,11 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/react"
 import { AuthGuard } from "@/components/auth-guard";
 import { SyncEngine } from "@/components/sync-engine";
+import { FrogAccountability } from "@/components/frog-accountability";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CommandPalette } from "@/components/command-palette";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +53,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
@@ -58,12 +61,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthGuard>
-            <SyncEngine />
-            {children}
-            <Toaster />
-            <CommandPalette />
-          </AuthGuard>
+          <ErrorBoundary>
+            <AuthGuard>
+              <SyncEngine />
+              <FrogAccountability />
+              {children}
+              <Toaster />
+              <CommandPalette />
+            </AuthGuard>
+          </ErrorBoundary>
           <Analytics />
         </ThemeProvider>
       </body>

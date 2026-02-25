@@ -17,6 +17,7 @@ export const idbStorage: StateStorage = {
 };
 import { Task, Project, FocusSession, SessionOutcome } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
+import { haptics } from '@/lib/haptics';
 import { generateId } from '@/lib/utils';
 import { fetchUrlMeta } from '@/app/actions/unfurl';
 import * as linkify from 'linkifyjs';
@@ -41,11 +42,9 @@ async function autoUnfurlTask(store: any, taskId: string, text: string, field: '
         try {
             const meta = await fetchUrlMeta(link.href);
             if (meta && meta.title && !meta.error) {
-                // Safely reconstruct the string using exact positional indices,
-                // formatting exactly one link per pass to avoid shifting bugs.
                 const processedText = text.slice(0, link.start) + `[${meta.title}](${link.href})` + text.slice(link.end);
                 store.getState().updateTask(taskId, { [field]: processedText });
-                return; // Exit after one successful unfurl. Subsequent updates will trigger another pass.
+                return;
             }
         } catch (e) {
             console.error("Failed to unfurl", link.href, e);
@@ -58,7 +57,8 @@ const DEFAULT_SETTINGS: MonocleState['settings'] = {
     archiveRetention: 30,
     nightShiftSweep: false,
     soundEnabled: true,
-    hasSeenOnboarding: false
+    hasSeenOnboarding: false,
+    weeklyInsight: undefined
 };
 
 const DEMO_TASKS: Task[] = [
@@ -159,6 +159,7 @@ interface MonocleState {
         nightShiftSweep: boolean;
         soundEnabled?: boolean;
         hasSeenOnboarding: boolean;
+        weeklyInsight?: { text: string; generatedAt: number; };
     };
     updateSettings: (settings: Partial<MonocleState['settings']>) => void;
 
@@ -232,7 +233,8 @@ export const useMonocleStore = create<MonocleState>()(
                 archiveRetention: 30,
                 nightShiftSweep: false,
                 hasSeenOnboarding: false,
-                soundEnabled: true
+                soundEnabled: true,
+                weeklyInsight: undefined
             },
 
             // Helper Getter
@@ -358,6 +360,11 @@ export const useMonocleStore = create<MonocleState>()(
                 set((state) => ({
                     tasks: [...state.tasks, { ...task, updatedAt: Date.now() }]
                 }));
+                const state = get();
+                if (state.settings?.soundEnabled !== false) {
+                    soundEngine.playAdd();
+                    haptics.click();
+                }
                 autoUnfurlTask(useMonocleStore, task.id, task.title, 'title');
                 if (task.description) {
                     autoUnfurlTask(useMonocleStore, task.id, task.description, 'description');
@@ -461,7 +468,7 @@ export const useMonocleStore = create<MonocleState>()(
                         }
                         // Demote ALL other frogs if we are becoming the frog
                         if (isBecomingFrog && t.isFrog) {
-                            return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
+                            return { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                         }
                         return t;
                     });
@@ -491,8 +498,10 @@ export const useMonocleStore = create<MonocleState>()(
                     if (state.settings?.soundEnabled !== false) {
                         if (taskToComplete.isFrog) {
                             soundEngine.playRibbit();
+                            haptics.success();
                         } else {
                             soundEngine.playComplete();
+                            haptics.heavy();
                         }
                     }
 
@@ -698,6 +707,8 @@ export const useMonocleStore = create<MonocleState>()(
 
                     const updatedTask = {
                         ...currentTask,
+                        isAvoidedFrog: currentTask.isFrog ? true : currentTask.isAvoidedFrog,
+                        avoidedAt: currentTask.isFrog ? Date.now() : currentTask.avoidedAt,
                         friction: {
                             skips: (currentTask.friction?.skips || 0) + 1,
                             holds: currentTask.friction?.holds || 0
@@ -718,6 +729,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                     if (state.settings?.soundEnabled !== false) {
                         soundEngine.playSkip();
+                        haptics.swipe();
                     }
 
                     return {
@@ -759,6 +771,8 @@ export const useMonocleStore = create<MonocleState>()(
                         ...currentTask,
                         skippedUntil,
                         isFrog: false,
+                        isAvoidedFrog: currentTask.isFrog ? true : currentTask.isAvoidedFrog,
+                        avoidedAt: currentTask.isFrog ? Date.now() : currentTask.avoidedAt,
                         friction: {
                             skips: currentTask.friction?.skips || 0,
                             holds: (currentTask.friction?.holds || 0) + 1
@@ -771,6 +785,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                     if (state.settings?.soundEnabled !== false) {
                         soundEngine.playHold();
+                        haptics.swipe();
                     }
 
                     return { tasks: finalTasks, lastState, currentSession: newCurrentSession, sessionHistory: newSessionHistory, frogDetourActive: false, activeRandomTaskId: null };
@@ -813,6 +828,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                     if (state.settings?.soundEnabled !== false) {
                         soundEngine.playDiceRattle();
+                        haptics.swipe();
                     }
 
                     return { activeRandomTaskId: randomTask.id };

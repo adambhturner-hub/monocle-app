@@ -123,5 +123,17 @@
 
   body {
     @apply bg-background text-foreground overflow-x-hidden touch-pan-y overscroll-none;
+    transition: background-color 3s ease-in-out;
+  }
+
+  /* Phase 7: The Frog Accountability Engine - Subconscious Guilt UI */
+  .guilt-mode {
+    --background: oklch(0.95 0.01 270);
+  }
+
+  .dark.guilt-mode,
+  .guilt-mode.dark {
+    --background: oklch(0.10 0.01 270);
+    /* Darker and slightly purple/slate */
   }
 }

@@ -180,11 +180,30 @@ class SoundEngine {
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
-        // Stop existing noise if any
-        if (this.noiseSource) {
-            this.noiseSource.stop();
-            this.noiseSource.disconnect();
+        // Fade out existing noise if any
+        if (this.noiseSource && this.noiseGain && this.ctx) {
+            const oldSource = this.noiseSource;
+            const oldGain = this.noiseGain;
+            const oldNodes = [...this.extraNodes];
+
+            // 1-second exponential fade out
+            oldGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+
+            setTimeout(() => {
+                try {
+                    oldSource.stop();
+                    oldSource.disconnect();
+                    oldNodes.forEach(node => {
+                        if (node instanceof OscillatorNode) {
+                            try { node.stop(); } catch (e) { }
+                        }
+                        node.disconnect();
+                    });
+                } catch (e) { }
+            }, 2000);
         }
+
+        this.extraNodes = [];
 
         this.currentNoiseType = type;
         const bufferSize = 2 * this.ctx.sampleRate;
@@ -228,7 +247,7 @@ class SoundEngine {
 
         // Base gain
         this.noiseGain = this.ctx.createGain();
-        this.noiseGain.gain.value = 0.5;
+        let targetVolume = 0.5;
 
         this.noiseSource.connect(filter);
         let finalNode: AudioNode = filter;
@@ -255,7 +274,7 @@ class SoundEngine {
             finalNode = hp;
             this.extraNodes.push(hp);
 
-            this.noiseGain.gain.value = 0.8;
+            targetVolume = 0.8;
         } else if (type === 'space') {
             // Dark, sweeping brown noise
             filter.type = 'lowpass';
@@ -275,11 +294,15 @@ class SoundEngine {
             osc.start();
 
             this.extraNodes.push(osc, oscGain);
-            this.noiseGain.gain.value = 0.9;
+            targetVolume = 0.9;
         }
 
         finalNode.connect(this.noiseGain);
         this.noiseGain.connect(this.ambientMasterGain || this.masterGain!);
+
+        // Start silent and fade in
+        this.noiseGain.gain.setValueAtTime(0, this.ctx.currentTime);
+        this.noiseGain.gain.setTargetAtTime(targetVolume, this.ctx.currentTime, 0.5);
 
         this.noiseSource.start();
     }
@@ -443,6 +466,15 @@ class SoundEngine {
         gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.3);
+    }
+
+    public playAdd() {
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+        // Bright rising pop
+        const now = 0;
+        this.playTone(600, 'sine', 0.05, now);
+        this.playTone(850, 'sine', 0.1, now + 0.05);
     }
 
     public playTick() {

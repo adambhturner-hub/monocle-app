@@ -23,6 +23,8 @@ export interface Task {
     holds: number;
   };
   isFrog?: boolean;
+  isAvoidedFrog?: boolean;
+  avoidedAt?: number;
   isLightning?: boolean;
   updatedAt?: number;
 }

@@ -322,7 +322,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                     >
                         <Card
                             className={cn(
-                                "w-full max-w-3xl min-h-[500px] h-[calc(100vh-6rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-12 shadow-lg border bg-card/60 backdrop-blur-sm relative flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
+                                "w-full max-w-3xl flex-1 max-h-[85vh] lg:max-h-[800px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-8 shadow-lg border bg-card/60 backdrop-blur-sm relative flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
                                 activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : "",
                                 activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/5 bg-yellow-500/5" : "",
                                 isCompleting && "scale-95 opacity-0 translate-y-8 duration-500 ease-in pointer-events-none"
@@ -351,7 +351,10 @@ export function FocusView({ onExit }: FocusViewProps) {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+                                        <DropdownMenuItem onSelect={(e) => {
+                                            e.preventDefault();
+                                            setTimeout(() => setEditModalOpen(true), 0);
+                                        }}>
                                             <Edit className="mr-2 h-4 w-4" /> Edit Task (Modal)
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={handleDuplicate}>

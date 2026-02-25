@@ -769,6 +769,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                         className={cn(
                                                                                             "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 active:shadow-lg select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
                                                                                             task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
+                                                                                            task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "scale-[1.03] shadow-lg shadow-red-500/10 border-red-500/50 ring-red-500/20 my-2 z-20",
                                                                                             task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
                                                                                             task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "border-l-4 border-l-primary bg-primary/5 shadow-md scale-[1.02] z-10 my-1",
                                                                                             task.id === currentActiveTask?.id && task.isFrog && "shadow-md shadow-emerald-500/10 scale-[1.02] z-10 my-1 border-l-emerald-500",
@@ -811,6 +812,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                         "text-sm font-medium truncate",
                                                                                                         task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
                                                                                                         task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
+                                                                                                        task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "text-base font-extrabold text-red-600 dark:text-red-400",
                                                                                                         task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
                                                                                                     )}>
                                                                                                         <FormattedText text={task.title} />
@@ -1070,7 +1072,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                         rightBgClass="bg-indigo-500"
                                                                                         rightColorClass="text-indigo-600"
                                                                                     >
-                                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20")} onClick={() => handleEdit(task)}>
+                                                                                        <div className={cn(
+                                                                                            "group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer",
+                                                                                            task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
+                                                                                            task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "scale-[1.03] shadow-lg shadow-red-500/10 border-red-500/50 ring-red-500/20 my-2 z-20",
+                                                                                            task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20"
+                                                                                        )} onClick={() => handleEdit(task)}>
                                                                                             <div className="flex-1 min-w-0">
                                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                                     {(() => {
@@ -1083,7 +1090,12 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                             </div>
                                                                                                         );
                                                                                                     })()}
-                                                                                                    <FormattedText text={task.title} className={cn("text-sm font-medium truncate shrink-0 max-w-full", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold", task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold")} />
+                                                                                                    <FormattedText text={task.title} className={cn(
+                                                                                                        "text-sm font-medium truncate shrink-0 max-w-full",
+                                                                                                        task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
+                                                                                                        task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "text-base font-extrabold text-red-600 dark:text-red-400",
+                                                                                                        task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
+                                                                                                    )} />
                                                                                                 </div>
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                     {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}

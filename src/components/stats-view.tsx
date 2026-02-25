@@ -4,13 +4,31 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useStats } from '@/hooks/use-stats';
 import { useMonocleStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { Activity, Clock, Trophy, BarChart3, TrendingUp, PieChart, CheckCircle2 } from 'lucide-react';
+import { Activity, Clock, Trophy, BarChart3, TrendingUp, PieChart, CheckCircle2, Sparkles } from 'lucide-react';
 import { getIconComponent } from '@/lib/icons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
+import { FrogGraveyard } from './frog-graveyard';
+import { generateWeeklyInsight } from '@/lib/insights';
+import { useEffect } from 'react';
 
 export function StatsView() {
-    const { activeSheet, setOpenSheet } = useMonocleStore();
+    const { activeSheet, setOpenSheet, settings, updateSettings, tasks, sessionHistory } = useMonocleStore();
     const stats = useStats();
+
+    useEffect(() => {
+        if (activeSheet === 'stats') {
+            const now = Date.now();
+            const lastGenerated = settings.weeklyInsight?.generatedAt || 0;
+            const daysSinceWeekly = (now - lastGenerated) / (1000 * 60 * 60 * 24);
+
+            if (daysSinceWeekly >= 7 || !settings.weeklyInsight) {
+                const text = generateWeeklyInsight(tasks, sessionHistory);
+                if (text) {
+                    updateSettings({ weeklyInsight: { text, generatedAt: now } });
+                }
+            }
+        }
+    }, [activeSheet, settings.weeklyInsight?.generatedAt, tasks, sessionHistory, updateSettings]);
 
     return (
         <Sheet open={activeSheet === 'stats'} onOpenChange={(val) => setOpenSheet(val ? 'stats' : null)}>
@@ -23,6 +41,19 @@ export function StatsView() {
                 </SheetHeader>
 
                 <div className="space-y-8 pb-12">
+                    {/* Weekly Insight Banner */}
+                    {settings.weeklyInsight && (
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                            <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                            <div className="flex flex-col gap-1">
+                                <h4 className="text-sm font-semibold text-primary">Targeted Insight</h4>
+                                <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                    {settings.weeklyInsight.text}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Summary Cards */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-card border rounded-xl p-4 shadow-sm flex flex-col gap-1">
@@ -58,6 +89,9 @@ export function StatsView() {
                             </div>
                         </div>
                     </div>
+
+                    {/* The Frog Graveyard */}
+                    <FrogGraveyard />
 
                     {/* Productivity Heatmap */}
                     <div className="space-y-6">
