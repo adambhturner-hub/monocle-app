@@ -445,7 +445,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                             {/* Details Dialog - Holds Description and Metadata */}
                             {/* Details Drawer - Holds Description and Metadata */}
                             <Drawer open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen} dismissible={true} modal={false}>
-                                <DrawerContent onOpenAutoFocus={(e) => e.preventDefault()} className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]">
+                                <DrawerContent
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]"
+                                >
                                     <DrawerHeader className="pb-4">
                                         <DrawerTitle className="text-center font-bold">
                                             <input
