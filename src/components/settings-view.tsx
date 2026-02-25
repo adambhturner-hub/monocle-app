@@ -116,7 +116,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
         }
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
         const data = {
             tasks,
             projects,
@@ -124,45 +124,100 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
             settings: useMonocleStore.getState().settings,
             exportedAt: new Date().toISOString(),
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `monocle-backup-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success("Data exported successfully");
+        const jsonString = JSON.stringify(data, null, 2);
+        const defaultFilename = `monocle-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+            try {
+                const { save } = await import('@tauri-apps/plugin-dialog');
+                const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+
+                const filePath = await save({
+                    defaultPath: defaultFilename,
+                    filters: [{ name: 'JSON', extensions: ['json'] }]
+                });
+
+                if (filePath) {
+                    await writeTextFile(filePath, jsonString);
+                    toast.success("Backup saved successfully");
+                }
+            } catch (err) {
+                console.error("Tauri export failed:", err);
+                toast.error("Export failed", { description: "Could not save the backup file." });
+            }
+        } else {
+            // Web Fallback
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = defaultFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success("Data exported successfully");
+        }
     };
 
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const runImport = (dataString: string) => {
+        try {
+            const data = JSON.parse(dataString);
+
+            // Validate schema loosely
+            if (!Array.isArray(data.tasks) || !Array.isArray(data.projects)) {
+                throw new Error("Invalid backup file format.");
+            }
+
+            if (confirm("Are you sure? This will overwrite your current local data with the backup.")) {
+                useMonocleStore.getState().loadFromCloud({
+                    tasks: data.tasks,
+                    projects: data.projects,
+                    settings: data.settings || useMonocleStore.getState().settings,
+                    sessionHistory: data.sessionHistory || useMonocleStore.getState().sessionHistory,
+                });
+
+                toast.success("Backup restored successfully.");
+            }
+        } catch (err) {
+            console.error("Failed to parse backup file", err);
+            toast.error("Failed to import data", { description: "The file might be corrupted or in an invalid format." });
+        }
+    };
+
+    const handleImportClick = async () => {
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+            try {
+                const { open } = await import('@tauri-apps/plugin-dialog');
+                const { readTextFile } = await import('@tauri-apps/plugin-fs');
+
+                const filePath = await open({
+                    multiple: false,
+                    filters: [{ name: 'JSON', extensions: ['json'] }]
+                });
+
+                if (filePath && typeof filePath === 'string') {
+                    const contents = await readTextFile(filePath);
+                    runImport(contents);
+                }
+            } catch (err) {
+                console.error("Tauri import failed:", err);
+                toast.error("Import failed", { description: "Could not read the backup file." });
+            }
+        } else {
+            // Web Fallback triggers the hidden file input
+            fileInputRef.current?.click();
+        }
+    };
+
+    const handleWebImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = async (event) => {
-            try {
-                const data = JSON.parse(event.target?.result as string);
-
-                // Validate schema loosely
-                if (!Array.isArray(data.tasks) || !Array.isArray(data.projects)) {
-                    throw new Error("Invalid backup file format.");
-                }
-
-                if (confirm("Are you sure? This will overwrite your current local data with the backup.")) {
-                    useMonocleStore.getState().loadFromCloud({
-                        tasks: data.tasks,
-                        projects: data.projects,
-                        settings: data.settings || useMonocleStore.getState().settings,
-                        sessionHistory: data.sessionHistory || useMonocleStore.getState().sessionHistory,
-                    });
-
-                    toast.success("Backup restored successfully.");
-                }
-            } catch (err) {
-                console.error("Failed to parse backup file", err);
-                toast.error("Failed to import data", { description: "The file might be corrupted or in an invalid format." });
+            if (typeof event.target?.result === 'string') {
+                runImport(event.target.result);
             }
             // Reset input so the same file can be selected again
             e.target.value = '';
@@ -429,9 +484,9 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                         accept=".json"
                                         className="hidden"
                                         ref={fileInputRef}
-                                        onChange={handleImport}
+                                        onChange={handleWebImport}
                                     />
-                                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 bg-background hover:bg-secondary/50">
+                                    <Button variant="outline" size="sm" onClick={handleImportClick} className="flex-1 bg-background hover:bg-secondary/50">
                                         <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
                                         Import JSON
                                     </Button>

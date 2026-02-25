@@ -4,15 +4,19 @@
 
 class SoundEngine {
     private ctx: AudioContext | null = null;
-    private noiseSource: AudioBufferSourceNode | null = null;
-    private noiseGain: GainNode | null = null;
     private masterGain: GainNode | null = null;
     private ambientMasterGain: GainNode | null = null;
-    private currentNoiseType: 'white' | 'pink' | 'brown' | 'rain' | 'space' | 'off' = 'off';
     private volume: number = 0.5;
     private ambientVolume: number = 0.5;
     private ribbitBuffer: AudioBuffer | null = null;
-    private extraNodes: AudioNode[] = [];
+    private buffers: Map<string, AudioBuffer> = new Map();
+
+    // Track active noise layers
+    private activeLayers: Map<string, {
+        source: AudioNode, // Can be BufferSource or Oscillator
+        gain: GainNode,
+        extraNodes: AudioNode[]
+    }> = new Map();
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -174,171 +178,191 @@ class SoundEngine {
         return this.ctx ? this.ctx.state : 'uninitialized';
     }
 
-    // --- Noise Generators ---
+    // --- Noise Generators (Layers) ---
 
-    public playNoise(type: 'white' | 'pink' | 'brown' | 'rain' | 'space') {
+    public async toggleNoiseLayer(type: 'white' | 'pink' | 'brown' | 'rain' | 'space' | 'cafe' | 'forest' | 'train', targetVolume: number = 0.5) {
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
-        // Fade out existing noise if any
-        if (this.noiseSource && this.noiseGain && this.ctx) {
-            const oldSource = this.noiseSource;
-            const oldGain = this.noiseGain;
-            const oldNodes = [...this.extraNodes];
+        if (this.activeLayers.has(type)) {
+            this.stopNoiseLayer(type);
+            return;
+        }
 
-            // 1-second exponential fade out
-            oldGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+        // Setup the new layer
+        let extraNodes: AudioNode[] = [];
+        let sourceNode: AudioNode;
+        let finalNode: AudioNode;
+        const layerGain = this.ctx.createGain();
 
-            setTimeout(() => {
+        // Standard noise generation for synthetic types
+        if (['white', 'pink', 'brown', 'rain', 'space'].includes(type)) {
+            const bufferSize = 2 * this.ctx.sampleRate;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const output = buffer.getChannelData(0);
+
+            if (type === 'white') {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+            } else if (type === 'pink') {
+                let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    b0 = 0.99886 * b0 + 0.0555179 * white;
+                    b1 = 0.99332 * b1 + 0.0750759 * white;
+                    b2 = 0.96900 * b2 + 0.1538520 * white;
+                    b3 = 0.86650 * b3 + 0.3104856 * white;
+                    b4 = 0.55000 * b4 + 0.5329522 * white;
+                    b5 = -0.7616 * b5 - 0.0168980 * white;
+                    output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                    output[i] *= 0.11;
+                    b6 = white * 0.115926;
+                }
+            } else if (type === 'brown' || type === 'rain' || type === 'space') {
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 3.5;
+                }
+            }
+
+            const bufferSource = this.ctx.createBufferSource();
+            bufferSource.buffer = buffer;
+            bufferSource.loop = true;
+            sourceNode = bufferSource;
+
+            const filter = this.ctx.createBiquadFilter();
+            bufferSource.connect(filter);
+            finalNode = filter;
+
+            if (type === 'white') {
+                filter.type = 'lowpass';
+                filter.frequency.value = 1000;
+            } else if (type === 'pink') {
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+            } else if (type === 'brown') {
+                filter.type = 'lowpass';
+                filter.frequency.value = 400;
+            } else if (type === 'rain') {
+                filter.type = 'lowpass';
+                filter.frequency.value = 400;
+                const hp = this.ctx.createBiquadFilter();
+                hp.type = 'highpass';
+                hp.frequency.value = 250;
+                filter.connect(hp);
+                finalNode = hp;
+                extraNodes.push(hp);
+                targetVolume = targetVolume * 1.5; // Rain needs a boost
+            } else if (type === 'space') {
+                filter.type = 'lowpass';
+                filter.frequency.value = 100;
+                filter.Q.value = 5;
+
+                const osc = this.ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = 55;
+                const oscGain = this.ctx.createGain();
+                oscGain.gain.value = 0.3;
+                osc.connect(oscGain);
+                oscGain.connect(layerGain);
+                osc.start();
+                extraNodes.push(osc, oscGain);
+                targetVolume = targetVolume * 1.5;
+            }
+
+            finalNode.connect(layerGain);
+            layerGain.connect(this.ambientMasterGain || this.masterGain!);
+
+            layerGain.gain.setValueAtTime(0, this.ctx.currentTime);
+            layerGain.gain.setTargetAtTime(targetVolume, this.ctx.currentTime, 0.5);
+
+            bufferSource.start();
+
+            this.activeLayers.set(type, { source: sourceNode, gain: layerGain, extraNodes });
+        } else if (['cafe', 'forest', 'train'].includes(type)) {
+            let buffer = this.buffers.get(type);
+
+            if (!buffer) {
                 try {
-                    oldSource.stop();
-                    oldSource.disconnect();
-                    oldNodes.forEach(node => {
-                        if (node instanceof OscillatorNode) {
-                            try { node.stop(); } catch (e) { }
-                        }
-                        node.disconnect();
-                    });
-                } catch (e) { }
-            }, 2000);
-        }
-
-        this.extraNodes = [];
-
-        this.currentNoiseType = type;
-        const bufferSize = 2 * this.ctx.sampleRate;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = buffer.getChannelData(0);
-
-        if (type === 'white') {
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
+                    const response = await fetch(`/audio/${type}.mp3`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    buffer = await this.ctx.decodeAudioData(arrayBuffer);
+                    this.buffers.set(type, buffer);
+                } catch (err) {
+                    console.error(`Failed to load ${type} sample:`, err);
+                    return;
+                }
             }
-        } else if (type === 'pink') {
-            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                b0 = 0.99886 * b0 + 0.0555179 * white;
-                b1 = 0.99332 * b1 + 0.0750759 * white;
-                b2 = 0.96900 * b2 + 0.1538520 * white;
-                b3 = 0.86650 * b3 + 0.3104856 * white;
-                b4 = 0.55000 * b4 + 0.5329522 * white;
-                b5 = -0.7616 * b5 - 0.0168980 * white;
-                output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-                output[i] *= 0.11; // (roughly) compensate for gain
-                b6 = white * 0.115926;
-            }
-        } else if (type === 'brown' || type === 'rain' || type === 'space') {
-            let lastOut = 0;
-            for (let i = 0; i < bufferSize; i++) {
-                const white = Math.random() * 2 - 1;
-                output[i] = (lastOut + (0.02 * white)) / 1.02;
-                lastOut = output[i];
-                output[i] *= 3.5; // (roughly) compensate for gain
-            }
+
+            // By the time it loads, the user might have clicked stop
+            if (this.activeLayers.has(type)) return;
+
+            const bufferSource = this.ctx.createBufferSource();
+            bufferSource.buffer = buffer;
+            bufferSource.loop = true;
+            sourceNode = bufferSource;
+
+            finalNode = bufferSource;
+
+            finalNode.connect(layerGain);
+            layerGain.connect(this.ambientMasterGain || this.masterGain!);
+
+            layerGain.gain.setValueAtTime(0, this.ctx.currentTime);
+            layerGain.gain.setTargetAtTime(targetVolume, this.ctx.currentTime, 0.5);
+
+            bufferSource.start();
+
+            this.activeLayers.set(type, { source: sourceNode, gain: layerGain, extraNodes });
+        } else {
+            return;
         }
-
-        this.noiseSource = this.ctx.createBufferSource();
-        this.noiseSource.buffer = buffer;
-        this.noiseSource.loop = true;
-
-        // Base filter
-        const filter = this.ctx.createBiquadFilter();
-
-        // Base gain
-        this.noiseGain = this.ctx.createGain();
-        let targetVolume = 0.5;
-
-        this.noiseSource.connect(filter);
-        let finalNode: AudioNode = filter;
-
-        if (type === 'white') {
-            filter.type = 'lowpass';
-            filter.frequency.value = 1000;
-        } else if (type === 'pink') {
-            filter.type = 'lowpass';
-            filter.frequency.value = 800;
-        } else if (type === 'brown') {
-            filter.type = 'lowpass';
-            filter.frequency.value = 400;
-        } else if (type === 'rain') {
-            // Muffled brown noise with highpass to cut rumble acts like rain
-            filter.type = 'lowpass';
-            filter.frequency.value = 400;
-
-            const hp = this.ctx.createBiquadFilter();
-            hp.type = 'highpass';
-            hp.frequency.value = 250;
-
-            filter.connect(hp);
-            finalNode = hp;
-            this.extraNodes.push(hp);
-
-            targetVolume = 0.8;
-        } else if (type === 'space') {
-            // Dark, sweeping brown noise
-            filter.type = 'lowpass';
-            filter.frequency.value = 100;
-            filter.Q.value = 5;
-
-            // Deep sine wave oscillator
-            const osc = this.ctx.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.value = 55; // Low A
-
-            const oscGain = this.ctx.createGain();
-            oscGain.gain.value = 0.3; // Gentle thrum
-
-            osc.connect(oscGain);
-            oscGain.connect(this.noiseGain);
-            osc.start();
-
-            this.extraNodes.push(osc, oscGain);
-            targetVolume = 0.9;
-        }
-
-        finalNode.connect(this.noiseGain);
-        this.noiseGain.connect(this.ambientMasterGain || this.masterGain!);
-
-        // Start silent and fade in
-        this.noiseGain.gain.setValueAtTime(0, this.ctx.currentTime);
-        this.noiseGain.gain.setTargetAtTime(targetVolume, this.ctx.currentTime, 0.5);
-
-        this.noiseSource.start();
     }
 
-    public stopNoise() {
-        if (this.noiseSource) {
-            // Fade out
-            if (this.noiseGain && this.ctx) {
-                this.noiseGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
-                setTimeout(() => {
-                    this.noiseSource?.stop();
-                    this.noiseSource?.disconnect();
-                    this.noiseSource = null;
+    public setNoiseLayerVolume(type: string, volume: number) {
+        if (!this.ctx) return;
+        const layer = this.activeLayers.get(type);
+        if (layer) {
+            // Clamp 0-1
+            const safeVol = Math.max(0, Math.min(1, volume));
+            layer.gain.gain.setTargetAtTime(safeVol, this.ctx.currentTime, 0.1);
+        }
+    }
 
-                    this.extraNodes.forEach(node => {
-                        if (node instanceof OscillatorNode) node.stop();
-                        node.disconnect();
-                    });
-                    this.extraNodes = [];
-                }, 1000);
-            } else {
-                this.noiseSource.stop();
-                this.noiseSource.disconnect();
-                this.noiseSource = null;
-                this.extraNodes.forEach(node => {
-                    if (node instanceof OscillatorNode) node.stop();
+    public stopNoiseLayer(type: string) {
+        if (!this.ctx) return;
+        const layer = this.activeLayers.get(type);
+        if (!layer) return;
+
+        layer.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+        setTimeout(() => {
+            try {
+                if (layer.source instanceof AudioBufferSourceNode || layer.source instanceof OscillatorNode) {
+                    layer.source.stop();
+                }
+                layer.source.disconnect();
+                layer.extraNodes.forEach(node => {
+                    if (node instanceof OscillatorNode) {
+                        try { node.stop(); } catch (e) { }
+                    }
                     node.disconnect();
                 });
-                this.extraNodes = [];
-            }
-        }
-        this.currentNoiseType = 'off';
+            } catch (e) { }
+        }, 1000);
+
+        this.activeLayers.delete(type);
     }
 
-    public getNoiseType() {
-        return this.currentNoiseType;
+    public stopAllNoise() {
+        if (!this.ctx) return;
+        Array.from(this.activeLayers.keys()).forEach(type => this.stopNoiseLayer(type));
+    }
+
+    public getActiveLayers() {
+        return Array.from(this.activeLayers.keys());
     }
 
 

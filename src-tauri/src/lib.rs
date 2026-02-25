@@ -28,18 +28,13 @@ pub fn run() {
         })
         .build(),
     )
+    .plugin(tauri_plugin_fs::init())
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_log::Builder::new().build())
     .setup(move |app| {
       #[cfg(desktop)]
       {
         app.global_shortcut().register(toggle_shortcut)?;
-      }
-      
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
       }
       Ok(())
     })
