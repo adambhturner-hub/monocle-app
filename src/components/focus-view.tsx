@@ -447,7 +447,6 @@ export function FocusView({ onExit }: FocusViewProps) {
                             <Drawer open={isDetailsSheetOpen} onOpenChange={setIsDetailsSheetOpen} dismissible={true} modal={false}>
                                 <DrawerContent
                                     onOpenAutoFocus={(e) => e.preventDefault()}
-                                    onClick={(e) => e.stopPropagation()}
                                     className="p-4 pt-4 pb-12 h-auto border-t rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]"
                                 >
                                     <DrawerHeader className="pb-4">
@@ -455,6 +454,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             <input
                                                 type="text"
                                                 value={activeTask.title}
+                                                onClick={(e) => e.stopPropagation()}
                                                 onChange={(e) => updateTask(activeTask.id, { title: e.target.value })}
                                                 className="bg-transparent border-none text-2xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
                                                 placeholder="Task Name"
@@ -464,7 +464,7 @@ export function FocusView({ onExit }: FocusViewProps) {
 
                                     <div className="flex flex-col gap-6 w-full pt-4 max-w-2xl mx-auto items-center">
                                         {/* Description */}
-                                        <div className="w-full relative group/desc min-h-[40px] shrink-0">
+                                        <div className="w-full relative group/desc min-h-[40px] shrink-0" onClick={(e) => e.stopPropagation()}>
                                             <TextareaAutosize
                                                 value={activeTask.description || ''}
                                                 onChange={(e) => updateTask(activeTask.id, { description: e.target.value })}
@@ -476,7 +476,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                         </div>
 
                                         {/* Metadata Chips Row */}
-                                        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                                        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                                             {/* Due Date Chip */}
                                             <Popover>
                                                 <PopoverTrigger asChild>
