@@ -339,10 +339,20 @@ export const useMonocleStore = create<MonocleState>()(
                     return Array.from(mergedMap.values());
                 };
 
+                // Merge tasks
+                let mergedTasks = cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks) as Task[] : state.tasks;
+
+                // Enforce single frog rule after merge
+                const frogs = mergedTasks.filter(t => t.isFrog).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                if (frogs.length > 1) {
+                    const keepFrogId = frogs[0].id;
+                    mergedTasks = mergedTasks.map(t => t.isFrog && t.id !== keepFrogId ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                }
+
                 return {
                     ...state,
                     deletedIds: Array.from(combinedDeletedIds),
-                    tasks: cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks) : state.tasks,
+                    tasks: mergedTasks,
                     projects: cloudState.projects !== undefined ? mergeById(state.projects, cloudState.projects) : state.projects,
                     settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
                     sessionHistory: cloudState.sessionHistory !== undefined ? mergeById(state.sessionHistory, cloudState.sessionHistory) : state.sessionHistory,
@@ -369,9 +379,13 @@ export const useMonocleStore = create<MonocleState>()(
             setTask: (tasks) => set({ tasks }),
 
             addTask: (task) => {
-                set((state) => ({
-                    tasks: [...state.tasks, { ...task, updatedAt: Date.now() }]
-                }));
+                set((state) => {
+                    let newTasks = state.tasks;
+                    if (task.isFrog) {
+                        newTasks = newTasks.map(t => t.isFrog ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                    }
+                    return { tasks: [...newTasks, { ...task, updatedAt: Date.now() }] };
+                });
                 const state = get();
                 if (state.settings?.soundEnabled !== false) {
                     soundEngine.playAdd();
@@ -384,9 +398,15 @@ export const useMonocleStore = create<MonocleState>()(
             },
 
             updateTask: (id, updates) => {
-                set((state) => ({
-                    tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)),
-                }));
+                set((state) => {
+                    let newTasks = state.tasks;
+                    if (updates.isFrog) {
+                        newTasks = newTasks.map(t => t.isFrog && t.id !== id ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                    }
+                    return {
+                        tasks: newTasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)),
+                    };
+                });
                 if (updates.title) autoUnfurlTask(useMonocleStore, id, updates.title, 'title');
                 if (updates.description) autoUnfurlTask(useMonocleStore, id, updates.description, 'description');
             },
@@ -450,6 +470,7 @@ export const useMonocleStore = create<MonocleState>()(
                     createdAt: Date.now(),
                     status: 'todo', // Reset status to todo
                     isDraft: true, // Duplicate as draft
+                    isFrog: false, // Do not duplicate frog status
                     archivedAt: undefined, // Clear archive data
                     completedAt: undefined, // Clear completion data
                     updatedAt: Date.now() // Sync timestamp
