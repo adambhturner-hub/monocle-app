@@ -310,17 +310,28 @@ export const useMonocleStore = create<MonocleState>()(
             },
 
             loadFromCloud: (cloudState) => set((state) => {
+                // Combine local and cloud deleted IDs so deletions are honored everywhere
+                const combinedDeletedIds = new Set([
+                    ...(state.deletedIds || []),
+                    ...(cloudState.deletedIds || [])
+                ]);
+
                 // Smart merge arrays by ID to prevent devices from overwriting each others tasks
                 const mergeById = <T extends { id: string, updatedAt?: number }>(local: T[], cloud: T[]) => {
                     const localMap = new Map(local.map(item => [item.id, item]));
                     const mergedMap = new Map<string, T>();
 
-                    // Add all cloud items, overwriting local if cloud is newer (we don't have updatedAt per task yet, so cloud wins by default for existing)
-                    cloud.forEach(item => mergedMap.set(item.id, item));
+                    // Add all cloud items, ignoring ones marked as deleted
+                    cloud.forEach(item => {
+                        if (!combinedDeletedIds.has(item.id)) {
+                            mergedMap.set(item.id, item);
+                        }
+                    });
 
                     // Add local items that don't exist in cloud (offline creations)
+                    // (But only if they aren't deleted either)
                     localMap.forEach((item, id) => {
-                        if (!mergedMap.has(id)) {
+                        if (!mergedMap.has(id) && !combinedDeletedIds.has(id)) {
                             mergedMap.set(id, item);
                         }
                     });
@@ -330,6 +341,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                 return {
                     ...state,
+                    deletedIds: Array.from(combinedDeletedIds),
                     tasks: cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks) : state.tasks,
                     projects: cloudState.projects !== undefined ? mergeById(state.projects, cloudState.projects) : state.projects,
                     settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
