@@ -47,6 +47,40 @@ interface FocusViewProps {
     onExit?: () => void;
 }
 
+function FocusEmptyState({ setView }: { setView: (view: any) => void }) {
+    const victoryPhrases = [
+        "The desk is clear.",
+        "Execution complete.",
+        "All frogs eaten.",
+        "Mission accomplished.",
+        "Zero tasks left."
+    ];
+
+    const [phrase] = React.useState(() => victoryPhrases[Math.floor(Math.random() * victoryPhrases.length)]);
+
+    return (
+        <div className="flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <AnimatedLogo />
+            <div className="space-y-4 max-w-sm">
+                <h3 className="text-xl font-medium tracking-tight text-foreground">{phrase}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    Add a new objective, or check the Idea Dump.
+                </p>
+            </div>
+            <div className="flex gap-4 pt-4">
+                <Button onClick={() => setView('capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Capture Task
+                </Button>
+                <Button variant="outline" onClick={() => setView('ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
+                    <Archive className="mr-2 h-4 w-4" />
+                    Idea Dump
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export function FocusView({ onExit }: FocusViewProps) {
     const {
         tasks,
@@ -101,43 +135,6 @@ export function FocusView({ onExit }: FocusViewProps) {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Empty State
-    const renderEmptyState = () => {
-        const victoryPhrases = [
-            "The desk is clear.",
-            "Execution complete.",
-            "All frogs eaten.",
-            "Mission accomplished.",
-            "Zero tasks left."
-        ];
-
-        // Pick a stable random phrase per render based on task count to avoid flickering
-        // Since task count is 0 here, it'll just be static until they add/complete next time.
-        // Actually picking purely random is fine here because this component mounts/unmounts.
-        const [phrase] = React.useState(() => victoryPhrases[Math.floor(Math.random() * victoryPhrases.length)]);
-
-        return (
-            <div className="flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                <AnimatedLogo />
-                <div className="space-y-4 max-w-sm">
-                    <h3 className="text-xl font-medium tracking-tight text-foreground">{phrase}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                        Add a new objective, or check the Idea Dump.
-                    </p>
-                </div>
-                <div className="flex gap-4 pt-4">
-                    <Button onClick={() => setView('capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Capture Task
-                    </Button>
-                    <Button variant="outline" onClick={() => setView('ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
-                        <Archive className="mr-2 h-4 w-4" />
-                        Idea Dump
-                    </Button>
-                </div>
-            </div>
-        );
-    };
 
     // Handlers
     const handleDateSelect = (date: Date | undefined) => {
@@ -660,7 +657,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                         </Card>
                     </SwipeableTask>
                 ) : (
-                    renderEmptyState()
+                    <FocusEmptyState setView={setView} />
                 )}
             </div>
         </TooltipProvider >
