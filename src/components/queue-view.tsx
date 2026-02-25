@@ -62,6 +62,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         setOpenSheet,
         deleteTask,
         archiveTask,
+        completeTask,
         toggleDraft,
         undo,
         wakeTask, // Added wakeTask
@@ -545,7 +546,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     };
 
     const handleComplete = (taskId: string) => {
-        const result = archiveTask(taskId);
+        const result = completeTask(taskId);
 
         if (result?.nextTask) {
             toast("Recurring task completed", {
@@ -888,6 +889,21 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                             <Button
                                                                                                 variant="ghost"
                                                                                                 size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleComplete(task.id);
+                                                                                                }}
+                                                                                                title="Complete Task"
+                                                                                            >
+                                                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
                                                                                                 className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
                                                                                                 type="button"
                                                                                                 onPointerDown={(e) => e.stopPropagation()}
@@ -898,7 +914,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                 }}
                                                                                                 title="Archive Task"
                                                                                             >
-                                                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                                                <Archive className="h-3 w-3" />
                                                                                             </Button>
                                                                                             <Button
                                                                                                 variant="ghost"
