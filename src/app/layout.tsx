@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://monocle.app"),
+  metadataBase: new URL("https://monocle-app.vercel.app"),
   title: "Monocle - The Fancy Focus App",
   description: "Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.",
   manifest: "/manifest.json",
@@ -34,7 +34,28 @@ export const metadata: Metadata = {
   icons: {
     icon: '/monocle_icon.png',
     apple: '/monocle_icon.png',
-  }
+  },
+  openGraph: {
+    title: "Monocle - The Fancy Focus App",
+    description: "Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.",
+    url: "https://monocle-app.vercel.app",
+    siteName: "Monocle",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Monocle App Preview",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Monocle - The Fancy Focus App",
+    description: "Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.",
+    images: ["/og-image.png"],
+  },
 };
 
 export const viewport: Viewport = {
