@@ -308,7 +308,13 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                     <p className="text-sm text-muted-foreground">
                                         Signed in as <span className="font-medium text-foreground">{auth.currentUser?.email}</span>
                                     </p>
-                                    <p className="text-xs text-muted-foreground/70 flex items-center gap-1 mt-1">
+                                    <p className="text-xs text-muted-foreground font-mono mt-1">
+                                        UID: {auth.currentUser?.uid}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Provider: {auth.currentUser?.providerData?.[0]?.providerId === 'google.com' ? 'Google' : 'Email/Password'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground/70 flex items-center gap-1 mt-2">
                                         <RefreshCw className="h-3 w-3" />
                                         Last synced: {lastSyncTime ? formatDistanceToNow(lastSyncTime, { addSuffix: true }) : 'Never'}
                                     </p>
