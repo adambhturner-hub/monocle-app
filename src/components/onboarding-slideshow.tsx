@@ -41,7 +41,7 @@ export function OnboardingSlideshow() {
     // Stop noise when leaving slide
     useEffect(() => {
         if (currentSlide !== 4 && activeNoise !== 'off') {
-            soundEngine.stopNoise();
+            soundEngine.stopAllNoise();
             setActiveNoise('off');
         }
     }, [currentSlide, activeNoise]);
@@ -55,7 +55,7 @@ export function OnboardingSlideshow() {
         return () => {
             if (timerRef.current) cancelAnimationFrame(timerRef.current);
             if (tickIntervalRef.current) clearInterval(tickIntervalRef.current);
-            soundEngine.stopNoise();
+            soundEngine.stopAllNoise();
         };
     }, []);
 
@@ -151,10 +151,11 @@ export function OnboardingSlideshow() {
     const handleNoiseTest = async (type: 'white' | 'pink' | 'rain') => {
         await soundEngine.unlock();
         if (activeNoise === type) {
-            soundEngine.stopNoise();
+            soundEngine.stopAllNoise();
             setActiveNoise('off');
         } else {
-            soundEngine.playNoise(type);
+            soundEngine.stopAllNoise();
+            soundEngine.toggleNoiseLayer(type);
             setActiveNoise(type);
             setMusicDone(true);
         }
