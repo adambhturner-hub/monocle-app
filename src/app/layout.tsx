@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CommandPalette } from "@/components/command-palette";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { VersionPoller } from "@/components/version-poller";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,6 +69,7 @@ export default function RootLayout({
               {children}
               <Toaster />
               <CommandPalette />
+              <VersionPoller />
             </AuthGuard>
           </ErrorBoundary>
           <Analytics />
