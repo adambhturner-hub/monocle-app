@@ -768,7 +768,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                 >
                                                                                     <div
                                                                                         className={cn(
-                                                                                            "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 active:shadow-lg select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
+                                                                                            "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
                                                                                             task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
                                                                                             task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "scale-[1.03] shadow-lg shadow-red-500/10 border-red-500/50 ring-red-500/20 my-2 z-20",
                                                                                             task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
