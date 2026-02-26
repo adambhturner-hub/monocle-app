@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { List, GripVertical, CheckCircle2, Circle, Calendar, ArrowUpDown } from 'lucide-react';
+import { List, GripVertical, CheckCircle2, Circle, Calendar, ArrowUpDown, Repeat } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn, generateId } from '@/lib/utils';
 import { Task } from '@/types';
@@ -844,6 +844,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                             {format(task.dueDate, 'MMM d')}
                                                                                                         </span>
                                                                                                     )}
+                                                                                                    {task.recurrence && (
+                                                                                                        <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}>
+                                                                                                            <Repeat className="h-3 w-3" />
+                                                                                                        </span>
+                                                                                                    )}
                                                                                                     {task.priority === 'high' && (
                                                                                                         <AlertCircle className="h-3 w-3 text-red-500" />
                                                                                                     )}
@@ -1115,6 +1120,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                 </div>
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                     {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                                    {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="flex items-center gap-1 opacity-0 md:group-hover:opacity-100 transition-all z-50 shrink-0">
@@ -1189,6 +1195,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                             <FormattedText text={task.title} className={cn("text-sm font-medium truncate", task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold")} />
                                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                                                                                                 {task.dueDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                                {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                             </div>
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1 opacity-0 md:group-hover:opacity-100 transition-all z-50 shrink-0">
