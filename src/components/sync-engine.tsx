@@ -48,7 +48,7 @@ export function SyncEngine() {
     // Prevent pushing local state to the cloud until we have received at least one 
     // snapshot from the cloud, otherwise LocalStorage hydration will overwrite the cloud instantly.
     const isCloudReadyRef = useRef<boolean>(false);
-    
+
     // Track the highest lastModified timestamp we've seen from the server
     const serverLastModifiedRef = useRef<number>(0);
 
@@ -96,7 +96,7 @@ export function SyncEngine() {
 
                         // We have successfully received data from the cloud, it is now safe to push local mutations
                         isCloudReadyRef.current = true;
-                        
+
                         // Update our knowledge of the server's timestamp
                         if (cloudData.lastModified) {
                             serverLastModifiedRef.current = cloudData.lastModified;
@@ -113,6 +113,7 @@ export function SyncEngine() {
                                 deletedIds: cloudData.deletedIds || [],
                                 settings: cloudData.settings,
                                 sessionHistory: cloudData.sessionHistory || [],
+                                lastModified: cloudData.lastModified,
                             });
                             useMonocleStore.getState().setLastSyncTime(Date.now());
                         }
@@ -157,7 +158,7 @@ export function SyncEngine() {
                             sessionHistory: state.sessionHistory,
                             lastModified: state.lastModified || Date.now()
                         });
-                        
+
                         serverLastModifiedRef.current = rawPayload.lastModified;
 
                         firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
@@ -200,14 +201,14 @@ export function SyncEngine() {
 
             // Only push if data changed AND we have already performed our initial pull from the network
             if (didSyncableDataChange && isCloudReadyRef.current) {
-                
+
                 // --- CONFLICT RESOLUTION ---
                 // If our local Zustand state's lastModified timestamp is OLDER than the server's,
                 // this means our local client is holding stale offline data and is trying to overwrite
                 // newer remote data. We abort the push entirely. 
                 if ((state.lastModified || 0) < serverLastModifiedRef.current) {
-                     console.log("[Monocle Sync] Aborting push: Local data is stale compared to cloud timestamp.");
-                     return;
+                    console.log("[Monocle Sync] Aborting push: Local data is stale compared to cloud timestamp.");
+                    return;
                 }
 
                 // Create a literal representation of the current syncable state

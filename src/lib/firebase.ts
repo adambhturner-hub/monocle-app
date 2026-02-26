@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,11 +15,12 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with robust offline persistence enabled.
-// This allows Firestore to queue writes to the local disk when offline 
-// and seamlessly sync them when connectivity is restored, fixing the "silent fail" behavior.
+// Using SingleTabManager with forceOwnership ensures that if a mobile PWA or desktop app
+// is improperly closed, the new instance forcefully takes the IndexedDB lock, preventing
+// all offline writes (setDocs) from hanging indefinitely (endless blue sync cycle).
 export const db = initializeFirestore(app, {
     localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
+        tabManager: persistentSingleTabManager({ forceOwnership: true })
     })
 });
 
