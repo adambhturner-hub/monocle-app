@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Monocle - The Fancy Focus App",
     description: "Monocle is not another to-do list. It's an execution chamber. Dump your brain into the Queue. Enter Focus Mode. One task. No drift.",
-    url: "https://monocle-app.vercel.app",
+    url: "https://monocle-app.vercel.app/?v=launch",
     siteName: "Monocle",
     type: "website",
   },
