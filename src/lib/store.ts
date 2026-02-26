@@ -27,11 +27,17 @@ async function autoUnfurlTask(store: any, taskId: string, text: string, field: '
     const links = linkify.find(text).filter(l => l.type === 'url' && l.isLink);
     if (links.length === 0) return;
 
+    const markdownLinkRegex = /\[[^\]]+\]\([^)]+\)/g;
+    const markdownLinks: { start: number, end: number }[] = [];
+    let match;
+    while ((match = markdownLinkRegex.exec(text)) !== null) {
+        markdownLinks.push({ start: match.index, end: markdownLinkRegex.lastIndex });
+    }
+
     for (const link of links) {
         // Skip if already inside a markdown link: e.g. [Title](url)
-        if (text[link.start - 1] === '(' && text[link.end] === ')') {
-            continue;
-        }
+        const isInsideMarkdown = markdownLinks.some(m => link.start >= m.start && link.end <= m.end);
+        if (isInsideMarkdown) continue;
 
         // Skip if formatted with pipe syntax: e.g. url | label
         const textAfter = text.slice(link.end);
