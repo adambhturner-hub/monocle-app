@@ -77,29 +77,47 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
 
     const handleClearData = async () => {
         if (confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
-            // 1. Wipe cloud state first to prevent SyncEngine from pulling old data back
+            // 1. Wipe local state so UI reflects it immediately
+            // Doing this first prevents the UI from freezing if the Firebase offline queue is completely locked up.
+            clearData();
+            toast.success("Local data wiped. If sync remains stuck, go to Account & Sync -> Repair Sync.");
+
+            // 2. Fire and forget the cloud wipe (do not await, to prevent UI freeze)
             if (auth.currentUser) {
                 try {
                     const { doc, setDoc } = await import('firebase/firestore');
                     const { db } = await import('@/lib/firebase');
                     const userDocRef = doc(db, 'users', auth.currentUser.uid);
-                    await setDoc(userDocRef, {
+                    setDoc(userDocRef, {
                         tasks: [],
                         projects: [],
                         sessionHistory: [],
                         settings: { ...settings, hasSeenOnboarding: true },
                         deletedIds: [],
-                        updatedAt: Date.now()
-                    }); // No { merge: true } to force overwrite arrays
+                        lastModified: Date.now()
+                    }).catch((e: any) => console.error("Failed to wipe cloud document (ignoring for UI)", e));
                 } catch (e) {
-                    console.error("Failed to wipe cloud document", e);
+                    console.error("Failed to load Firebase chunks", e);
                 }
             }
+        }
+    };
 
-            // 2. Wipe local state so UI reflects it immediately
-            // The SyncEngine will see this matches the cloud state and do nothing
-            clearData();
-            toast.success("Execution chamber wiped.");
+    const handleRepairDatabase = async () => {
+        if (confirm("This will clear the local Firebase network cache and completely reload the app. Use this if sync is frozen. Continue?")) {
+            toast.loading("Repairing database...");
+            try {
+                const { terminate, clearIndexedDbPersistence } = await import('firebase/firestore');
+                const { db } = await import('@/lib/firebase');
+                await terminate(db);
+                await clearIndexedDbPersistence(db);
+                window.location.reload();
+            } catch (e: any) {
+                console.error("Failed to clear DB", e);
+                toast.error("Failed to repair database", { description: e.message });
+                // Fallback: reload anyway
+                setTimeout(() => window.location.reload(), 1500);
+            }
         }
     };
 
@@ -323,6 +341,9 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                     <Button variant="default" size="sm" onClick={handleForceSync} disabled={isSyncing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                                         {isSyncing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                                         Force Sync
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={handleRepairDatabase} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-900/20 dark:text-red-400">
+                                        Repair Sync
                                     </Button>
                                     <Button variant="outline" size="sm" onClick={handleSignOut}>
                                         Sign Out
