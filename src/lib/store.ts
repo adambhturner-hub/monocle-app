@@ -338,22 +338,39 @@ export const useMonocleStore = create<MonocleState>()(
                         ...(cloudState.deletedIds || [])
                     ]);
 
+                    // Combine local and cloud Session History IDs so completions act as tombstones for tasks
+                    const combinedCompletedIds = new Set([
+                        ...(state.sessionHistory || []).map(t => t.id),
+                        ...(cloudState.sessionHistory || []).map(t => t.id)
+                    ]);
+
                     // Smart merge arrays by ID to prevent devices from overwriting each others tasks
-                    const mergeById = <T extends { id: string, updatedAt?: number }>(local: T[], cloud: T[]) => {
+                    const mergeById = <T extends { id: string, updatedAt?: number }>(
+                        local: T[],
+                        cloud: T[],
+                        skipLocalIds?: Set<string>
+                    ) => {
                         const localMap = new Map(local.map(item => [item.id, item]));
                         const mergedMap = new Map<string, T>();
 
                         // Add all cloud items, ignoring ones marked as deleted
                         cloud.forEach(item => {
                             if (!combinedDeletedIds.has(item.id)) {
-                                mergedMap.set(item.id, item);
+                                const localVal = localMap.get(item.id);
+                                if (localVal && localVal.updatedAt && (!item.updatedAt || localVal.updatedAt > item.updatedAt)) {
+                                    // Row-Level CRDT: If local task was edited more recently than the cloud version, keep local.
+                                    mergedMap.set(item.id, localVal);
+                                } else {
+                                    mergedMap.set(item.id, item);
+                                }
                             }
                         });
 
                         // Add local items that don't exist in cloud (offline creations)
-                        // (But only if they aren't deleted either)
+                        // (But only if they aren't deleted, and not completed on another device)
                         localMap.forEach((item, id) => {
                             if (!mergedMap.has(id) && !combinedDeletedIds.has(id)) {
+                                if (skipLocalIds && skipLocalIds.has(id)) return; // Skip resurrected tasks that were completed
                                 mergedMap.set(id, item);
                             }
                         });
@@ -362,7 +379,7 @@ export const useMonocleStore = create<MonocleState>()(
                     };
 
                     // Merge tasks
-                    let mergedTasks = cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks) as Task[] : state.tasks;
+                    let mergedTasks = cloudState.tasks !== undefined ? mergeById(state.tasks, cloudState.tasks, combinedCompletedIds) as Task[] : state.tasks;
 
                     // Enforce single frog rule after merge
                     const frogs = mergedTasks.filter(t => t.isFrog).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
