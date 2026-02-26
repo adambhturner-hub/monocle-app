@@ -1,5 +1,5 @@
 import { Project, RecurrenceInterval } from '@/types';
-import { addDays, nextDay, startOfDay, addWeeks, addYears } from 'date-fns';
+import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'date-fns';
 
 export interface ParsedTask {
     title: string;
@@ -85,11 +85,17 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
+    // Due Date Variables (Declared early for Recurrence overlap)
+    let dueDate: number | undefined;
+    const today = startOfDay(new Date());
+
     // 3. Recurrence Detection
     let recurrence: RecurrenceInterval | undefined;
     const recurrenceMap: Record<string, RecurrenceInterval> = {
-        'daily': 'daily', 'every day': 'daily', 'everyday': 'daily',
-        'weekly': 'weekly', 'every week': 'weekly', 'weekdays': 'daily', // Approximation
+        'daily': 'daily', 'every day': 'daily', 'everyday': 'daily', 'each day': 'daily',
+        'weekdays': 'daily', 'every weekday': 'daily',
+        'weekends': 'weekly', 'every weekend': 'weekly',
+        'weekly': 'weekly', 'every week': 'weekly', 'every other week': 'weekly',
         'monthly': 'monthly', 'every month': 'monthly',
         'yearly': 'yearly', 'annually': 'yearly', 'every year': 'yearly'
     };
@@ -113,8 +119,41 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         if (match) {
             recurrence = 'weekly';
             matchedTokens.push(match[0]);
-            // Replace "every wednesday" with "wednesday" so the date parser below still catches it
             cleanTitle = cleanTitle.replace(everyDayOfWeekRegex, match[1]);
+        }
+    }
+
+    // "Mondays", "Wednesdays", etc.
+    const pluralDaysOfWeekRegex = new RegExp(`\\b(${daysOfWeek.join('|')}|${shortDays.join('|')})s\\b`, 'i');
+    if (pluralDaysOfWeekRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(pluralDaysOfWeekRegex);
+        if (match) {
+            recurrence = 'weekly';
+            matchedTokens.push(match[0]);
+            // Extract the base day
+            cleanTitle = cleanTitle.replace(pluralDaysOfWeekRegex, match[1]);
+        }
+    }
+
+    // "every 15th", "every 2nd"
+    const everyNthRegex = /\bevery (\d{1,2})(st|nd|rd|th)?\b/i;
+    if (everyNthRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(everyNthRegex);
+        if (match) {
+            const dateNum = parseInt(match[1]);
+            if (dateNum >= 1 && dateNum <= 31) {
+                recurrence = 'monthly';
+                matchedTokens.push(match[0]);
+                cleanTitle = cleanTitle.replace(everyNthRegex, '');
+
+                // Set the due date to the next occurrence of this date
+                const todayForMath = startOfDay(new Date());
+                let setDate = new Date(todayForMath.getFullYear(), todayForMath.getMonth(), dateNum);
+                if (setDate < todayForMath) {
+                    setDate = addMonths(setDate, 1);
+                }
+                dueDate = setDate.getTime();
+            }
         }
     }
 
@@ -164,8 +203,6 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     }
 
     // 5. Due Date Detection
-    let dueDate: number | undefined;
-    const today = startOfDay(new Date());
 
     // Extended Date Patterns
     const datePatterns = [
