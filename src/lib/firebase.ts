@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,14 +14,14 @@ const firebaseConfig = {
 // Initialize Firebase only once
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore with robust offline persistence enabled.
-// Using SingleTabManager with forceOwnership ensures that if a mobile PWA or desktop app
-// is improperly closed, the new instance forcefully takes the IndexedDB lock, preventing
-// all offline writes (setDocs) from hanging indefinitely (endless blue sync cycle).
+// Initialize Firestore with memory cache only.
+// Mobile Safari Incognito aggressively blocks IndexedDB and BroadcastChannel APIs.
+// If we use `persistentLocalCache`, Firestore's `setDoc` promises hang indefinitely 
+// because it cannot acquire the IDB lock. 
+// Since Monocle's offline state is robustly managed by Zustand (which gracefully falls back 
+// to ephemeral storage in Incognito), we do not need Firebase's offline caching.
 export const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-        tabManager: persistentSingleTabManager({ forceOwnership: true })
-    })
+    localCache: memoryLocalCache()
 });
 
 // Export Firebase services
