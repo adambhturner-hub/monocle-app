@@ -82,6 +82,9 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         });
     }
 
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
     // 3. Recurrence Detection
     let recurrence: RecurrenceInterval | undefined;
     const recurrenceMap: Record<string, RecurrenceInterval> = {
@@ -98,9 +101,20 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     if (everyNDaysRegex.test(cleanTitle)) {
         const match = cleanTitle.match(everyNDaysRegex);
         if (match) {
-            recurrence = parseInt(match[1]);
+            recurrence = parseInt(match[1]) as any;
             matchedTokens.push(match[0]);
             cleanTitle = cleanTitle.replace(everyNDaysRegex, '');
+        }
+    }
+
+    const everyDayOfWeekRegex = new RegExp(`\\bevery (${daysOfWeek.join('|')}|${shortDays.join('|')})\\b`, 'i');
+    if (everyDayOfWeekRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(everyDayOfWeekRegex);
+        if (match) {
+            recurrence = 'weekly';
+            matchedTokens.push(match[0]);
+            // Replace "every wednesday" with "wednesday" so the date parser below still catches it
+            cleanTitle = cleanTitle.replace(everyDayOfWeekRegex, match[1]);
         }
     }
 
@@ -162,8 +176,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         { regex: /\b(eod)\b/i, handler: () => today }, // End of Day = Today
     ];
 
-    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    // Extended Date Patterns
 
     // Add day matchers
     daysOfWeek.forEach((day, idx) => {
