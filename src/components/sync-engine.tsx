@@ -48,6 +48,9 @@ export function SyncEngine() {
     // Prevent pushing local state to the cloud until we have received at least one 
     // snapshot from the cloud, otherwise LocalStorage hydration will overwrite the cloud instantly.
     const isCloudReadyRef = useRef<boolean>(false);
+    
+    // Track the highest lastModified timestamp we've seen from the server
+    const serverLastModifiedRef = useRef<number>(0);
 
     // 0. Listen to Hardware Network Connectivity
     useEffect(() => {
@@ -87,11 +90,17 @@ export function SyncEngine() {
                             projects: cloudData.projects || [],
                             deletedIds: cloudData.deletedIds || [],
                             settings: cloudData.settings,
-                            sessionHistory: cloudData.sessionHistory || []
+                            sessionHistory: cloudData.sessionHistory || [],
+                            lastModified: cloudData.lastModified || 0
                         });
 
                         // We have successfully received data from the cloud, it is now safe to push local mutations
                         isCloudReadyRef.current = true;
+                        
+                        // Update our knowledge of the server's timestamp
+                        if (cloudData.lastModified) {
+                            serverLastModifiedRef.current = cloudData.lastModified;
+                        }
 
                         // Only load from cloud if the data is actually different from what we last synced
                         if (incomingStateStr !== lastSyncedStateStrRef.current) {
@@ -134,7 +143,7 @@ export function SyncEngine() {
                             deletedIds: state.deletedIds,
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
-                            updatedAt: Date.now()
+                            lastModified: state.lastModified || Date.now()
                         };
 
                         const safePayload = removeUndefined(rawPayload);
@@ -145,8 +154,11 @@ export function SyncEngine() {
                             projects: state.projects,
                             deletedIds: state.deletedIds,
                             settings: state.settings,
-                            sessionHistory: state.sessionHistory
+                            sessionHistory: state.sessionHistory,
+                            lastModified: state.lastModified || Date.now()
                         });
+                        
+                        serverLastModifiedRef.current = rawPayload.lastModified;
 
                         firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
                             useMonocleStore.getState().setSyncStatus('idle');
@@ -183,17 +195,29 @@ export function SyncEngine() {
                 state.projects !== prevState.projects ||
                 state.deletedIds !== prevState.deletedIds ||
                 state.settings !== prevState.settings ||
-                state.sessionHistory !== prevState.sessionHistory;
+                state.sessionHistory !== prevState.sessionHistory ||
+                state.lastModified !== prevState.lastModified;
 
             // Only push if data changed AND we have already performed our initial pull from the network
             if (didSyncableDataChange && isCloudReadyRef.current) {
+                
+                // --- CONFLICT RESOLUTION ---
+                // If our local Zustand state's lastModified timestamp is OLDER than the server's,
+                // this means our local client is holding stale offline data and is trying to overwrite
+                // newer remote data. We abort the push entirely. 
+                if ((state.lastModified || 0) < serverLastModifiedRef.current) {
+                     console.log("[Monocle Sync] Aborting push: Local data is stale compared to cloud timestamp.");
+                     return;
+                }
+
                 // Create a literal representation of the current syncable state
                 const currentStateStr = deepStringify({
                     tasks: state.tasks,
                     projects: state.projects,
                     deletedIds: state.deletedIds,
                     settings: state.settings,
-                    sessionHistory: state.sessionHistory
+                    sessionHistory: state.sessionHistory,
+                    lastModified: state.lastModified || 0
                 });
 
                 // If this state exactly matches the last state we synced from/to the cloud,
@@ -210,15 +234,16 @@ export function SyncEngine() {
                     deletedIds: state.deletedIds,
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
-                    updatedAt: Date.now()
+                    lastModified: state.lastModified || Date.now()
                 };
 
                 const safePayload = removeUndefined(rawPayload);
                 console.log("[Monocle Sync] Pushing payload to Firestore");
                 useMonocleStore.getState().setSyncStatus('syncing');
 
-                // Update our ref so our own snapshot echo doesn't trigger a pull
+                // Update our strings and timestamps so our own snapshot echo doesn't trigger a pull
                 lastSyncedStateStrRef.current = currentStateStr;
+                serverLastModifiedRef.current = rawPayload.lastModified;
 
                 firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
                     useMonocleStore.getState().setLastSyncTime(Date.now());

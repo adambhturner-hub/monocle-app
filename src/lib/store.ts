@@ -107,6 +107,7 @@ interface MonocleState {
     projects: Project[];
     deletedIds: string[];
     activeProject: string | null; // 'null' means All Projects
+    lastModified: number; // For sync conflict resolution
 
     // Actions
     setTask: (tasks: Task[]) => void; // For reordering
@@ -217,6 +218,7 @@ export const useMonocleStore = create<MonocleState>()(
             projects: [],
             deletedIds: [],
             activeProject: null,
+            lastModified: Date.now(),
             isHydrated: false,
             setHydrated: () => set({ isHydrated: true }),
             lastSyncTime: null,
@@ -384,7 +386,7 @@ export const useMonocleStore = create<MonocleState>()(
                     if (task.isFrog) {
                         newTasks = newTasks.map(t => t.isFrog ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                     }
-                    return { tasks: [...newTasks, { ...task, updatedAt: Date.now() }] };
+                    return { tasks: [...newTasks, { ...task, updatedAt: Date.now() }], lastModified: Date.now() };
                 });
                 const state = get();
                 if (state.settings?.soundEnabled !== false) {
@@ -404,7 +406,7 @@ export const useMonocleStore = create<MonocleState>()(
                         newTasks = newTasks.map(t => t.isFrog && t.id !== id ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                     }
                     return {
-                        tasks: newTasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)),
+                        tasks: newTasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)), lastModified: Date.now()
                     };
                 });
                 if (updates.title) autoUnfurlTask(useMonocleStore, id, updates.title, 'title');
@@ -414,22 +416,22 @@ export const useMonocleStore = create<MonocleState>()(
             deleteTask: (id) =>
                 set((state) => ({
                     tasks: state.tasks.filter((t) => t.id !== id),
-                    deletedIds: [...(state.deletedIds || []), id]
+                    deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now()
                 })),
 
             addProject: (project) => set((state) => ({
-                projects: [...state.projects, { ...project, updatedAt: Date.now() }]
+                projects: [...state.projects, { ...project, updatedAt: Date.now() }], lastModified: Date.now()
             })),
 
             updateProject: (id, updates) =>
                 set((state) => ({
-                    projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)),
+                    projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)), lastModified: Date.now()
                 })),
 
             deleteProject: (id) =>
                 set((state) => ({
                     projects: state.projects.filter((p) => p.id !== id),
-                    deletedIds: [...(state.deletedIds || []), id],
+                    deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now(),
                     // Remove project reference from all tasks that had it
                     tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: undefined, updatedAt: Date.now() } : t),
                     // If the active project is the one being deleted, switch to 'All Projects'
