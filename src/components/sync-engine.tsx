@@ -171,14 +171,17 @@ export function SyncEngine() {
 
                         firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
                             useMonocleStore.getState().setSyncStatus('idle');
+                            useMonocleStore.getState().setSyncErrorDetails(undefined);
                         }).catch(err => {
                             console.error("Failed to initialize cloud document:", err);
+                            useMonocleStore.getState().setSyncErrorDetails(err.message || String(err));
                             useMonocleStore.getState().setSyncStatus('error');
                             toast.error("Sync Error", { description: "Failed to initialize cloud document. Check Firebase rules." });
                         });
                     }
                 }, (error) => {
                     console.error("Firestore Snapshot Error:", error);
+                    useMonocleStore.getState().setSyncErrorDetails(error.message || String(error));
                     useMonocleStore.getState().setSyncStatus('error');
                     toast.error("Sync Disconnected", { description: "You don't have permission to read from the cloud. Check Firebase Rules." });
                 });
@@ -289,8 +292,10 @@ export function SyncEngine() {
                 firestoreSetDoc(userDocRef, safePayload, { merge: true }).then(() => {
                     useMonocleStore.getState().setLastSyncTime(Date.now());
                     useMonocleStore.getState().setSyncStatus('idle');
+                    useMonocleStore.getState().setSyncErrorDetails(undefined);
                 }).catch((err: any) => {
                     console.error("Failed to sync to cloud:", err);
+                    useMonocleStore.getState().setSyncErrorDetails(err.message || String(err));
                     useMonocleStore.getState().setSyncStatus('error');
                     toast.error(`Sync Failed`, { description: err.message || "Could not save your changes to the cloud. They are saved locally." });
                 });

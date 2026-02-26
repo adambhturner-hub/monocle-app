@@ -195,6 +195,8 @@ interface MonocleState {
     setLastSyncTime: (time: number | null) => void;
     syncStatus: 'idle' | 'syncing' | 'error' | 'offline';
     setSyncStatus: (status: 'idle' | 'syncing' | 'error' | 'offline') => void;
+    syncErrorDetails?: string;
+    setSyncErrorDetails: (details?: string) => void;
 
     isHydrated?: boolean;
     setHydrated?: () => void;
@@ -245,6 +247,8 @@ export const useMonocleStore = create<MonocleState>()(
                 setLastSyncTime: (time) => set({ lastSyncTime: time }),
                 syncStatus: 'idle',
                 setSyncStatus: (status) => set({ syncStatus: status }),
+                syncErrorDetails: undefined,
+                setSyncErrorDetails: (details) => set({ syncErrorDetails: details }),
                 frogDetourActive: false,
                 activeRandomTaskId: null,
                 lastActiveDate: new Date().toISOString().split('T')[0],

@@ -29,7 +29,14 @@ export function SyncIndicator({ className = "" }: { className?: string }) {
                     {syncStatus === 'offline' && "Offline - Local Only"}
                     {syncStatus === 'syncing' && "Syncing with Cloud..."}
                     {syncStatus === 'idle' && "Cloud Synced"}
-                    {syncStatus === 'error' && "Sync Error"}
+                    {syncStatus === 'error' && (
+                        <div className="flex flex-col gap-1 max-w-[200px]">
+                            <span className="font-semibold text-red-500">Sync Error</span>
+                            <span className="text-[10px] text-muted-foreground break-words leading-tight">
+                                {useMonocleStore.getState().syncErrorDetails || "Unknown error occurred"}
+                            </span>
+                        </div>
+                    )}
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
