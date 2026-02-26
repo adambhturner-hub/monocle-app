@@ -453,6 +453,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                                 value={activeTask.title}
                                                 onClick={(e) => e.stopPropagation()}
                                                 onChange={(e) => updateTask(activeTask.id, { title: e.target.value })}
+                                                maxLength={255}
                                                 className="bg-transparent border-none text-2xl font-bold tracking-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 cursor-text"
                                                 placeholder="Task Name"
                                             />
@@ -468,6 +469,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                                 placeholder="Add a description..."
                                                 minRows={1}
                                                 maxRows={4}
+                                                maxLength={2000}
                                                 className="w-full bg-secondary/50 border-none text-sm md:text-base text-foreground/80 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-xl p-4 transition-all"
                                             />
                                         </div>

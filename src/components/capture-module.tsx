@@ -487,7 +487,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     )}
                     minRows={1}
                     maxRows={5}
-                    maxLength={120}
+                    maxLength={255}
                 />
 
 
@@ -544,6 +544,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Add details, notes, or links..."
+                            maxLength={2000}
                             className="min-h-[60px] resize-none text-sm bg-card hover:bg-secondary/50 focus:bg-secondary transition-colors border-border/50 rounded-xl px-3 py-2"
                         />
 

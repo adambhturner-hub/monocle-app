@@ -96,6 +96,7 @@ export function AddTask() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
+                maxLength={255}
                 className="text-lg py-8 pl-14 pr-6 rounded-2xl border-2 shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-all bg-background/50 backdrop-blur-sm"
             />
             <div className="absolute inset-y-0 right-4 flex items-center gap-2 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
