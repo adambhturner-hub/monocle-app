@@ -726,7 +726,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                     )}
 
                                     <div className="flex-1 min-h-0">
-                                        <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4 scroll-smooth">
+                                        <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4">
                                             {sortMode === 'manual' && !searchQuery ? (
                                                 <>
                                                     <Droppable droppableId="active">
@@ -1335,7 +1335,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
 
                                     <div className="flex-1 min-h-0">
-                                        <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4 scroll-smooth">
+                                        <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4">
                                             <Droppable droppableId="drafts">
                                                 {(provided) => (
                                                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
