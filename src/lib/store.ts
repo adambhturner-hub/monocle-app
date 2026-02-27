@@ -125,6 +125,7 @@ interface MonocleState {
     updateProject: (id: string, updates: Partial<Project>) => void;
     deleteProject: (id: string) => void;
     setActiveProject: (id: string | null) => void;
+    reorderProjects: (startIndex: number, endIndex: number) => void;
 
     // UI State
     activeSheet: 'queue' | 'archive' | 'settings' | 'stats' | null;
@@ -487,6 +488,17 @@ export const useMonocleStore = create<MonocleState>()(
                     })),
 
                 setActiveProject: (id) => set({ activeProject: id }),
+
+                reorderProjects: (startIndex: number, endIndex: number) => {
+                    const state = get();
+                    const newProjects = Array.from(state.projects);
+                    const [removed] = newProjects.splice(startIndex, 1);
+                    newProjects.splice(endIndex, 0, removed);
+                    set({
+                        projects: newProjects,
+                        lastModified: Date.now()
+                    });
+                },
 
                 // UI State
                 activeSheet: null,

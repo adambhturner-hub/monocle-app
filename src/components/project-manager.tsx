@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Pencil, Check, X, Palette } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useMonocleStore } from '@/lib/store';
 import { Project } from '@/types';
 import { cn, generateId } from '@/lib/utils';
@@ -31,7 +32,7 @@ interface ProjectManagerProps {
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 
 export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
-    const { projects, addProject, updateProject, deleteProject } = useMonocleStore();
+    const { projects, addProject, updateProject, deleteProject, reorderProjects } = useMonocleStore();
 
     // Creation State
     const [isCreating, setIsCreating] = useState(false);
@@ -86,6 +87,12 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
         }
     };
 
+    const handleDragEnd = (result: DropResult) => {
+        if (!result.destination) return;
+        if (result.source.index === result.destination.index) return;
+        reorderProjects(result.source.index, result.destination.index);
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="w-full sm:max-w-[500px] p-0 overflow-hidden gap-0">
@@ -98,101 +105,125 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
 
                 <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
                     {/* List */}
-                    <div className="space-y-2">
-                        {projects.map(project => (
-                            <div key={project.id} className="group flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-border/50 transition-colors">
-                                {editingId === project.id ? (
-                                    <div className="flex items-center gap-2 flex-1 animate-in fade-in zoom-in-95 duration-200">
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <button className="w-8 h-8 rounded-md border border-border shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 ring-primary/20 flex items-center justify-center shrink-0" style={{ backgroundColor: editColor }}>
-                                                    {(() => {
-                                                        const IconCmp = getIconComponent(editIcon);
-                                                        return <IconCmp className="h-4 w-4 text-white drop-shadow-sm" />;
-                                                    })()}
-                                                </button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-80 p-3 flex flex-col gap-4">
-                                                <div>
-                                                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Color</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {COLORS.map(c => (
-                                                            <button
-                                                                key={c}
-                                                                className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", editColor === c && "ring-2 ring-offset-2 ring-primary")}
-                                                                style={{ backgroundColor: c }}
-                                                                onClick={() => setEditColor(c)}
-                                                            />
-                                                        ))}
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="project-list">
+                            {(provided) => (
+                                <div className="space-y-2" {...provided.droppableProps} ref={provided.innerRef}>
+                                    {projects.map((project, index) => (
+                                        <Draggable key={project.id} draggableId={project.id} index={index} isDragDisabled={editingId !== null}>
+                                            {(provided, snapshot) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className={cn(
+                                                        "group flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-border/50 transition-colors bg-card",
+                                                        snapshot.isDragging && "shadow-lg ring-1 ring-primary/20 opacity-90 z-50",
+                                                    )}
+                                                >
+                                                    {/* Drag Handle */}
+                                                    <div {...provided.dragHandleProps} className={cn("mr-2 text-muted-foreground/30 hover:text-foreground cursor-grab active:cursor-grabbing", editingId === project.id && "invisible")}>
+                                                        <GripVertical className="h-4 w-4" />
+                                                    </div>
+
+                                                    <div className="flex-1 flex items-center justify-between min-w-0">
+                                                        {editingId === project.id ? (
+                                                            <div className="flex items-center gap-2 flex-1 animate-in fade-in zoom-in-95 duration-200">
+                                                                <Popover modal={true}>
+                                                                    <PopoverTrigger asChild>
+                                                                        <button className="w-8 h-8 rounded-md border border-border shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 ring-primary/20 flex items-center justify-center shrink-0" style={{ backgroundColor: editColor }}>
+                                                                            {(() => {
+                                                                                const IconCmp = getIconComponent(editIcon);
+                                                                                return <IconCmp className="h-4 w-4 text-white drop-shadow-sm" />;
+                                                                            })()}
+                                                                        </button>
+                                                                    </PopoverTrigger>
+                                                                    <PopoverContent className="w-[calc(100vw-4rem)] sm:w-80 p-3 flex flex-col gap-4">
+                                                                        <div>
+                                                                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Color</p>
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                {COLORS.map(c => (
+                                                                                    <button
+                                                                                        key={c}
+                                                                                        className={cn("w-6 h-6 rounded-full hover:scale-110 transition-transform", editColor === c && "ring-2 ring-offset-2 ring-primary")}
+                                                                                        style={{ backgroundColor: c }}
+                                                                                        onClick={() => setEditColor(c)}
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Icon</p>
+                                                                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                                                                                {Object.keys(PROJECT_ICONS).map(iconName => {
+                                                                                    const IconCmp = PROJECT_ICONS[iconName];
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={iconName}
+                                                                                            className={cn("w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors", editIcon === iconName && "bg-secondary text-primary ring-1 ring-primary")}
+                                                                                            onClick={() => setEditIcon(iconName)}
+                                                                                        >
+                                                                                            <IconCmp className="h-4 w-4" />
+                                                                                        </button>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    </PopoverContent>
+                                                                </Popover>
+                                                                <Input
+                                                                    value={editName}
+                                                                    onChange={(e) => setEditName(e.target.value)}
+                                                                    className="h-8 flex-1"
+                                                                    onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                                                                />
+                                                                <Button size="icon-xs" variant="ghost" onClick={saveEdit} className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10">
+                                                                    <Check className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button size="icon-xs" variant="ghost" onClick={cancelEdit} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: project.color }}>
+                                                                        {(() => {
+                                                                            const IconCmp = getIconComponent(project.icon);
+                                                                            return <IconCmp className="h-3.5 w-3.5 text-white drop-shadow-sm" />;
+                                                                        })()}
+                                                                    </div>
+                                                                    <span className="font-medium">{project.name}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Button size="icon-xs" variant="ghost" onClick={() => startEdit(project)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                                                                        <Pencil className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                    <Button size="icon-xs" variant="ghost" onClick={() => setDeleteId(project.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Icon</p>
-                                                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
-                                                        {Object.keys(PROJECT_ICONS).map(iconName => {
-                                                            const IconCmp = PROJECT_ICONS[iconName];
-                                                            return (
-                                                                <button
-                                                                    key={iconName}
-                                                                    className={cn("w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors", editIcon === iconName && "bg-secondary text-primary ring-1 ring-primary")}
-                                                                    onClick={() => setEditIcon(iconName)}
-                                                                >
-                                                                    <IconCmp className="h-4 w-4" />
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <Input
-                                            value={editName}
-                                            onChange={(e) => setEditName(e.target.value)}
-                                            className="h-8 flex-1"
-                                            autoFocus
-                                            onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                                        />
-                                        <Button size="icon-xs" variant="ghost" onClick={saveEdit} className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10">
-                                            <Check className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="icon-xs" variant="ghost" onClick={cancelEdit} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: project.color }}>
-                                                {(() => {
-                                                    const IconCmp = getIconComponent(project.icon);
-                                                    return <IconCmp className="h-3.5 w-3.5 text-white drop-shadow-sm" />;
-                                                })()}
-                                            </div>
-                                            <span className="font-medium">{project.name}</span>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                    {projects.length === 0 && !isCreating && (
+                                        <div className="text-center py-8 text-muted-foreground text-sm italic">
+                                            No projects yet. Create one to get organized!
                                         </div>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button size="icon-xs" variant="ghost" onClick={() => startEdit(project)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button size="icon-xs" variant="ghost" onClick={() => setDeleteId(project.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                        {projects.length === 0 && !isCreating && (
-                            <div className="text-center py-8 text-muted-foreground text-sm italic">
-                                No projects yet. Create one to get organized!
-                            </div>
-                        )}
-                    </div>
+                                    )}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
 
                     {/* Creation Form */}
                     {isCreating ? (
                         <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/20 animate-in slide-in-from-top-2">
-                            <Popover>
+                            <Popover modal={true}>
                                 <PopoverTrigger asChild>
                                     <button className="w-9 h-9 rounded-md border border-border shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 ring-primary/20 flex items-center justify-center shrink-0" style={{ backgroundColor: newColor }}>
                                         {(() => {
@@ -201,7 +232,7 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                         })()}
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-80 p-3 flex flex-col gap-4">
+                                <PopoverContent className="w-[calc(100vw-4rem)] sm:w-80 p-3 flex flex-col gap-4">
                                     <div>
                                         <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-tight">Color</p>
                                         <div className="flex flex-wrap gap-2">
@@ -239,7 +270,6 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                 onChange={(e) => setNewName(e.target.value)}
                                 placeholder="Project Name"
                                 className="h-9 flex-1"
-                                autoFocus
                                 onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                             />
                             <Button size="sm" onClick={handleCreate}>Create</Button>
