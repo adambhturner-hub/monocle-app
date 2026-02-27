@@ -194,7 +194,7 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                                                     </div>
                                                                     <span className="font-medium">{project.name}</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                                     <Button size="icon-xs" variant="ghost" onClick={() => startEdit(project)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
                                                                         <Pencil className="h-3.5 w-3.5" />
                                                                     </Button>
