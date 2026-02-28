@@ -409,6 +409,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             dueDate: parsedResult.dueDate,
             recurrence: parsedResult.recurrence,
             duration: parsedResult.duration,
+            isFrog: parsedResult.isFrog,
+            isLightning: parsedResult.isLightning,
             isDraft,
             createdAt: Date.now(),
         };
@@ -438,6 +440,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                 dueDate: parsedResult.dueDate,
                 recurrence: parsedResult.recurrence,
                 duration: parsedResult.duration,
+                isFrog: parsedResult.isFrog,
+                isLightning: parsedResult.isLightning,
                 isDraft,
                 createdAt: Date.now() + count, // offset to maintain order
             };
@@ -1317,6 +1321,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         dueDate: parsedResult.dueDate, // Yes, ideas can have dates too
                                                         recurrence: parsedResult.recurrence,
                                                         duration: parsedResult.duration,
+                                                        isFrog: parsedResult.isFrog,
+                                                        isLightning: parsedResult.isLightning,
                                                         isDraft: true, // Always draft in this mode
                                                         createdAt: Date.now(),
                                                     };

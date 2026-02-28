@@ -8,6 +8,8 @@ export interface ParsedTask {
     recurrence?: RecurrenceInterval;
     projectId?: string;
     duration?: number; // Minutes
+    isFrog?: boolean;
+    isLightning?: boolean;
     matchedTokens: string[];
 }
 
@@ -19,6 +21,31 @@ function escapeRegExp(string: string) {
 export function parseTaskInput(input: string, projects: Project[] = []): ParsedTask {
     let cleanTitle = input;
     const matchedTokens: string[] = [];
+
+    let isFrog = false;
+    let isLightning = false;
+
+    // 0. Special Flags (Frog/Lightning)
+    const frogRegex = /\b(frog|#frog|!frog)\b/i;
+    const lightningRegex = /\b(lightning|#lightning|!lightning|bolt|quick)\b/i;
+
+    if (frogRegex.test(cleanTitle)) {
+        isFrog = true;
+        const match = cleanTitle.match(frogRegex);
+        if (match) {
+            matchedTokens.push(match[0]);
+            cleanTitle = cleanTitle.replace(frogRegex, '');
+        }
+    }
+
+    if (lightningRegex.test(cleanTitle)) {
+        isLightning = true;
+        const match = cleanTitle.match(lightningRegex);
+        if (match) {
+            matchedTokens.push(match[0]);
+            cleanTitle = cleanTitle.replace(lightningRegex, '');
+        }
+    }
 
     // 1. Duration Detection (Do this early to avoid confusion with dates)
     let duration: number | undefined;
@@ -322,6 +349,8 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         recurrence,
         projectId,
         duration,
+        isFrog,
+        isLightning,
         matchedTokens
     };
 }

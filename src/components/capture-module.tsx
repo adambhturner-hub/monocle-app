@@ -205,7 +205,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 return;
             }
             const result = parseTaskInput(title, projects);
-            if (result.priority || result.dueDate || result.recurrence || result.projectId) {
+            if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning) {
                 setParsedData(result);
             } else {
                 setParsedData(null);
@@ -236,6 +236,10 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             if (recurrence === 'none' && parsedData.recurrence) finalRecurrence = parsedData.recurrence;
             // Only auto-apply parsed project if the user hasn't manually selected one via hashtag or dropdown
             if (projectId === 'all' && parsedData.projectId) finalProjectId = parsedData.projectId;
+
+            // Auto-apply Frog and Lightning tags if they typed it
+            if (parsedData.isFrog) setIsFrog(true);
+            if (parsedData.isLightning) setIsLightning(true);
         }
 
         if (isEditMode && taskToEdit) {
