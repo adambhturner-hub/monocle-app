@@ -234,7 +234,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
     // Parser
     useEffect(() => {
-        if (isEditMode) return;
         const timer = setTimeout(() => {
             if (!title.trim()) {
                 setParsedData(null);
@@ -248,7 +247,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [title, projects, isEditMode]);
+    }, [title, projects]);
 
     const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive') => {
         if (!title.trim()) {
@@ -264,18 +263,23 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         let finalDueDate = dueDate?.getTime();
         let finalRecurrence: string | number = recurrence;
         let finalProjectId = projectId === 'all' ? undefined : projectId;
+        let finalIsFrog = isFrog;
+        let finalIsLightning = isLightning;
 
-        if (parsedData && !isEditMode) {
+        if (parsedData) {
             finalTitle = parsedData.title;
-            if (priority === 'medium' && parsedData.priority) finalPriority = parsedData.priority;
-            if (!dueDate && parsedData.dueDate) finalDueDate = parsedData.dueDate;
-            if (recurrence === 'none' && parsedData.recurrence) finalRecurrence = parsedData.recurrence;
-            // Only auto-apply parsed project if the user hasn't manually selected one via hashtag or dropdown
-            if (projectId === 'all' && parsedData.projectId) finalProjectId = parsedData.projectId;
+
+            // In Edit mode, we still want to apply parsed tokens.
+            // However, we only override state values if the user hasn't actively fought the parser.
+            // The simplest approach is to always let parsed tokens win if they exist in the current string.
+            if (parsedData.priority) finalPriority = parsedData.priority;
+            if (parsedData.dueDate) finalDueDate = parsedData.dueDate;
+            if (parsedData.recurrence) finalRecurrence = parsedData.recurrence;
+            if (parsedData.projectId) finalProjectId = parsedData.projectId;
 
             // Auto-apply Frog and Lightning tags if they typed it
-            if (parsedData.isFrog) setIsFrog(true);
-            if (parsedData.isLightning) setIsLightning(true);
+            if (parsedData.isFrog) finalIsFrog = true;
+            if (parsedData.isLightning) finalIsLightning = true;
         }
 
         if (isEditMode && taskToEdit) {
@@ -286,15 +290,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 projectId: finalProjectId,
                 dueDate: finalDueDate,
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
-                isLightning,
+                isLightning: finalIsLightning,
+                isFrog: finalIsFrog,
                 isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
                 status: destination === 'archive' ? 'done' : taskToEdit.status,
             });
-            if (isFrog && !taskToEdit.isFrog) {
-                useMonocleStore.getState().toggleFrog(taskToEdit.id);
-            } else if (!isFrog && taskToEdit.isFrog) {
-                useMonocleStore.getState().toggleFrog(taskToEdit.id);
-            }
 
             if (destination === 'archive') {
                 toast.success("Archived");
@@ -318,13 +318,13 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
             isDraft: destination === 'idea' ? true : false,
             isFrog: false, // Will be made true securely by toggleFrog if requested
-            isLightning: isLightning,
+            isLightning: finalIsLightning,
             createdAt: Date.now(),
         };
 
         addTask(newTask);
 
-        if (isFrog) {
+        if (finalIsFrog) {
             useMonocleStore.getState().toggleFrog(taskId);
         }
 
