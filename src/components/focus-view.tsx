@@ -5,7 +5,7 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
@@ -35,7 +35,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'; // Renamed to avoid collision
 import { AddTaskModal } from './add-task-modal';
 import TextareaAutosize from 'react-textarea-autosize';
-import { RecurrenceInterval } from '@/types';
+import { RecurrenceInterval, Project } from '@/types';
 import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
 import { HoldButton } from './ui/hold-button';
@@ -47,8 +47,12 @@ interface FocusViewProps {
     onExit?: () => void;
 }
 
-function FocusEmptyState({ setView }: { setView: (view: any) => void }) {
-    const victoryPhrases = [
+function FocusEmptyState({ setView, project }: { setView: (view: any) => void, project: Project | null }) {
+    const victoryPhrases = project ? [
+        "Project tasks complete.",
+        "Nothing remains in " + project.name + ".",
+        "Desk cleared."
+    ] : [
         "The desk is clear.",
         "Execution complete.",
         "All frogs eaten.",
@@ -64,17 +68,17 @@ function FocusEmptyState({ setView }: { setView: (view: any) => void }) {
             <div className="space-y-4 max-w-sm">
                 <h3 className="text-xl font-medium tracking-tight text-foreground">{phrase}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                    Add a new objective, or check the Idea Dump.
+                    {project ? "Return to the queue to choose a new target, or add more tasks here." : "Add a new objective, or check the Idea Dump."}
                 </p>
             </div>
             <div className="flex gap-4 pt-4">
-                <Button onClick={() => setView('capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Capture Task
+                <Button onClick={() => setView(project ? 'queue' : 'capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
+                    {project ? <Layers className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                    {project ? 'Return to Queue' : 'Capture Task'}
                 </Button>
-                <Button variant="outline" onClick={() => setView('ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
-                    <Archive className="mr-2 h-4 w-4" />
-                    Idea Dump
+                <Button variant="outline" onClick={() => setView(project ? 'capture' : 'ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
+                    {project ? <Plus className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                    {project ? 'Add Task to Project' : 'Idea Dump'}
                 </Button>
             </div>
         </div>
@@ -659,7 +663,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                         </Card>
                     </SwipeableTask>
                 ) : (
-                    <FocusEmptyState setView={setView} />
+                    <FocusEmptyState setView={setView} project={activeProject ? projects.find(p => p.id === activeProject) || null : null} />
                 )}
             </div>
         </TooltipProvider >

@@ -738,8 +738,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4 min-h-[50px]">
                                                                 {activeTasks.length === 0 && (
                                                                     <div className="text-center py-10 px-6 text-muted-foreground/60 text-sm border-2 border-dashed rounded-xl flex flex-col items-center gap-2">
-                                                                        <p className="font-medium text-foreground/80">Your queue is clear.</p>
-                                                                        <p className="text-xs max-w-xs leading-relaxed">Monocle is a merciless execution engine. Add your first task below to begin.</p>
+                                                                        <p className="font-medium text-foreground/80">{activeProject ? `No tasks in ${projects.find(p => p.id === activeProject)?.name || 'this project'}.` : "Your queue is clear."}</p>
+                                                                        <p className="text-xs max-w-xs leading-relaxed">{activeProject ? "Add a new task below, or return to the main queue." : "Monocle is a merciless execution engine. Add your first task below to begin."}</p>
                                                                     </div>
                                                                 )}
                                                                 {activeTasks.map((task, index) => (
@@ -1347,7 +1347,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
                                                         {draftTasks.length === 0 && (
                                                             <div className="text-center py-8 text-muted-foreground/50 italic text-sm border-2 border-dashed rounded-xl">
-                                                                No tasks yet. Dump your brain here.
+                                                                {activeProject ? `No ideas in ${projects.find(p => p.id === activeProject)?.name || 'this project'}.` : "No tasks yet. Dump your brain here."}
                                                             </div>
                                                         )}
                                                         {draftTasks.map((task, index) => (
