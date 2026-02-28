@@ -1108,7 +1108,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 'Overdue': [], 'Today': [], 'Tomorrow': [], 'Upcoming': [], 'Later': [], 'No Date': []
                                                             };
                                                             activeTasks.forEach(t => {
-                                                                if (!t.dueDate) groups['No Date'].push(t);
+                                                                if (t.isFrog) groups['Today'].push(t);
+                                                                else if (!t.dueDate) groups['No Date'].push(t);
                                                                 else if (isPast(t.dueDate) && !isToday(t.dueDate)) groups['Overdue'].push(t);
                                                                 else if (isToday(t.dueDate)) groups['Today'].push(t);
                                                                 else if (isTomorrow(t.dueDate)) groups['Tomorrow'].push(t);
@@ -1119,10 +1120,19 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             return groupOrder.map(groupName => {
                                                                 const tasks = groups[groupName];
                                                                 if (tasks.length === 0) return null;
+
+                                                                const sortedTasks = [...tasks].sort((a, b) => {
+                                                                    if (a.isFrog) return -1;
+                                                                    if (b.isFrog) return 1;
+                                                                    // For Date view, primarily we just want Frogs at top.
+                                                                    // Remaining sorting is preserved from activeTasks original order.
+                                                                    return 0;
+                                                                });
+
                                                                 return (
                                                                     <div key={groupName} className="space-y-2">
                                                                         <h4 className={cn("text-[10px] uppercase font-bold tracking-wider mb-2", groupName === 'Overdue' ? "text-red-500" : "text-muted-foreground")}>{groupName}</h4>
-                                                                        {tasks.map(task => (
+                                                                        {sortedTasks.map(task => (
                                                                             // Context Menu wrapper for sorted items too
                                                                             <ContextMenu key={task.id}>
                                                                                 <ContextMenuTrigger
@@ -1230,7 +1240,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
                                                             // Group by priority
                                                             activeTasks.forEach(t => {
-                                                                groups[t.priority].push(t);
+                                                                if (t.isFrog) {
+                                                                    groups['high'].push(t);
+                                                                } else {
+                                                                    groups[t.priority].push(t);
+                                                                }
                                                             });
 
                                                             const groupOrder = ['high', 'medium', 'low'];
