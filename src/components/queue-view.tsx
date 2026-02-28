@@ -59,12 +59,12 @@ const renderHighlightedText = (text: string, matchedTokens: string[]) => {
         const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
         if (isMatch) {
             return (
-                <span key={i} className="bg-primary/20 text-primary rounded-sm transition-colors duration-200">
+                <span key={i} className="bg-primary/20 text-transparent rounded-sm transition-colors duration-200">
                     {part}
                 </span>
             );
         }
-        return <span key={i} className="text-foreground">{part}</span>;
+        return <span key={i} className="text-transparent">{part}</span>;
     });
 };
 
@@ -697,11 +697,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         })()}
                                                     </div>
                                                 )}
-                                                <div className="relative flex items-center w-full">
+                                                <div className="relative flex items-center w-full rounded-md bg-card">
                                                     {/* Syntax Highlighting Background Overlay */}
                                                     <div
                                                         className={cn(
-                                                            "absolute inset-0 pointer-events-none w-full bg-transparent flex items-center pr-16 whitespace-pre font-medium sm:text-sm text-base truncate",
+                                                            "absolute inset-0 pointer-events-none w-full bg-transparent flex items-center pr-16 whitespace-pre font-medium sm:text-sm text-base truncate text-transparent",
                                                             quickAddProjectId ? "pl-10" : "pl-4", // Match input padding left based on project badge presence
                                                             tasks.length <= 1 && !quickAddValue && "opacity-0" // Hide when ring effect is active
                                                         )}
@@ -728,9 +728,9 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         onKeyDown={handleQuickAddKeyDown}
                                                         placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
                                                         className={cn(
-                                                            "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all text-transparent caret-foreground relative z-10 w-full font-medium sm:text-sm text-base",
+                                                            "bg-transparent border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all text-foreground caret-foreground relative z-10 w-full font-medium sm:text-sm text-base",
                                                             quickAddProjectId ? "pl-10" : "pl-4", // Update input padding
-                                                            tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)] text-foreground"
+                                                            tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
                                                         )}
                                                     />
                                                 </div>

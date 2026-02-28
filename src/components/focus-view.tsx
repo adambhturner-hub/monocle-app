@@ -47,7 +47,7 @@ interface FocusViewProps {
     onExit?: () => void;
 }
 
-function FocusEmptyState({ setView, project }: { setView: (view: any) => void, project: Project | null }) {
+function FocusEmptyState({ setView, project, setActiveProject }: { setView: (view: any) => void, project: Project | null, setActiveProject?: (id: string | null) => void }) {
     const victoryPhrases = project ? [
         "Project tasks complete.",
         "Nothing remains in " + project.name + ".",
@@ -72,11 +72,23 @@ function FocusEmptyState({ setView, project }: { setView: (view: any) => void, p
                 </p>
             </div>
             <div className="flex gap-4 pt-4">
-                <Button onClick={() => setView(project ? 'queue' : 'capture')} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
+                <Button onClick={() => {
+                    if (project && setActiveProject) {
+                        setActiveProject(null);
+                    } else {
+                        setView('queue');
+                    }
+                }} className="rounded-full shadow-md bg-foreground text-background hover:bg-foreground/90 transition-all font-medium px-6 h-10">
                     {project ? <Layers className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                     {project ? 'Return to Queue' : 'Capture Task'}
                 </Button>
-                <Button variant="outline" onClick={() => setView(project ? 'capture' : 'ideas')} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
+                <Button variant="outline" onClick={() => {
+                    if (project) {
+                        setView('capture');
+                    } else {
+                        setView('ideas');
+                    }
+                }} className="rounded-full border-muted-foreground/20 hover:bg-muted text-muted-foreground transition-all font-medium px-6 h-10 shadow-sm">
                     {project ? <Plus className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
                     {project ? 'Add Task to Project' : 'Idea Dump'}
                 </Button>
@@ -90,6 +102,7 @@ export function FocusView({ onExit }: FocusViewProps) {
         tasks,
         projects,
         activeProject,
+        setActiveProject,
         completeTask,
         holdTask,
         skipTask,
@@ -663,7 +676,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                         </Card>
                     </SwipeableTask>
                 ) : (
-                    <FocusEmptyState setView={setView} project={activeProject ? projects.find(p => p.id === activeProject) || null : null} />
+                    <FocusEmptyState setView={setView} project={activeProject ? projects.find(p => p.id === activeProject) || null : null} setActiveProject={setActiveProject} />
                 )}
             </div>
         </TooltipProvider >

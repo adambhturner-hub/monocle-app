@@ -37,12 +37,12 @@ const renderHighlightedText = (text: string, matchedTokens: string[]) => {
         const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
         if (isMatch) {
             return (
-                <span key={i} className="bg-primary/20 text-primary rounded-sm transition-colors duration-200">
+                <span key={i} className="bg-primary/20 text-transparent rounded-sm transition-colors duration-200">
                     {part}
                 </span>
             );
         }
-        return <span key={i} className="text-foreground">{part}</span>;
+        return <span key={i} className="text-transparent">{part}</span>;
     });
 };
 
@@ -500,23 +500,38 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     })()}
                 </div>
 
-                <TextareaAutosize
-                    ref={inputRef}
-                    value={title}
-                    onChange={(e) => {
-                        setTitle(e.target.value);
-                        onMentionChange();
-                    }}
-                    onKeyDown={handleKeyDown}
-                    placeholder="What's on your mind?"
-                    className={cn(
-                        "w-full bg-transparent border-none text-center resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground/30 leading-tight",
-                        isModal ? "text-2xl md:text-3xl font-bold" : "text-3xl md:text-5xl font-bold"
-                    )}
-                    minRows={1}
-                    maxRows={5}
-                    maxLength={255}
-                />
+                <div className="relative w-full flex items-center justify-center">
+                    {/* Syntax Highlighting Background Overlay */}
+                    <div
+                        className={cn(
+                            "absolute inset-0 pointer-events-none w-full bg-transparent text-center resize-none focus:outline-none placeholder-transparent leading-tight break-words whitespace-pre-wrap flex flex-col justify-center text-transparent",
+                            isModal ? "text-2xl md:text-3xl font-bold" : "text-3xl md:text-5xl font-bold"
+                        )}
+                        aria-hidden="true"
+                    >
+                        {renderHighlightedText(title, parsedData?.matchedTokens || [])}
+                    </div>
+
+                    <TextareaAutosize
+                        ref={(node) => {
+                            if (node) inputRef.current = node;
+                        }}
+                        value={title}
+                        onChange={(e) => {
+                            setTitle(e.target.value);
+                            onMentionChange();
+                        }}
+                        onKeyDown={handleKeyDown}
+                        placeholder="What's on your mind?"
+                        className={cn(
+                            "w-full bg-transparent border-none text-center resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground/30 leading-tight text-foreground caret-foreground relative z-10",
+                            isModal ? "text-2xl md:text-3xl font-bold" : "text-3xl md:text-5xl font-bold"
+                        )}
+                        minRows={1}
+                        maxRows={5}
+                        maxLength={255}
+                    />
+                </div>
 
 
 
