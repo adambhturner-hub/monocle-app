@@ -26,24 +26,25 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     let isLightning = false;
 
     // 0. Special Flags (Frog/Lightning)
-    const frogRegex = /\b(frog|@frog|!frog)\b/i;
-    const lightningRegex = /\b(lightning|@lightning|!lightning|bolt|quick)\b/i;
+    // Use (?:^|\s) to catch tags at start of string or after a space, since \b doesn't trigger on @ or !
+    const frogRegex = /(?:^|\s)(frog|@frog|!frog)(?=\s|$)/i;
+    const lightningRegex = /(?:^|\s)(lightning|@lightning|!lightning|bolt|quick)(?=\s|$)/i;
 
     if (frogRegex.test(cleanTitle)) {
         isFrog = true;
         const match = cleanTitle.match(frogRegex);
-        if (match) {
-            matchedTokens.push(match[0]);
-            cleanTitle = cleanTitle.replace(frogRegex, '');
+        if (match && match[1]) {
+            matchedTokens.push(match[1]); // push just the token
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim(); // replace the matched block (including leading space) with a single space to avoid smushing words
         }
     }
 
     if (lightningRegex.test(cleanTitle)) {
         isLightning = true;
         const match = cleanTitle.match(lightningRegex);
-        if (match) {
-            matchedTokens.push(match[0]);
-            cleanTitle = cleanTitle.replace(lightningRegex, '');
+        if (match && match[1]) {
+            matchedTokens.push(match[1]);
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
 

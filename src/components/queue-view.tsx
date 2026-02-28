@@ -45,6 +45,29 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const renderHighlightedText = (text: string, matchedTokens: string[]) => {
+    if (!text || !matchedTokens || matchedTokens.length === 0) return <span>{text}</span>;
+
+    // Create a regex to match any of the tokens (case insensitive, full words or padded)
+    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
+    const escapedTokens = sortedTokens.map(token => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
+
+    const parts = text.split(regex);
+
+    return parts.map((part, i) => {
+        const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
+        if (isMatch) {
+            return (
+                <span key={i} className="bg-primary/20 text-primary rounded-sm transition-colors duration-200">
+                    {part}
+                </span>
+            );
+        }
+        return <span key={i} className="text-foreground">{part}</span>;
+    });
+};
+
 export interface QueueViewProps {
     customTrigger?: ReactNode;
     defaultTab?: 'active' | 'drafts';
@@ -565,6 +588,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         }
     };
 
+    const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects) : null;
+
     return (
         <>
             <TooltipProvider>
@@ -672,29 +697,43 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         })()}
                                                     </div>
                                                 )}
-                                                <Input
-                                                    ref={inputRef}
-                                                    value={quickAddValue}
-                                                    onChange={(e) => {
-                                                        setQuickAddValue(e.target.value);
-                                                        onMentionChange();
-                                                    }}
-                                                    onPaste={(e) => {
-                                                        const text = e.clipboardData.getData('text');
-                                                        const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-                                                        if (lines.length > 1) {
-                                                            e.preventDefault();
-                                                            setPendingPaste(lines);
-                                                        }
-                                                    }}
-                                                    onKeyDown={handleQuickAddKeyDown}
-                                                    placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
-                                                    className={cn(
-                                                        "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all",
-                                                        quickAddProjectId ? "pl-7" : "",
-                                                        tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)]"
-                                                    )}
-                                                />
+                                                <div className="relative flex items-center w-full">
+                                                    {/* Syntax Highlighting Background Overlay */}
+                                                    <div
+                                                        className={cn(
+                                                            "absolute inset-0 pointer-events-none w-full bg-transparent flex items-center pr-16 whitespace-pre font-medium sm:text-sm text-base truncate",
+                                                            quickAddProjectId ? "pl-10" : "pl-4", // Match input padding left based on project badge presence
+                                                            tasks.length <= 1 && !quickAddValue && "opacity-0" // Hide when ring effect is active
+                                                        )}
+                                                        aria-hidden="true"
+                                                    >
+                                                        {renderHighlightedText(quickAddValue, parsedQuickAddResult?.matchedTokens || [])}
+                                                    </div>
+
+                                                    <Input
+                                                        ref={inputRef}
+                                                        value={quickAddValue}
+                                                        onChange={(e) => {
+                                                            setQuickAddValue(e.target.value);
+                                                            onMentionChange();
+                                                        }}
+                                                        onPaste={(e) => {
+                                                            const text = e.clipboardData.getData('text');
+                                                            const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                                                            if (lines.length > 1) {
+                                                                e.preventDefault();
+                                                                setPendingPaste(lines);
+                                                            }
+                                                        }}
+                                                        onKeyDown={handleQuickAddKeyDown}
+                                                        placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
+                                                        className={cn(
+                                                            "bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all text-transparent caret-foreground relative z-10 w-full font-medium sm:text-sm text-base",
+                                                            quickAddProjectId ? "pl-10" : "pl-4", // Update input padding
+                                                            tasks.length <= 1 && !quickAddValue && "border-primary/50 ring-2 ring-primary/20 shadow-[0_0_15px_-3px_rgba(var(--primary),0.3)] text-foreground"
+                                                        )}
+                                                    />
+                                                </div>
                                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
                                                     <Button
                                                         variant="ghost"

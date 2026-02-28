@@ -22,6 +22,30 @@ import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
 
+const renderHighlightedText = (text: string, matchedTokens: string[]) => {
+    if (!text || !matchedTokens || matchedTokens.length === 0) return <span>{text}</span>;
+
+    // Create a regex to match any of the tokens (case insensitive, full words or padded)
+    // We sort by length descending so longer phrases like "every saturday" match before "saturday"
+    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
+    const escapedTokens = sortedTokens.map(token => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
+
+    const parts = text.split(regex);
+
+    return parts.map((part, i) => {
+        const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
+        if (isMatch) {
+            return (
+                <span key={i} className="bg-primary/20 text-primary rounded-sm transition-colors duration-200">
+                    {part}
+                </span>
+            );
+        }
+        return <span key={i} className="text-foreground">{part}</span>;
+    });
+};
+
 const COLORS = [
     '#ef4444', // Red 500
     '#f97316', // Orange 500
