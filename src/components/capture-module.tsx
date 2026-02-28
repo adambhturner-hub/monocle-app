@@ -8,7 +8,7 @@ import { Task } from '@/types';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap } from 'lucide-react';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
@@ -509,7 +509,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence) && (
+                {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.dueDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
@@ -527,6 +527,16 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {parsedData.recurrence && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-500 flex items-center gap-1.5 backdrop-blur-md">
                                 <Repeat className="w-3 h-3" /> {parsedData.recurrence}
+                            </span>
+                        )}
+                        {parsedData.isFrog && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 backdrop-blur-md">
+                                <span className="leading-none select-none text-[10px]">🐸</span> Daily Frog
+                            </span>
+                        )}
+                        {parsedData.isLightning && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 backdrop-blur-md">
+                                <Zap className="w-3 h-3" /> Lightning
                             </span>
                         )}
                     </div>
