@@ -22,22 +22,34 @@ import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
 
-const renderHighlightedText = (text: string, matchedTokens: string[]) => {
+import { ParsedToken } from '@/lib/smart-parser';
+
+const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
     if (!text || !matchedTokens || matchedTokens.length === 0) return <span>{text}</span>;
 
-    // Create a regex to match any of the tokens (case insensitive, full words or padded)
-    // We sort by length descending so longer phrases like "every saturday" match before "saturday"
-    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
-    const escapedTokens = sortedTokens.map(token => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const sortedTokens = [...matchedTokens].sort((a, b) => b.text.length - a.text.length);
+    const escapedTokens = sortedTokens.map(token => token.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
 
     const parts = text.split(regex);
 
     return parts.map((part, i) => {
-        const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
-        if (isMatch) {
+        const tokenMatch = sortedTokens.find(token => part.toLowerCase() === token.text.toLowerCase());
+
+        if (tokenMatch) {
+            let colorClass = "bg-primary/20 text-transparent";
+            switch (tokenMatch.type) {
+                case 'frog': colorClass = "bg-green-500/20 text-transparent"; break;
+                case 'lightning': colorClass = "bg-amber-500/20 text-transparent"; break;
+                case 'date': colorClass = "bg-purple-500/20 text-transparent"; break;
+                case 'priority': colorClass = "bg-red-500/20 text-transparent"; break;
+                case 'recurrence': colorClass = "bg-blue-500/20 text-transparent"; break;
+                case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
+                case 'project': colorClass = "bg-primary/20 text-transparent"; break;
+            }
+
             return (
-                <span key={i} className="bg-primary/20 text-transparent rounded-sm transition-colors duration-200">
+                <span key={i} className={cn(colorClass, "rounded-sm transition-colors duration-200")} style={tokenMatch.type === 'project' && tokenMatch.color ? { backgroundColor: `${tokenMatch.color}33` } : undefined}>
                     {part}
                 </span>
             );
@@ -500,11 +512,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     })()}
                 </div>
 
-                <div className="relative w-full flex items-center justify-center">
+                <div className="relative w-full">
                     {/* Syntax Highlighting Background Overlay */}
                     <div
                         className={cn(
-                            "absolute inset-0 pointer-events-none w-full bg-transparent text-center resize-none focus:outline-none placeholder-transparent leading-tight break-words whitespace-pre-wrap flex flex-col justify-center text-transparent",
+                            "absolute inset-0 pointer-events-none w-full bg-transparent text-center p-0 m-0 resize-none focus:outline-none placeholder-transparent leading-tight break-words whitespace-pre-wrap text-transparent",
                             isModal ? "text-2xl md:text-3xl font-bold" : "text-3xl md:text-5xl font-bold"
                         )}
                         aria-hidden="true"
@@ -524,7 +536,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         onKeyDown={handleKeyDown}
                         placeholder="What's on your mind?"
                         className={cn(
-                            "w-full bg-transparent border-none text-center resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground/30 leading-tight text-foreground caret-foreground relative z-10",
+                            "w-full bg-transparent border-none text-center p-0 m-0 resize-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground/30 leading-tight text-foreground caret-foreground relative z-10",
                             isModal ? "text-2xl md:text-3xl font-bold" : "text-3xl md:text-5xl font-bold"
                         )}
                         minRows={1}

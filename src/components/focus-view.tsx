@@ -47,7 +47,7 @@ interface FocusViewProps {
     onExit?: () => void;
 }
 
-function FocusEmptyState({ setView, project, setActiveProject }: { setView: (view: any) => void, project: Project | null, setActiveProject?: (id: string | null) => void }) {
+function FocusEmptyState({ setView, project, setActiveProject, setActiveModal }: { setView: (view: any) => void, project: Project | null, setActiveProject?: (id: string | null) => void, setActiveModal?: (val: any) => void }) {
     const victoryPhrases = project ? [
         "Project tasks complete.",
         "Nothing remains in " + project.name + ".",
@@ -83,8 +83,8 @@ function FocusEmptyState({ setView, project, setActiveProject }: { setView: (vie
                     {project ? 'Return to Queue' : 'Capture Task'}
                 </Button>
                 <Button variant="outline" onClick={() => {
-                    if (project) {
-                        setView('capture');
+                    if (project && setActiveModal) {
+                        setActiveModal('add-task');
                     } else {
                         setView('ideas');
                     }
@@ -676,7 +676,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                         </Card>
                     </SwipeableTask>
                 ) : (
-                    <FocusEmptyState setView={setView} project={activeProject ? projects.find(p => p.id === activeProject) || null : null} setActiveProject={setActiveProject} />
+                    <FocusEmptyState setView={setView} project={activeProject ? projects.find(p => p.id === activeProject) || null : null} setActiveProject={setActiveProject} setActiveModal={setActiveModal} />
                 )}
             </div>
         </TooltipProvider >

@@ -1,6 +1,12 @@
 import { Project, RecurrenceInterval } from '@/types';
 import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'date-fns';
 
+export interface ParsedToken {
+    text: string;
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date';
+    color?: string;
+}
+
 export interface ParsedTask {
     title: string;
     priority?: 'low' | 'medium' | 'high';
@@ -10,7 +16,7 @@ export interface ParsedTask {
     duration?: number; // Minutes
     isFrog?: boolean;
     isLightning?: boolean;
-    matchedTokens: string[];
+    matchedTokens: ParsedToken[];
 }
 
 // Helper to escape regex special characters
@@ -20,7 +26,7 @@ function escapeRegExp(string: string) {
 
 export function parseTaskInput(input: string, projects: Project[] = []): ParsedTask {
     let cleanTitle = input;
-    const matchedTokens: string[] = [];
+    const matchedTokens: ParsedToken[] = [];
 
     let isFrog = false;
     let isLightning = false;
@@ -34,7 +40,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isFrog = true;
         const match = cleanTitle.match(frogRegex);
         if (match && match[1]) {
-            matchedTokens.push(match[1]); // push just the token
+            matchedTokens.push({ text: match[1], type: 'frog' }); // push just the token
             cleanTitle = cleanTitle.replace(match[0], ' ').trim(); // replace the matched block (including leading space) with a single space to avoid smushing words
         }
     }
@@ -43,7 +49,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isLightning = true;
         const match = cleanTitle.match(lightningRegex);
         if (match && match[1]) {
-            matchedTokens.push(match[1]);
+            matchedTokens.push({ text: match[1], type: 'lightning' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
@@ -60,7 +66,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             const match = cleanTitle.match(pattern.regex);
             if (match) {
                 duration = parseInt(match[1]) * pattern.multiplier;
-                matchedTokens.push(match[0]);
+                matchedTokens.push({ text: match[0], type: 'duration' });
                 cleanTitle = cleanTitle.replace(pattern.regex, '');
             }
         }
@@ -82,7 +88,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         highPatterns.forEach(p => {
             const match = cleanTitle.match(p);
             if (match) {
-                matchedTokens.push(match[0]);
+                matchedTokens.push({ text: match[0], type: 'priority' });
                 cleanTitle = cleanTitle.replace(p, '');
             }
         });
@@ -95,7 +101,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         medPatterns.forEach(p => {
             const match = cleanTitle.match(p);
             if (match) {
-                matchedTokens.push(match[0]);
+                matchedTokens.push({ text: match[0], type: 'priority' });
                 cleanTitle = cleanTitle.replace(p, '');
             }
         });
@@ -104,7 +110,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         lowPatterns.forEach(p => {
             const match = cleanTitle.match(p);
             if (match) {
-                matchedTokens.push(match[0]);
+                matchedTokens.push({ text: match[0], type: 'priority' });
                 cleanTitle = cleanTitle.replace(p, '');
             }
         });
@@ -136,7 +142,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         const match = cleanTitle.match(everyNDaysRegex);
         if (match) {
             recurrence = parseInt(match[1]) as any;
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'recurrence' });
             cleanTitle = cleanTitle.replace(everyNDaysRegex, '');
         }
     }
@@ -146,7 +152,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         const match = cleanTitle.match(everyDayOfWeekRegex);
         if (match) {
             recurrence = 'weekly';
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'recurrence' });
             cleanTitle = cleanTitle.replace(everyDayOfWeekRegex, match[1]);
         }
     }
@@ -157,7 +163,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         const match = cleanTitle.match(pluralDaysOfWeekRegex);
         if (match) {
             recurrence = 'weekly';
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'recurrence' });
             // Extract the base day
             cleanTitle = cleanTitle.replace(pluralDaysOfWeekRegex, match[1]);
         }
@@ -171,7 +177,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             const dateNum = parseInt(match[1]);
             if (dateNum >= 1 && dateNum <= 31) {
                 recurrence = 'monthly';
-                matchedTokens.push(match[0]);
+                matchedTokens.push({ text: match[0], type: 'recurrence' });
                 cleanTitle = cleanTitle.replace(everyNthRegex, '');
 
                 // Set the due date to the next occurrence of this date
@@ -193,7 +199,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             const regex = new RegExp(`\\b${escapeRegExp(key)}\\b`, 'i');
             if (regex.test(cleanTitle)) {
                 recurrence = recurrenceMap[key];
-                matchedTokens.push(key);
+                matchedTokens.push({ text: key, type: 'recurrence' });
                 cleanTitle = cleanTitle.replace(regex, '');
                 break; // Take first match
             }
@@ -211,7 +217,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         if (tagRegex.test(cleanTitle)) {
             projectId = project.id;
             const match = cleanTitle.match(tagRegex);
-            if (match) matchedTokens.push(match[0]);
+            if (match) matchedTokens.push({ text: match[0], type: 'project', color: project.color });
             cleanTitle = cleanTitle.replace(tagRegex, '');
             break;
         }
@@ -223,7 +229,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             if (inRegex.test(cleanTitle)) {
                 projectId = project.id;
                 const match = cleanTitle.match(inRegex);
-                if (match) matchedTokens.push(match[0]);
+                if (match) matchedTokens.push({ text: match[0], type: 'project', color: project.color });
                 cleanTitle = cleanTitle.replace(inRegex, '');
                 break;
             }
@@ -271,7 +277,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         const match = cleanTitle.match(inDaysRegex);
         if (match) {
             dueDate = addDays(today, parseInt(match[1])).getTime();
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inDaysRegex, '');
             dateMatched = true;
         }
@@ -279,7 +285,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         const match = cleanTitle.match(inWeeksRegex);
         if (match) {
             dueDate = addWeeks(today, parseInt(match[1])).getTime();
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inWeeksRegex, '');
             dateMatched = true;
         }
@@ -300,7 +306,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
                 setDate = addYears(setDate, 1);
             }
             dueDate = setDate.getTime();
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(monthDateRegex, '');
             dateMatched = true;
         }
@@ -311,7 +317,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             if (pattern.regex.test(cleanTitle)) {
                 dueDate = pattern.handler().getTime();
                 const match = cleanTitle.match(pattern.regex);
-                if (match) matchedTokens.push(match[0]);
+                if (match) matchedTokens.push({ text: match[0], type: 'date' });
                 cleanTitle = cleanTitle.replace(pattern.regex, '');
                 dateMatched = true;
                 break;
@@ -334,7 +340,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             }
 
             dueDate = setDate.getTime();
-            matchedTokens.push(match[0]);
+            matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(numericDateRegex, '');
             dateMatched = true;
         }

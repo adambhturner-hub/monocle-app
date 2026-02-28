@@ -19,7 +19,7 @@ import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, 
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
-import { parseTaskInput } from '@/lib/smart-parser';
+import { parseTaskInput, ParsedToken } from '@/lib/smart-parser';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SwipeableTask } from '@/components/ui/swipeable-task';
@@ -45,21 +45,31 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const renderHighlightedText = (text: string, matchedTokens: string[]) => {
+const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
     if (!text || !matchedTokens || matchedTokens.length === 0) return <span>{text}</span>;
 
-    // Create a regex to match any of the tokens (case insensitive, full words or padded)
-    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
-    const escapedTokens = sortedTokens.map(token => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const sortedTokens = [...matchedTokens].sort((a, b) => b.text.length - a.text.length);
+    const escapedTokens = sortedTokens.map(token => token.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
 
     const parts = text.split(regex);
 
     return parts.map((part, i) => {
-        const isMatch = sortedTokens.some(token => part.toLowerCase() === token.toLowerCase());
-        if (isMatch) {
+        const tokenMatch = sortedTokens.find(token => part.toLowerCase() === token.text.toLowerCase());
+        if (tokenMatch) {
+            let colorClass = "bg-primary/20 text-transparent";
+            switch (tokenMatch.type) {
+                case 'frog': colorClass = "bg-green-500/20 text-transparent"; break;
+                case 'lightning': colorClass = "bg-amber-500/20 text-transparent"; break;
+                case 'date': colorClass = "bg-purple-500/20 text-transparent"; break;
+                case 'priority': colorClass = "bg-red-500/20 text-transparent"; break;
+                case 'recurrence': colorClass = "bg-blue-500/20 text-transparent"; break;
+                case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
+                case 'project': colorClass = "bg-primary/20 text-transparent"; break;
+            }
+
             return (
-                <span key={i} className="bg-primary/20 text-transparent rounded-sm transition-colors duration-200">
+                <span key={i} className={cn(colorClass, "rounded-sm transition-colors duration-200")} style={tokenMatch.type === 'project' && tokenMatch.color ? { backgroundColor: `${tokenMatch.color}33` } : undefined}>
                     {part}
                 </span>
             );
