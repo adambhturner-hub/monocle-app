@@ -88,11 +88,11 @@ export function ShortcutsHelp() {
                         <div className="text-xs font-semibold text-muted-foreground mt-2">Text Modifiers</div>
                         <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
                             <span>Daily Frog</span>
-                            <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">#frog</span>
+                            <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">@frog</span>
                         </div>
                         <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
                             <span>Lightning Task</span>
-                            <span className="font-mono text-xs text-yellow-600 dark:text-yellow-400">#lightning</span>
+                            <span className="font-mono text-xs text-yellow-600 dark:text-yellow-400">@lightning</span>
                         </div>
 
                         {/* Focus Timer */}

@@ -26,8 +26,8 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     let isLightning = false;
 
     // 0. Special Flags (Frog/Lightning)
-    const frogRegex = /\b(frog|#frog|!frog)\b/i;
-    const lightningRegex = /\b(lightning|#lightning|!lightning|bolt|quick)\b/i;
+    const frogRegex = /\b(frog|@frog|!frog)\b/i;
+    const lightningRegex = /\b(lightning|@lightning|!lightning|bolt|quick)\b/i;
 
     if (frogRegex.test(cleanTitle)) {
         isFrog = true;
