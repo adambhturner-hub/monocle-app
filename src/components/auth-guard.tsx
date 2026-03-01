@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { auth, googleProvider } from '@/lib/firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, isSignInWithEmailLink, signInWithEmailLink, sendSignInLinkToEmail, User } from 'firebase/auth';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,33 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const isDesktopRoute = pathname === '/desktop';
 
     useEffect(() => {
+        const checkEmailLink = async () => {
+            if (isSignInWithEmailLink(auth, window.location.href)) {
+                let email = window.localStorage.getItem('emailForSignIn');
+                if (!email) {
+                    email = window.prompt('Please provide your email for confirmation');
+                }
+                if (email) {
+                    try {
+                        await signInWithEmailLink(auth, email, window.location.href);
+                        window.localStorage.removeItem('emailForSignIn');
+                        toast.success('Successfully signed in with Magic Link!');
+                        // Optional: remove query params from URL so link can't be reused or clutter the address bar
+                        window.history.replaceState(null, '', window.location.pathname);
+                    } catch (error: any) {
+                        console.error('Error signing in with magic link:', error);
+                        // If the link is invalid/expired, we don't necessarily want to block the user,
+                        // auth state check below will just show them the landing page.
+                        if (error.code !== 'auth/invalid-action-code') {
+                            toast.error(error.message || 'Error signing in with magic link.');
+                        }
+                    }
+                }
+            }
+        };
+
+        checkEmailLink();
+
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
@@ -83,6 +110,26 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'Failed to send password reset email.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSendMagicLink = async (emailAddress: string) => {
+        if (!emailAddress) return false;
+        setIsSubmitting(true);
+        try {
+            const actionCodeSettings = {
+                url: window.location.origin,
+                handleCodeInApp: true,
+            };
+            await sendSignInLinkToEmail(auth, emailAddress, actionCodeSettings);
+            window.localStorage.setItem('emailForSignIn', emailAddress);
+            return true;
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || 'Failed to send magic link.');
+            return false;
         } finally {
             setIsSubmitting(false);
         }
@@ -157,7 +204,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
         return (
             <div className="fixed inset-0 z-[100] bg-background animate-in fade-in duration-500 overflow-y-auto">
-                <LandingPage onGoogleSignIn={handleGoogleSignIn} isSubmitting={isSubmitting} />
+                <LandingPage onGoogleSignIn={handleGoogleSignIn} onSendMagicLink={handleSendMagicLink} isSubmitting={isSubmitting} />
             </div>
         );
     }

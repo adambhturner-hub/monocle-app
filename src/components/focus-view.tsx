@@ -616,7 +616,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                                                 disabled={activeTask.isFrog}
                                                                 className={cn(
                                                                     "h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm",
-                                                                    activeTask.isFrog && "opacity-50 cursor-not-allowed hidden" // Optionally hide or just dim. Let's dim and disable.
+                                                                    activeTask.isFrog && "opacity-50 cursor-not-allowed" // Optionally hide or just dim. Let's dim and disable.
                                                                 )}
                                                             >
                                                                 <Pause className="mr-1.5 h-3.5 w-3.5" /> Hold
