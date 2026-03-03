@@ -15,7 +15,7 @@ import { getIconComponent } from '@/lib/icons';
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -318,8 +318,14 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     }, [open, defaultTab]);
 
     // Filter locally to get the lists
-    // First, apply project filter
-    const visibleTasks = tasks.filter(t => (activeProject ? t.projectId === activeProject : true));
+    const visibleTasks = tasks.filter(t => {
+        if (activeProject) return t.projectId === activeProject;
+        if (t.projectId) {
+            const project = projects.find(p => p.id === t.projectId);
+            if (project?.excludeFromQueue) return false;
+        }
+        return true;
+    });
 
     // Then separate active vs draft
     // And apply search filter
@@ -668,6 +674,22 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                     <div className="flex items-center justify-between mb-3 shrink-0">
                                         <div className="flex items-center gap-2">
                                             <ProjectSelect variant="ghost" className="h-8 text-xs font-semibold uppercase tracking-widest text-muted-foreground bg-transparent border-none shadow-none hover:bg-muted/50 px-2 -ml-2 min-w-0" />
+                                            {activeProject && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-xs"
+                                                    title={projects.find(p => p.id === activeProject)?.excludeFromQueue ? "Project tasks are hidden from main queue. Click to show." : "Project tasks appear in main queue. Click to hide."}
+                                                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => {
+                                                        const p = projects.find(p => p.id === activeProject);
+                                                        if (p) {
+                                                            useMonocleStore.getState().updateProject(p.id, { excludeFromQueue: !p.excludeFromQueue });
+                                                        }
+                                                    }}
+                                                >
+                                                    {projects.find(p => p.id === activeProject)?.excludeFromQueue ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground/70" /> : <Eye className="h-3.5 w-3.5 opacity-30 hover:opacity-100 transition-opacity" />}
+                                                </Button>
+                                            )}
                                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold shrink-0">{activeTasks.length}</span>
                                         </div>
                                         <div className="flex">
