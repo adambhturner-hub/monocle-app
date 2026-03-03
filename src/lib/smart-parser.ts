@@ -76,13 +76,13 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     let priority: 'low' | 'medium' | 'high' | undefined;
 
     // High
-    const highPatterns = [/\b(high|urgent|asap|p1|important)\b/i, /(!{2,})/]; // !! or more
+    const highPatterns = [/\b(high|urgent|asap|p1|important)\b/i, /(!{3,})/]; // !!! or more
     // Med
-    const medPatterns = [/\b(medium|med|normal|p2)\b/i, /(!{1})/]; // !
+    const medPatterns = [/\b(medium|med|normal|p2)\b/i, /(?<=^|\s)(!!)(?=\s|$)/]; // exactly !!
     // Low
-    const lowPatterns = [/\b(low|lo|later|p3)\b/i];
+    const lowPatterns = [/\b(low|lo|later|p3)\b/i, /(?<=^|\s)(!)(?=\s|$)/]; // exactly !
 
-    // Check High first (strongest wins)
+    // Priority Parsing Logic (Strongest to weakest)
     if (highPatterns.some(p => p.test(cleanTitle))) {
         priority = 'high';
         highPatterns.forEach(p => {
@@ -93,10 +93,6 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             }
         });
     } else if (medPatterns.some(p => p.test(cleanTitle))) {
-        // Only match single ! if it's not part of a word (this is tricky with ! without spaces)
-        // Regex /(!{1})/ matches "!" anywhere. Let's be careful.
-        // Actually, let's just stick to keywords for Med/Low mostly, or strict ! count.
-        // For now, if we found !, and it wasn't captured by High (!!), it matches here.
         priority = 'medium';
         medPatterns.forEach(p => {
             const match = cleanTitle.match(p);

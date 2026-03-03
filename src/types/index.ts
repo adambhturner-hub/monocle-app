@@ -34,6 +34,7 @@ export interface Project {
   name: string;
   color: string;
   icon?: string;
+  excludeFromQueue?: boolean;
   updatedAt?: number;
 }
 

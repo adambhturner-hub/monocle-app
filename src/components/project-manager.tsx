@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, GripVertical, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useMonocleStore } from '@/lib/store';
 import { Project } from '@/types';
 import { cn, generateId } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PROJECT_ICONS, getIconComponent } from '@/lib/icons';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const COLORS = [
     '#ef4444', // Red 500
@@ -168,6 +170,16 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                                                                 })}
                                                                             </div>
                                                                         </div>
+                                                                        <div className="flex items-center justify-between mt-2 pt-4 border-t border-border">
+                                                                            <div className="space-y-0.5">
+                                                                                <Label className="text-sm font-medium">Exclude from Queue</Label>
+                                                                                <p className="text-xs text-muted-foreground break-words whitespace-normal font-normal">Hide tasks from Global Focus Mode.</p>
+                                                                            </div>
+                                                                            <Switch
+                                                                                checked={project.excludeFromQueue || false}
+                                                                                onCheckedChange={(checked) => updateProject(project.id, { excludeFromQueue: checked })}
+                                                                            />
+                                                                        </div>
                                                                     </PopoverContent>
                                                                 </Popover>
                                                                 <Input
@@ -193,6 +205,9 @@ export function ProjectManager({ open, onOpenChange }: ProjectManagerProps) {
                                                                         })()}
                                                                     </div>
                                                                     <span className="font-medium">{project.name}</span>
+                                                                    {project.excludeFromQueue && (
+                                                                        <EyeOff className="h-3.5 w-3.5 text-muted-foreground/50 ml-1" />
+                                                                    )}
                                                                 </div>
                                                                 <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                                     <Button size="icon-xs" variant="ghost" onClick={() => startEdit(project)} className="h-7 w-7 text-muted-foreground hover:text-foreground">

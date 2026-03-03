@@ -277,15 +277,25 @@ export const useMonocleStore = create<MonocleState>()(
                 },
 
                 getAutoPickedTask: () => {
-                    const { tasks, activeProject, settings, frogDetourActive } = get();
+                    const { tasks, projects, activeProject, settings, frogDetourActive } = get();
                     const now = Date.now();
 
                     // Filter eligible tasks
-                    const eligible = tasks.filter(t =>
-                        !t.isDraft &&
-                        t.status !== 'done' &&
-                        (!activeProject || t.projectId === activeProject)
-                    );
+                    const eligible = tasks.filter(t => {
+                        if (t.isDraft || t.status === 'done') return false;
+
+                        if (activeProject) {
+                            // If viewing a specific project, only show its tasks (even if it's excluded from global)
+                            return t.projectId === activeProject;
+                        } else {
+                            // If viewing the global queue, hide tasks from excluded projects
+                            if (t.projectId) {
+                                const project = projects.find(p => p.id === t.projectId);
+                                if (project?.excludeFromQueue) return false;
+                            }
+                            return true;
+                        }
+                    });
 
                     if (eligible.length === 0) return null;
 
@@ -572,12 +582,20 @@ export const useMonocleStore = create<MonocleState>()(
                     }),
 
                 getVisibleTasks: () => {
-                    const { tasks, activeProject } = get();
-                    return tasks.filter(t =>
-                        !t.isDraft &&
-                        t.status !== 'done' &&
-                        (activeProject ? t.projectId === activeProject : true)
-                    );
+                    const { tasks, activeProject, projects } = get();
+                    return tasks.filter(t => {
+                        if (t.isDraft || t.status === 'done') return false;
+
+                        if (activeProject) {
+                            return t.projectId === activeProject;
+                        } else {
+                            if (t.projectId) {
+                                const project = projects.find(p => p.id === t.projectId);
+                                if (project?.excludeFromQueue) return false;
+                            }
+                            return true;
+                        }
+                    });
                 },
 
                 completeTask: (taskId?: string) => {

@@ -87,6 +87,18 @@ export function ShortcutsHelp() {
                         {/* Text Modifiers */}
                         <div className="text-xs font-semibold text-muted-foreground mt-2">Text Modifiers</div>
                         <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                            <span>High Priority</span>
+                            <span className="font-mono text-xs text-amber-500">!!! or p1</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                            <span>Medium Priority</span>
+                            <span className="font-mono text-xs">!! or p2</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                            <span>Low Priority</span>
+                            <span className="font-mono text-xs text-blue-500">! or p3</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
                             <span>Daily Frog</span>
                             <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">@frog</span>
                         </div>
@@ -94,7 +106,6 @@ export function ShortcutsHelp() {
                             <span>Lightning Task</span>
                             <span className="font-mono text-xs text-yellow-600 dark:text-yellow-400">@lightning</span>
                         </div>
-
                         {/* Focus Timer */}
                         <div className="text-xs font-semibold text-muted-foreground mt-2">Focus Timer</div>
                         <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
