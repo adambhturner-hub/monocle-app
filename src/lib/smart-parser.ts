@@ -24,9 +24,11 @@ function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-export function parseTaskInput(input: string, projects: Project[] = []): ParsedTask {
+export function parseTaskInput(input: string, projects: Project[] = [], ignoredTokens: string[] = []): ParsedTask {
     let cleanTitle = input;
     const matchedTokens: ParsedToken[] = [];
+
+    const isIgnored = (str: string) => ignoredTokens.some(t => t.toLowerCase() === str.trim().toLowerCase());
 
     let isFrog = false;
     let isLightning = false;
@@ -37,18 +39,18 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const lightningRegex = /(?:^|\s)(lightning|@lightning|!lightning|bolt|quick)(?=\s|$)/i;
 
     if (frogRegex.test(cleanTitle)) {
-        isFrog = true;
         const match = cleanTitle.match(frogRegex);
-        if (match && match[1]) {
+        if (match && match[1] && !isIgnored(match[1])) {
+            isFrog = true;
             matchedTokens.push({ text: match[1], type: 'frog' }); // push just the token
             cleanTitle = cleanTitle.replace(match[0], ' ').trim(); // replace the matched block (including leading space) with a single space to avoid smushing words
         }
     }
 
     if (lightningRegex.test(cleanTitle)) {
-        isLightning = true;
         const match = cleanTitle.match(lightningRegex);
-        if (match && match[1]) {
+        if (match && match[1] && !isIgnored(match[1])) {
+            isLightning = true;
             matchedTokens.push({ text: match[1], type: 'lightning' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
@@ -64,7 +66,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     for (const pattern of durationPatterns) {
         if (pattern.regex.test(cleanTitle)) {
             const match = cleanTitle.match(pattern.regex);
-            if (match) {
+            if (match && !isIgnored(match[0])) {
                 duration = parseInt(match[1]) * pattern.multiplier;
                 matchedTokens.push({ text: match[0], type: 'duration' });
                 cleanTitle = cleanTitle.replace(pattern.regex, '');
@@ -83,34 +85,20 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const lowPatterns = [/\b(low|lo|later|p3)\b/i, /(?<=^|\s)(!)(?=\s|$)/]; // exactly !
 
     // Priority Parsing Logic (Strongest to weakest)
-    if (highPatterns.some(p => p.test(cleanTitle))) {
-        priority = 'high';
-        highPatterns.forEach(p => {
+    function checkPriority(patterns: RegExp[], prioValue: 'high' | 'medium' | 'low') {
+        for (const p of patterns) {
             const match = cleanTitle.match(p);
-            if (match) {
+            if (match && !isIgnored(match[0])) {
+                if (!priority) priority = prioValue; // Set only the strongest priority
                 matchedTokens.push({ text: match[0], type: 'priority' });
                 cleanTitle = cleanTitle.replace(p, '');
             }
-        });
-    } else if (medPatterns.some(p => p.test(cleanTitle))) {
-        priority = 'medium';
-        medPatterns.forEach(p => {
-            const match = cleanTitle.match(p);
-            if (match) {
-                matchedTokens.push({ text: match[0], type: 'priority' });
-                cleanTitle = cleanTitle.replace(p, '');
-            }
-        });
-    } else if (lowPatterns.some(p => p.test(cleanTitle))) {
-        priority = 'low';
-        lowPatterns.forEach(p => {
-            const match = cleanTitle.match(p);
-            if (match) {
-                matchedTokens.push({ text: match[0], type: 'priority' });
-                cleanTitle = cleanTitle.replace(p, '');
-            }
-        });
+        }
     }
+
+    checkPriority(highPatterns, 'high');
+    if (!priority) checkPriority(medPatterns, 'medium');
+    if (!priority) checkPriority(lowPatterns, 'low');
 
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -136,7 +124,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const everyNDaysRegex = /\bevery (\d+) days\b/i;
     if (everyNDaysRegex.test(cleanTitle)) {
         const match = cleanTitle.match(everyNDaysRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             recurrence = parseInt(match[1]) as any;
             matchedTokens.push({ text: match[0], type: 'recurrence' });
             cleanTitle = cleanTitle.replace(everyNDaysRegex, '');
@@ -146,7 +134,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const everyDayOfWeekRegex = new RegExp(`\\bevery (${daysOfWeek.join('|')}|${shortDays.join('|')})\\b`, 'i');
     if (everyDayOfWeekRegex.test(cleanTitle)) {
         const match = cleanTitle.match(everyDayOfWeekRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             recurrence = 'weekly';
             matchedTokens.push({ text: match[0], type: 'recurrence' });
             cleanTitle = cleanTitle.replace(everyDayOfWeekRegex, match[1]);
@@ -157,7 +145,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const pluralDaysOfWeekRegex = new RegExp(`\\b(${daysOfWeek.join('|')}|${shortDays.join('|')})s\\b`, 'i');
     if (pluralDaysOfWeekRegex.test(cleanTitle)) {
         const match = cleanTitle.match(pluralDaysOfWeekRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             recurrence = 'weekly';
             matchedTokens.push({ text: match[0], type: 'recurrence' });
             // Extract the base day
@@ -169,7 +157,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const everyNthRegex = /\bevery (\d{1,2})(st|nd|rd|th)?\b/i;
     if (everyNthRegex.test(cleanTitle)) {
         const match = cleanTitle.match(everyNthRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             const dateNum = parseInt(match[1]);
             if (dateNum >= 1 && dateNum <= 31) {
                 recurrence = 'monthly';
@@ -194,10 +182,12 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         for (const key of recurrenceKeys) {
             const regex = new RegExp(`\\b${escapeRegExp(key)}\\b`, 'i');
             if (regex.test(cleanTitle)) {
-                recurrence = recurrenceMap[key];
-                matchedTokens.push({ text: key, type: 'recurrence' });
-                cleanTitle = cleanTitle.replace(regex, '');
-                break; // Take first match
+                if (!isIgnored(key)) {
+                    recurrence = recurrenceMap[key];
+                    matchedTokens.push({ text: key, type: 'recurrence' });
+                    cleanTitle = cleanTitle.replace(regex, '');
+                    break; // Take first match
+                }
             }
         }
     }
@@ -211,11 +201,13 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     for (const project of sortedProjects) {
         const tagRegex = new RegExp(`[@#]${escapeRegExp(project.name)}\\b`, 'i');
         if (tagRegex.test(cleanTitle)) {
-            projectId = project.id;
             const match = cleanTitle.match(tagRegex);
-            if (match) matchedTokens.push({ text: match[0], type: 'project', color: project.color });
-            cleanTitle = cleanTitle.replace(tagRegex, '');
-            break;
+            if (match && !isIgnored(match[0])) {
+                projectId = project.id;
+                matchedTokens.push({ text: match[0], type: 'project', color: project.color });
+                cleanTitle = cleanTitle.replace(tagRegex, '');
+                break;
+            }
         }
     }
 
@@ -223,11 +215,13 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         for (const project of sortedProjects) {
             const inRegex = new RegExp(`\\bin ${escapeRegExp(project.name)}\\b`, 'i');
             if (inRegex.test(cleanTitle)) {
-                projectId = project.id;
                 const match = cleanTitle.match(inRegex);
-                if (match) matchedTokens.push({ text: match[0], type: 'project', color: project.color });
-                cleanTitle = cleanTitle.replace(inRegex, '');
-                break;
+                if (match && !isIgnored(match[0])) {
+                    projectId = project.id;
+                    matchedTokens.push({ text: match[0], type: 'project', color: project.color });
+                    cleanTitle = cleanTitle.replace(inRegex, '');
+                    break;
+                }
             }
         }
     }
@@ -271,7 +265,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
 
     if (inDaysRegex.test(cleanTitle)) {
         const match = cleanTitle.match(inDaysRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             dueDate = addDays(today, parseInt(match[1])).getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inDaysRegex, '');
@@ -279,7 +273,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         }
     } else if (inWeeksRegex.test(cleanTitle)) {
         const match = cleanTitle.match(inWeeksRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             dueDate = addWeeks(today, parseInt(match[1])).getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inWeeksRegex, '');
@@ -289,7 +283,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
 
     if (!dateMatched && monthDateRegex.test(cleanTitle)) {
         const match = cleanTitle.match(monthDateRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
             const month = monthNames.findIndex(m => match[1].toLowerCase().startsWith(m));
             const day = parseInt(match[2]);
@@ -311,19 +305,21 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     if (!dateMatched) {
         for (const pattern of datePatterns) {
             if (pattern.regex.test(cleanTitle)) {
-                dueDate = pattern.handler().getTime();
                 const match = cleanTitle.match(pattern.regex);
-                if (match) matchedTokens.push({ text: match[0], type: 'date' });
-                cleanTitle = cleanTitle.replace(pattern.regex, '');
-                dateMatched = true;
-                break;
+                if (match && !isIgnored(match[0])) {
+                    dueDate = pattern.handler().getTime();
+                    matchedTokens.push({ text: match[0], type: 'date' });
+                    cleanTitle = cleanTitle.replace(pattern.regex, '');
+                    dateMatched = true;
+                    break;
+                }
             }
         }
     }
 
     if (!dateMatched) {
         const match = cleanTitle.match(numericDateRegex);
-        if (match) {
+        if (match && !isIgnored(match[0])) {
             const month = parseInt(match[1]) - 1;
             const day = parseInt(match[2]);
             const currentYear = new Date().getFullYear();

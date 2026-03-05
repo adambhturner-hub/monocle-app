@@ -95,6 +95,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [isFrog, setIsFrog] = useState(false);
     const [isLightning, setIsLightning] = useState(false);
 
+    const [ignoredTokens, setIgnoredTokens] = useState<string[]>([]);
+
     // Initializer for Edit Mode or Undo Drafts
     useEffect(() => {
         setParsedData(null);
@@ -237,9 +239,10 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         const timer = setTimeout(() => {
             if (!title.trim()) {
                 setParsedData(null);
+                setIgnoredTokens(prev => prev.filter(t => title.toLowerCase().includes(t.toLowerCase()))); // Clean up unused ignored tokens
                 return;
             }
-            const result = parseTaskInput(title, projects);
+            const result = parseTaskInput(title, projects, ignoredTokens);
             if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning) {
                 setParsedData(result);
             } else {
@@ -247,7 +250,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [title, projects]);
+    }, [title, projects, ignoredTokens]);
 
     const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive') => {
         if (!title.trim()) {
@@ -358,6 +361,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         setIsFrog(false);
         setIsLightning(false);
         setAdvancedOpen(false);
+        setIgnoredTokens([]);
 
         if (destination === 'queue') {
             setView('queue');
@@ -371,6 +375,26 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Backspace' && inputRef.current && parsedData?.matchedTokens) {
+            const cursorPosition = inputRef.current.selectionStart;
+            const textBeforeCursor = title.substring(0, cursorPosition);
+
+            const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            for (const token of parsedData.matchedTokens) {
+                const regex = new RegExp(escapeRegExp(token.text) + "\\s*$", "i");
+                if (regex.test(textBeforeCursor)) {
+                    e.preventDefault();
+                    setIgnoredTokens(prev => [...prev, token.text]);
+
+                    // Force immediate re-parse to drop the highlight instantly
+                    const tempResult = parseTaskInput(title, projects, [...ignoredTokens, token.text]);
+                    setParsedData(tempResult);
+                    return;
+                }
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             if (isMentionsOpen && mentionOptions.length > 0) {
                 e.preventDefault();
