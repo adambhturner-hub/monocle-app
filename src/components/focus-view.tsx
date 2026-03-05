@@ -336,7 +336,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                     >
                         <Card
                             className={cn(
-                                "w-full max-w-3xl flex-1 max-h-[85vh] lg:max-h-[800px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-8 shadow-lg border bg-card/60 backdrop-blur-sm relative flex flex-col items-center text-center rounded-3xl group cursor-default transition-all duration-500",
+                                "w-full max-w-3xl flex-1 flex flex-col p-4 md:p-8 shadow-lg border bg-card/60 backdrop-blur-sm relative text-center rounded-3xl group cursor-default transition-all duration-500",
                                 activeTask.isFrog ? "ring-2 ring-emerald-500 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)] border-emerald-500/50" : "",
                                 activeTask.isLightning && !activeTask.isFrog ? "ring-2 ring-yellow-500 shadow-[0_0_30px_-5px_rgba(234,179,8,0.3)] border-yellow-500/5 bg-yellow-500/5" : "",
                                 isCompleting && "scale-95 opacity-0 translate-y-8 duration-500 ease-in pointer-events-none"
@@ -350,47 +350,46 @@ export function FocusView({ onExit }: FocusViewProps) {
                             }}
                         >
 
-                            {/* Focus Atmosphere - Always Visible */}
-                            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10">
-                                <FocusAtmosphere />
+                            {/* Header Row: Atmosphere and Actions */}
+                            <div className="flex justify-between items-start w-full mb-2 z-10">
+                                <div>
+                                    <FocusAtmosphere />
+                                </div>
+                                <div className="flex gap-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/50 hover:text-foreground shrink-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={(e) => {
+                                                e.preventDefault();
+                                                setTimeout(() => setEditModalOpen(true), 0);
+                                            }}>
+                                                <Edit className="mr-2 h-4 w-4" /> Edit Task (Modal)
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleDuplicate}>
+                                                <Copy className="mr-2 h-4 w-4" /> Duplicate
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleConvertToDraft}>
+                                                <FileText className="mr-2 h-4 w-4" /> Convert to Draft
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={handleArchive}>
+                                                <Archive className="mr-2 h-4 w-4" /> Archive
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
 
-                            {/* Actions Menu (Top Right) */}
-                            <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex gap-2">
-                                {/* ... menu items ... */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/50 hover:text-foreground">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onSelect={(e) => {
-                                            e.preventDefault();
-                                            setTimeout(() => setEditModalOpen(true), 0);
-                                        }}>
-                                            <Edit className="mr-2 h-4 w-4" /> Edit Task (Modal)
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleDuplicate}>
-                                            <Copy className="mr-2 h-4 w-4" /> Duplicate
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleConvertToDraft}>
-                                            <FileText className="mr-2 h-4 w-4" /> Convert to Draft
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleArchive}>
-                                            <Archive className="mr-2 h-4 w-4" /> Archive
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-
-                            {/* Tappable Background Area for the Details Sheet */}
+                            {/* Tappable Content Area for the Details Sheet */}
                             <div
-                                className="flex-1 flex flex-col items-center justify-center w-full gap-2 md:gap-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-pointer"
+                                className="flex-1 flex flex-col items-center justify-center w-full gap-4 md:gap-6 cursor-pointer overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                                 onClick={() => setIsDetailsSheetOpen(true)}
                             >
 
@@ -445,7 +444,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                 </div>
 
                                 {/* Focus Timer */}
-                                <div className="w-full py-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <div className="w-full py-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                                     <FocusTimer taskId={activeTask.id} />
                                 </div>
                             </div>
@@ -595,7 +594,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                             </Drawer>
 
                             {/* Footer Actions - Pinned to bottom of Card */}
-                            <div className="w-full shrink-0 pt-4 pb-2 flex flex-col gap-3">
+                            <div className="w-full shrink-0 pt-6 pb-2 flex flex-col gap-3">
                                 {/* Secondary Actions */}
                                 <div className="flex items-center justify-center gap-2">
                                     {/* Random */}
