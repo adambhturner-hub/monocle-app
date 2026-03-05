@@ -1163,8 +1163,14 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 const sortedTasks = [...tasks].sort((a, b) => {
                                                                     if (a.isFrog) return -1;
                                                                     if (b.isFrog) return 1;
-                                                                    // For Date view, primarily we just want Frogs at top.
-                                                                    // Remaining sorting is preserved from activeTasks original order.
+
+                                                                    // Keep chronological order within the group
+                                                                    if (a.dueDate && b.dueDate) {
+                                                                        return a.dueDate - b.dueDate;
+                                                                    }
+                                                                    if (a.dueDate) return -1;
+                                                                    if (b.dueDate) return 1;
+
                                                                     return 0;
                                                                 });
 
