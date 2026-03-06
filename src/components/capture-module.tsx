@@ -95,8 +95,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [isFrog, setIsFrog] = useState(false);
     const [isLightning, setIsLightning] = useState(false);
 
-    const [ignoredTokens, setIgnoredTokens] = useState<string[]>([]);
-
     // Initializer for Edit Mode or Undo Drafts
     useEffect(() => {
         setParsedData(null);
@@ -239,10 +237,9 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         const timer = setTimeout(() => {
             if (!title.trim()) {
                 setParsedData(null);
-                setIgnoredTokens(prev => prev.filter(t => title.toLowerCase().includes(t.toLowerCase()))); // Clean up unused ignored tokens
                 return;
             }
-            const result = parseTaskInput(title, projects, ignoredTokens);
+            const result = parseTaskInput(title, projects);
             if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning) {
                 setParsedData(result);
             } else {
@@ -250,10 +247,12 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [title, projects, ignoredTokens]);
+    }, [title, projects]);
 
     const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive') => {
-        if (!title.trim()) {
+        const finalTitle = title.replace(/\u200B/g, '').trim();
+        if (!finalTitle) {
+            toast.error("Task title cannot be empty");
             if (destination === 'queue') setView('queue');
             if (destination === 'focus') setView('focus');
             if (destination === 'idea') setView('ideas');
@@ -261,7 +260,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             return;
         }
 
-        let finalTitle = title;
         let finalPriority = priority;
         let finalDueDate = dueDate?.getTime();
         let finalRecurrence: string | number = recurrence;
@@ -270,7 +268,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         let finalIsLightning = isLightning;
 
         if (parsedData) {
-            finalTitle = parsedData.title;
+            // The parsedData.title here is already stripped of tokens, but we use finalTitle for the actual task title.
+            // We still use parsedData to extract the *values* of the tokens.
 
             // In Edit mode, we still want to apply parsed tokens.
             // However, we only override state values if the user hasn't actively fought the parser.
@@ -287,7 +286,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
         if (isEditMode && taskToEdit) {
             updateTask(taskToEdit.id, {
-                title: finalTitle.trim(),
+                title: finalTitle,
                 description: description.trim() || undefined,
                 priority: finalPriority,
                 projectId: finalProjectId,
@@ -312,7 +311,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         const taskId = generateId();
         const newTask: Task = {
             id: taskId,
-            title: finalTitle.trim(),
+            title: finalTitle,
             description: description.trim() || undefined,
             status: 'todo',
             priority: finalPriority,
@@ -361,7 +360,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         setIsFrog(false);
         setIsLightning(false);
         setAdvancedOpen(false);
-        setIgnoredTokens([]);
 
         if (destination === 'queue') {
             setView('queue');
@@ -382,14 +380,28 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             for (const token of parsedData.matchedTokens) {
-                const regex = new RegExp(escapeRegExp(token.text) + "\\s*$", "i");
+                // Must be at exactly the end of the token
+                const regex = new RegExp(escapeRegExp(token.text) + "$", "i");
                 if (regex.test(textBeforeCursor)) {
                     e.preventDefault();
-                    setIgnoredTokens(prev => [...prev, token.text]);
 
-                    // Force immediate re-parse to drop the highlight instantly
-                    const tempResult = parseTaskInput(title, projects, [...ignoredTokens, token.text]);
-                    setParsedData(tempResult);
+                    const match = textBeforeCursor.match(regex)!;
+                    const tokenTextPos = textBeforeCursor.lastIndexOf(match[0]);
+                    const beforeToken = title.substring(0, tokenTextPos);
+                    const tokenText = match[0];
+
+                    // Insert \u200B right before the last character of the token to break the match
+                    const modifiedToken = tokenText.substring(0, tokenText.length - 1) + '\u200B' + tokenText.substring(tokenText.length - 1);
+                    const afterToken = title.substring(cursorPosition);
+
+                    setTitle(beforeToken + modifiedToken + afterToken);
+
+                    // Keep cursor at the same visual position
+                    setTimeout(() => {
+                        const newPos = cursorPosition + 1; // Since we added 1 invisible char before cursor
+                        inputRef.current?.setSelectionRange(newPos, newPos);
+                    }, 0);
+
                     return;
                 }
             }

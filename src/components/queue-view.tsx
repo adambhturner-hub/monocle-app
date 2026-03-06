@@ -111,7 +111,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     const [isSearchActive, setIsSearchActive] = useState(false);
     const [quickAddValue, setQuickAddValue] = useState('');
     const [quickAddProjectId, setQuickAddProjectId] = useState<string | null>(null);
-    const [ignoredTokens, setIgnoredTokens] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     // Initialize sortMode from settings
     const [sortMode, setSortMode] = useState<'manual' | 'date' | 'priority'>(settings.sortMode);
@@ -242,7 +241,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     };
 
     const handleQuickAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects, ignoredTokens) : null;
+        const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects) : null;
         if (e.key === 'Backspace' && inputRef.current && parsedQuickAddResult?.matchedTokens) {
             const cursorPosition = inputRef.current.selectionStart;
             const textBeforeCursor = quickAddValue.substring(0, cursorPosition || 0);
@@ -250,10 +249,27 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             for (const token of parsedQuickAddResult.matchedTokens) {
-                const regex = new RegExp(escapeRegExp(token.text) + "\\s*$", "i");
+                // Must be at exactly the end of the token
+                const regex = new RegExp(escapeRegExp(token.text) + "$", "i");
                 if (regex.test(textBeforeCursor)) {
                     e.preventDefault();
-                    setIgnoredTokens(prev => [...prev, token.text]);
+
+                    const match = textBeforeCursor.match(regex)!;
+                    const tokenTextPos = textBeforeCursor.lastIndexOf(match[0]);
+                    const beforeToken = quickAddValue.substring(0, tokenTextPos);
+                    const tokenText = match[0];
+
+                    // Insert \u200B right before the last character
+                    const modifiedToken = tokenText.substring(0, tokenText.length - 1) + '\u200B' + tokenText.substring(tokenText.length - 1);
+                    const afterToken = quickAddValue.substring(cursorPosition || 0);
+
+                    setQuickAddValue(beforeToken + modifiedToken + afterToken);
+
+                    setTimeout(() => {
+                        const newPos = (cursorPosition || 0) + 1;
+                        inputRef.current?.setSelectionRange(newPos, newPos);
+                    }, 0);
+
                     return;
                 }
             }
@@ -450,15 +466,16 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         }
     };
 
-    const handleQuickAdd = (isDraft: boolean) => {
-        if (!quickAddValue.trim()) return;
+    const handleQuickAdd = (isDraft: boolean = false) => {
+        const finalTitle = quickAddValue.replace(/\u200B/g, '').trim();
+        if (!finalTitle) return;
 
         const { projects } = useMonocleStore.getState();
-        const parsedResult = parseTaskInput(quickAddValue.trim(), projects, ignoredTokens);
+        const parsedResult = parseTaskInput(quickAddValue, projects);
 
         const newTask: Task = {
             id: generateId(),
-            title: parsedResult.title.trim(),
+            title: finalTitle,
             description: '',
             status: 'todo',
             priority: parsedResult.priority || 'medium',
@@ -474,7 +491,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         useMonocleStore.getState().addTask(newTask);
         setQuickAddValue('');
         setQuickAddProjectId(null);
-        setIgnoredTokens([]); // Reset ignored tokens after adding task
         toast(isDraft ? "Added to Idea Dump" : "Added to Queue", { description: newTask.title });
     };
 
@@ -483,14 +499,14 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         let count = 0;
 
         lines.forEach(line => {
-            const trimmed = line.trim();
+            const trimmed = line.replace(/\u200B/g, '').trim();
             if (!trimmed) return;
 
-            const parsedResult = parseTaskInput(trimmed, projects, ignoredTokens);
+            const parsedResult = parseTaskInput(line, projects);
 
             const newTask: Task = {
                 id: generateId(),
-                title: parsedResult.title.trim(),
+                title: trimmed,
                 description: '',
                 status: 'todo',
                 priority: parsedResult.priority || 'medium',
@@ -508,7 +524,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         });
 
         setPendingPaste(null);
-        setIgnoredTokens([]); // Reset ignored tokens after batch add
         toast(`Added ${count} ${isDraft ? 'ideas' : 'tasks'}!`);
     };
 
@@ -624,7 +639,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         }
     };
 
-    const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects, ignoredTokens) : null;
+    const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects) : null;
 
     return (
         <>
@@ -1191,6 +1206,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                         isMobile={isBelowMd}
                                                                                         leftAction={() => handleComplete(task.id)}
                                                                                         rightAction={() => handleDump(task.id)}
+                                                                                        onTap={(task) => handleEdit(task)}
                                                                                         leftIcon={CheckCircle2}
                                                                                         leftLabel="Complete"
                                                                                         leftBgClass="bg-emerald-500"
@@ -1416,14 +1432,15 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                             onChange={(e) => setQuickAddValue(e.target.value)}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
-                                                    if (!quickAddValue.trim()) return;
+                                                    const finalTitle = quickAddValue.replace(/\u200B/g, '').trim();
+                                                    if (!finalTitle) return;
 
                                                     const { projects } = useMonocleStore.getState();
-                                                    const parsedResult = parseTaskInput(quickAddValue.trim(), projects, ignoredTokens);
+                                                    const parsedResult = parseTaskInput(quickAddValue, projects);
 
                                                     const newTask: Task = {
                                                         id: crypto.randomUUID(),
-                                                        title: parsedResult.title.trim(), // Clean title even for ideas? Yes.
+                                                        title: finalTitle, // Clean title even for ideas? Yes.
                                                         status: 'todo',
                                                         priority: parsedResult.priority || 'medium',
                                                         projectId: parsedResult.projectId || activeProject || undefined,
@@ -1437,7 +1454,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                     };
                                                     useMonocleStore.getState().addTask(newTask);
                                                     setQuickAddValue('');
-                                                    setIgnoredTokens([]);
                                                     if (activeProject) setQuickAddProjectId(null);
                                                     toast("Added to Idea Dump", { description: newTask.title });
                                                 }
