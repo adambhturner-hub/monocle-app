@@ -150,6 +150,7 @@ interface MonocleState {
     completeTask: (taskId?: string) => { nextTask?: Task } | void;
     archiveTask: (id: string) => { nextTask?: Task } | void;
     holdTask: (taskId?: string) => void;
+    waitTask: (taskId?: string) => void;
     snoozeTask: (durationMinutes: number, taskId?: string) => void;
     wakeTask: (id: string) => void;
     skipTask: (taskId?: string) => void;
@@ -282,7 +283,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                     // Filter eligible tasks
                     const eligible = tasks.filter(t => {
-                        if (t.isDraft || t.status === 'done') return false;
+                        if (t.isDraft || t.status === 'done' || t.status === 'waiting') return false;
 
                         if (activeProject) {
                             // If viewing a specific project, only show its tasks (even if it's excluded from global)
@@ -917,6 +918,19 @@ export const useMonocleStore = create<MonocleState>()(
 
                         return { tasks: otherTasks, lastState };
                     }),
+
+                waitTask: (taskId?: string) => {
+                    set((state) => {
+                        const currentTask = taskId ? state.tasks.find(t => t.id === taskId) : get().getAutoPickedTask();
+                        if (!currentTask) return state;
+                        
+                        const updatedTask = { ...currentTask, status: 'waiting', skippedUntil: undefined, isDraft: false, updatedAt: Date.now() };
+
+                        return {
+                            tasks: state.tasks.map(t => t.id === currentTask.id ? updatedTask as Task : t)
+                        };
+                    });
+                },
 
                 randomTask: () =>
                     set((state) => {

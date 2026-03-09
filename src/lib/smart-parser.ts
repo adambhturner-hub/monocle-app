@@ -3,7 +3,7 @@ import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'dat
 
 export interface ParsedToken {
     text: string;
-    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date';
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting';
     color?: string;
 }
 
@@ -16,6 +16,7 @@ export interface ParsedTask {
     duration?: number; // Minutes
     isFrog?: boolean;
     isLightning?: boolean;
+    isWaiting?: boolean;
     matchedTokens: ParsedToken[];
 }
 
@@ -30,8 +31,9 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
 
     let isFrog = false;
     let isLightning = false;
+    let isWaiting = false;
 
-    // 0. Special Flags (Frog/Lightning)
+    // 0. Special Flags (Frog/Lightning/Waiting)
     // Use (?:^|\s) to catch tags at start of string or after a space, since \b doesn't trigger on @ or !
     const frogRegex = /(?:^|\s)(frog|@frog|!frog)(?=\s|$)/i;
     const lightningRegex = /(?:^|\s)(lightning|@lightning|!lightning|bolt|quick)(?=\s|$)/i;
@@ -50,6 +52,16 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         if (match && match[1]) {
             isLightning = true;
             matchedTokens.push({ text: match[1], type: 'lightning' });
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+        }
+    }
+
+    const waitRegex = /(?:^|\s)(wait|@wait|!wait|waiting|@waiting|!waiting)(?=\s|$)/i;
+    if (waitRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(waitRegex);
+        if (match && match[1]) {
+            isWaiting = true;
+            matchedTokens.push({ text: match[1], type: 'waiting' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
@@ -346,6 +358,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         duration,
         isFrog,
         isLightning,
+        isWaiting,
         matchedTokens
     };
 }

@@ -8,7 +8,7 @@ import { Task } from '@/types';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass } from 'lucide-react';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
@@ -295,7 +295,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 isLightning: finalIsLightning,
                 isFrog: finalIsFrog,
                 isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
-                status: destination === 'archive' ? 'done' : taskToEdit.status,
+                status: destination === 'archive' ? 'done' : (parsedData?.isWaiting ? 'waiting' : taskToEdit.status),
             });
 
             if (destination === 'archive') {
@@ -313,7 +313,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             id: taskId,
             title: finalTitle,
             description: description.trim() || undefined,
-            status: 'todo',
+            status: parsedData?.isWaiting ? 'waiting' : 'todo',
             priority: finalPriority,
             projectId: finalProjectId,
             dueDate: finalDueDate,
@@ -610,7 +610,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning) && (
+                {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.dueDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
@@ -638,6 +638,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {parsedData.isLightning && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 backdrop-blur-md">
                                 <Zap className="w-3 h-3" /> Lightning
+                            </span>
+                        )}
+                        {parsedData.isWaiting && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 flex items-center gap-1.5 backdrop-blur-md">
+                                <Hourglass className="w-3 h-3" /> Waiting
                             </span>
                         )}
                     </div>

@@ -7,7 +7,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  status: 'todo' | 'done';
+  status: 'todo' | 'done' | 'waiting';
   priority: 'low' | 'medium' | 'high';
   projectId?: string;
   dueDate?: number;

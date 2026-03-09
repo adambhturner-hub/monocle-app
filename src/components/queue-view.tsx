@@ -15,7 +15,7 @@ import { getIconComponent } from '@/lib/icons';
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -392,7 +392,8 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         activeTasks.unshift(frog);
     }
 
-    const snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
+    const snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
+    const waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t));
     const draftTasks = visibleTasks.filter(t => t.isDraft && t.status !== 'done' && matchesSearch(t));
 
     const currentActiveTask = getAutoPickedTask();
@@ -466,7 +467,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
         let finalActive = result.destination.droppableId === 'active' ? newDest : (result.source.droppableId === 'active' ? newSource : activeTasks);
         let finalDrafts = result.destination.droppableId === 'drafts' ? newDest : (result.source.droppableId === 'drafts' ? newSource : draftTasks);
 
-        setTask([...finalActive, ...finalDrafts, ...uninvolvedTasks, ...snoozedTasks]);
+        setTask([...finalActive, ...finalDrafts, ...uninvolvedTasks, ...snoozedTasks, ...waitingTasks]);
     };
 
     const handleSnoozeDrop = (durationMinutes: number, label: string) => {
@@ -984,6 +985,9 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                 <ContextMenuItem onClick={() => handleArchive(task.id)}>
                                                                                                     <CheckCircle2 className="mr-2 h-4 w-4" /> Archive
                                                                                                 </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}>
+                                                                                                    <Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting
+                                                                                                </ContextMenuItem>
                                                                                                 <ContextMenuSeparator />
                                                                                                 <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive">
                                                                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -1126,6 +1130,46 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             </div>
                                                         )}
                                                     </Droppable>
+
+                                                    {/* Waiting On Section */}
+                                                    {waitingTasks.length > 0 && (
+                                                        <div className="mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]">
+                                                            <div className="flex items-center gap-2 px-2 pt-2 mb-3">
+                                                                <Hourglass className="h-3 w-3 text-slate-500" />
+                                                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                                                    Waiting On
+                                                                    <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full">{waitingTasks.length}</span>
+                                                                </h3>
+                                                            </div>
+                                                            {waitingTasks.map((task) => (
+                                                                <div
+                                                                    key={task.id}
+                                                                    className="group bg-card/60 border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 p-3 opacity-80"
+                                                                >
+                                                                    <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p className="text-sm font-medium text-slate-500 truncate">
+                                                                                <FormattedText text={task.title} />
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-2">
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    useMonocleStore.getState().updateTask(task.id, { status: 'todo' });
+                                                                                    toast.success("Restored to Queue");
+                                                                                }}
+                                                                                className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20 px-2 py-1 rounded-md transition-all active:scale-95 border border-slate-500/20"
+                                                                                title="Restore to Active Queue"
+                                                                            >
+                                                                                <RefreshCw className="h-3 w-3" /> Restore to Queue
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
 
                                                     {/* Idea Dump Dropzone (Active Mode Only) */}
                                                     <Droppable droppableId="drafts">
@@ -1297,6 +1341,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                     <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}><Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                                 </ContextMenuContent>
@@ -1414,6 +1459,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                     <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}><Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                                 </ContextMenuContent>
