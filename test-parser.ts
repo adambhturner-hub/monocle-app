@@ -1,17 +1,7 @@
 import { parseTaskInput } from './src/lib/smart-parser';
 
-const tests = [
-    "Survivor wednesdays",
-    "Pay rent every 15th",
-    "Review numbers every weekday",
-    "Family call every weekend",
-    "Brush teeth each day",
-    "Update yearly",
-    "Meeting every other week"
-];
+const res1 = parseTaskInput("wait test");
+console.log("res1", res1);
 
-tests.forEach(t => {
-    console.log(`Input: "${t}"`);
-    console.log(JSON.stringify(parseTaskInput(t), null, 2));
-    console.log("-----------------------");
-});
+const res2 = parseTaskInput("testing wait");
+console.log("res2", res2);

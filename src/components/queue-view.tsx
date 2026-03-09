@@ -66,6 +66,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'recurrence': colorClass = "bg-blue-500/20 text-transparent"; break;
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
+                case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
             }
 
             return (
@@ -492,7 +493,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             id: generateId(),
             title: finalTitle,
             description: '',
-            status: 'todo',
+            status: parsedResult.isWaiting ? 'waiting' : 'todo',
             priority: parsedResult.priority || 'medium',
             projectId: quickAddProjectId || parsedResult.projectId || activeProject || undefined,
             dueDate: parsedResult.dueDate,
@@ -523,7 +524,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                 id: generateId(),
                 title: trimmed,
                 description: '',
-                status: 'todo',
+                status: parsedResult.isWaiting ? 'waiting' : 'todo',
                 priority: parsedResult.priority || 'medium',
                 projectId: parsedResult.projectId || activeProject || undefined,
                 dueDate: parsedResult.dueDate,

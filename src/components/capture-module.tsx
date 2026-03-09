@@ -46,6 +46,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'recurrence': colorClass = "bg-blue-500/20 text-transparent"; break;
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
+                case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
             }
 
             return (
@@ -240,7 +241,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 return;
             }
             const result = parseTaskInput(title, projects);
-            if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning) {
+            if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting) {
                 setParsedData(result);
             } else {
                 setParsedData(null);
