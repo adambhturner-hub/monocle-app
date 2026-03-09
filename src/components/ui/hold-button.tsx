@@ -21,14 +21,16 @@ export function HoldButton({
     const startTimeRef = useRef<number | null>(null);
     const animationFrameRef = useRef<number | null>(null);
 
-    const startHold = () => {
+    const startHold = (e?: React.TouchEvent | React.MouseEvent) => {
+        if (startTimeRef.current) return; // Prevent double-triggering on devices that fire both touch and mouse events
+        
         setIsHolding(true);
         setProgress(0);
         startTimeRef.current = performance.now();
 
-        const updateProgress = (currentTime: number) => {
+        const updateProgress = () => {
             if (!startTimeRef.current) return;
-            const elapsed = currentTime - startTimeRef.current;
+            const elapsed = performance.now() - startTimeRef.current;
             const newProgress = Math.min((elapsed / holdTime) * 100, 100);
             setProgress(newProgress);
 
@@ -54,6 +56,7 @@ export function HoldButton({
         setProgress(0);
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
         startTimeRef.current = null;
     };
@@ -89,7 +92,7 @@ export function HoldButton({
                     strokeWidth="4"
                     strokeLinecap="round"
                     className={cn(
-                        "text-green-500 transition-all duration-75",
+                        "text-green-500 transition-opacity duration-75",
                         progress > 0 ? "opacity-100" : "opacity-0"
                     )}
                     style={{
