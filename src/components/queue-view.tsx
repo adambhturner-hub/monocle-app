@@ -1148,7 +1148,17 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                     className="group bg-card/60 border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 p-3 opacity-80"
                                                                 >
                                                                     <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
-                                                                        <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                            {(() => {
+                                                                                const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                if (!proj) return null;
+                                                                                const IconCmp = getIconComponent(proj.icon);
+                                                                                return (
+                                                                                    <div className="flex justify-center items-center shrink-0 w-3 h-3 rounded-sm opacity-60" style={{ backgroundColor: proj.color }}>
+                                                                                        <IconCmp className="h-2 w-2 text-white drop-shadow-sm" />
+                                                                                    </div>
+                                                                                );
+                                                                            })()}
                                                                             <p className="text-sm font-medium text-slate-500 truncate">
                                                                                 <FormattedText text={task.title} />
                                                                             </p>
