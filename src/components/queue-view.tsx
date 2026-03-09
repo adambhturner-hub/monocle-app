@@ -1175,6 +1175,16 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                             >
                                                                                 <RefreshCw className="h-3 w-3" /> Restore to Queue
                                                                             </button>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleEdit(task);
+                                                                                }}
+                                                                                className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20 px-2 py-1 rounded-md transition-all active:scale-95 border border-slate-500/20"
+                                                                                title="Edit Task"
+                                                                            >
+                                                                                <Edit2 className="h-3 w-3" /> Edit
+                                                                            </button>
                                                                         </div>
                                                                     </div>
                                                                 </div>
