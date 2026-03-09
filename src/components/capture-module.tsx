@@ -160,7 +160,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             const exactMatch = projects.find(p => p.name.toLowerCase() === lowerFilter);
             if (lowerFilter.length > 0 && !exactMatch) {
                 // Add a "create new" option
-                matches.unshift({
+                matches.push({
                     label: `Create "${filterText}"...`,
                     value: `create_${filterText}`,
                     icon: <Plus className="w-3 h-3 text-muted-foreground" />
@@ -403,6 +403,20 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     }, 0);
 
                     return;
+                }
+            }
+        }
+
+        if (e.key === ' ' && isMentionsOpen && activeTrigger === '#') {
+            if (mentionOptions.length > 0) {
+                const selected = mentionOptions[mentionSelectedIndex];
+                if (!selected.value.startsWith('create_')) {
+                    e.preventDefault();
+                    handleMentionSelect(selected);
+                    return;
+                } else {
+                    closeMentions();
+                    // Let space behave normally
                 }
             }
         }
