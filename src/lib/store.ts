@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { get, set, del } from 'idb-keyval';
-import { addDays, addWeeks, addMonths, addYears, isToday } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, isToday, startOfDay } from 'date-fns';
 
 // Custom IndexedDB storage adapter
 export const idbStorage: StateStorage = {
@@ -325,9 +325,9 @@ export const useMonocleStore = create<MonocleState>()(
                             if (wA !== wB) return wA - wB;
 
                             // Sub-sort by date within same priority
-                            if (!a.dueDate && b.dueDate) return 1;
-                            if (a.dueDate && !b.dueDate) return -1;
-                            if (a.dueDate && b.dueDate) return a.dueDate - b.dueDate;
+                            if (!a.launchDate && b.launchDate) return 1;
+                            if (a.launchDate && !b.launchDate) return -1;
+                            if (a.launchDate && b.launchDate) return a.launchDate - b.launchDate;
                             return 0;
                         });
                         return sorted[0];
@@ -335,9 +335,9 @@ export const useMonocleStore = create<MonocleState>()(
 
                     if (settings?.sortMode === 'date') {
                         const sorted = [...eligible].sort((a, b) => {
-                            if (!a.dueDate && b.dueDate) return 1;
-                            if (a.dueDate && !b.dueDate) return -1;
-                            if (a.dueDate && b.dueDate) return a.dueDate - b.dueDate;
+                            if (!a.launchDate && b.launchDate) return 1;
+                            if (a.launchDate && !b.launchDate) return -1;
+                            if (a.launchDate && b.launchDate) return a.launchDate - b.launchDate;
                             return 0;
                         });
                         return sorted[0];
@@ -407,7 +407,7 @@ export const useMonocleStore = create<MonocleState>()(
                     const frogs = mergedTasks.filter(t => t.isFrog).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                     if (frogs.length > 1) {
                         const keepFrogId = frogs[0].id;
-                        mergedTasks = mergedTasks.map(t => t.isFrog && t.id !== keepFrogId ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                        mergedTasks = mergedTasks.map(t => t.isFrog && t.id !== keepFrogId ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                     }
 
                     return {
@@ -444,7 +444,7 @@ export const useMonocleStore = create<MonocleState>()(
                     set((state) => {
                         let newTasks = state.tasks;
                         if (task.isFrog) {
-                            newTasks = newTasks.map(t => t.isFrog ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                            newTasks = newTasks.map(t => t.isFrog ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                         }
                         return { tasks: [...newTasks, { ...task, updatedAt: Date.now() }], lastModified: Date.now() };
                     });
@@ -463,7 +463,7 @@ export const useMonocleStore = create<MonocleState>()(
                     set((state) => {
                         let newTasks = state.tasks;
                         if (updates.isFrog) {
-                            newTasks = newTasks.map(t => t.isFrog && t.id !== id ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                            newTasks = newTasks.map(t => t.isFrog && t.id !== id ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                         }
                         return {
                             tasks: newTasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)), lastModified: Date.now()
@@ -567,14 +567,14 @@ export const useMonocleStore = create<MonocleState>()(
                         const newTasks = state.tasks.map(t => {
                             if (t.id === id) {
                                 if (isBecomingFrog) {
-                                    return { ...t, isFrog: true, dueDate: undefined, priority: 'medium' as const, updatedAt: Date.now() };
+                                    return { ...t, isFrog: true, launchDate: undefined, priority: 'medium' as const, updatedAt: Date.now() };
                                 } else {
-                                    return { ...t, isFrog: false, dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
+                                    return { ...t, isFrog: false, launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                                 }
                             }
                             // Demote ALL other frogs if we are becoming the frog
                             if (isBecomingFrog && t.isFrog) {
-                                return { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), dueDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
+                                return { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                             }
                             return t;
                         });
@@ -596,6 +596,12 @@ export const useMonocleStore = create<MonocleState>()(
                             }
                             return true;
                         }
+                    }).filter(t => {
+                        // Queue Purity: Hide dormant tasks (future launch date)
+                        if (t.launchDate && startOfDay(new Date(t.launchDate)).getTime() > startOfDay(new Date()).getTime()) {
+                            return false;
+                        }
+                        return true;
                     });
                 },
 
@@ -648,34 +654,33 @@ export const useMonocleStore = create<MonocleState>()(
                         const otherTasks = state.tasks.filter(t => t.id !== taskToComplete.id);
                         const newTasks = [...otherTasks, archivedTask];
 
-                        // Recurrence Logic
                         if (taskToComplete.recurrence) {
-                            let nextDueDate = Date.now();
-                            const currentDue = taskToComplete.dueDate || Date.now();
+                            let nextLaunchDate = Date.now();
+                            const currentDue = taskToComplete.launchDate || Date.now();
 
                             switch (taskToComplete.recurrence) {
                                 case 'daily':
-                                    nextDueDate = addDays(currentDue, 1).getTime();
+                                    nextLaunchDate = addDays(currentDue, 1).getTime();
                                     break;
                                 case 'weekly':
-                                    nextDueDate = addWeeks(currentDue, 1).getTime();
+                                    nextLaunchDate = addWeeks(currentDue, 1).getTime();
                                     break;
                                 case 'monthly':
-                                    nextDueDate = addMonths(currentDue, 1).getTime();
+                                    nextLaunchDate = addMonths(currentDue, 1).getTime();
                                     break;
                                 case 'yearly':
-                                    nextDueDate = addYears(currentDue, 1).getTime();
+                                    nextLaunchDate = addYears(currentDue, 1).getTime();
                                     break;
                                 default:
                                     if (typeof taskToComplete.recurrence === 'number') {
-                                        nextDueDate = addDays(currentDue, taskToComplete.recurrence).getTime();
+                                        nextLaunchDate = addDays(currentDue, taskToComplete.recurrence).getTime();
                                     }
                             }
 
                             const nextTask: Task = {
                                 ...taskToComplete,
                                 id: generateId(),
-                                dueDate: nextDueDate,
+                                launchDate: nextLaunchDate,
                                 status: 'todo',
                                 createdAt: Date.now(),
                                 completedAt: undefined,
@@ -719,36 +724,36 @@ export const useMonocleStore = create<MonocleState>()(
 
                         // Recurrence Logic (duplicate of completeTask but for specific ID)
                         if (taskToArchive.recurrence) {
-                            let nextDueDate = Date.now();
-                            const currentDue = taskToArchive.dueDate || Date.now();
+                            let nextLaunchDate = Date.now();
+                            const currentDue = taskToArchive.launchDate || Date.now();
 
                             switch (taskToArchive.recurrence) {
                                 case 'daily':
-                                    nextDueDate = currentDue + 24 * 60 * 60 * 1000;
+                                    nextLaunchDate = currentDue + 24 * 60 * 60 * 1000;
                                     break;
                                 case 'weekly':
-                                    nextDueDate = currentDue + 7 * 24 * 60 * 60 * 1000;
+                                    nextLaunchDate = currentDue + 7 * 24 * 60 * 60 * 1000;
                                     break;
                                 case 'monthly':
                                     const d = new Date(currentDue);
                                     d.setMonth(d.getMonth() + 1);
-                                    nextDueDate = d.getTime();
+                                    nextLaunchDate = d.getTime();
                                     break;
                                 case 'yearly':
                                     const y = new Date(currentDue);
                                     y.setFullYear(y.getFullYear() + 1);
-                                    nextDueDate = y.getTime();
+                                    nextLaunchDate = y.getTime();
                                     break;
                                 default:
                                     if (typeof taskToArchive.recurrence === 'number') {
-                                        nextDueDate = currentDue + taskToArchive.recurrence * 24 * 60 * 60 * 1000;
+                                        nextLaunchDate = currentDue + taskToArchive.recurrence * 24 * 60 * 60 * 1000;
                                     }
                             }
 
                             const nextTask: Task = {
                                 ...taskToArchive,
                                 id: generateId(),
-                                dueDate: nextDueDate,
+                                launchDate: nextLaunchDate,
                                 status: 'todo',
                                 createdAt: Date.now(),
                                 completedAt: undefined,
@@ -1265,6 +1270,17 @@ export const useMonocleStore = create<MonocleState>()(
                     initialTasks = [...DEMO_TASKS];
                 }
 
+                // -------------------------------------------------------------
+                // Legacy Migration: dueDate -> launchDate
+                // -------------------------------------------------------------
+                initialTasks = initialTasks.map((t: any) => {
+                    if (t.dueDate !== undefined) {
+                        const { dueDate, ...rest } = t;
+                        return { ...rest, launchDate: dueDate };
+                    }
+                    return t;
+                });
+                
                 // -------------------------------------------------------------
                 // Night Shift Sweep Logic
                 // -------------------------------------------------------------

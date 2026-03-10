@@ -86,7 +86,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
     const [projectId, setProjectId] = useState<string>('all');
-    const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+    const [launchDate, setLaunchDate] = useState<Date | undefined>(undefined);
     const [recurrence, setRecurrence] = useState<string>('none');
 
     const [parsedData, setParsedData] = useState<ParsedTask | null>(null);
@@ -104,11 +104,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             setDescription(taskToEdit.description || '');
             setPriority(taskToEdit.priority);
             setProjectId(taskToEdit.projectId || 'all');
-            setDueDate(taskToEdit.dueDate ? new Date(taskToEdit.dueDate) : undefined);
+            setLaunchDate(taskToEdit.launchDate ? new Date(taskToEdit.launchDate) : undefined);
             setRecurrence(taskToEdit.recurrence?.toString() || 'none');
             setIsFrog(taskToEdit.isFrog || false);
             setIsLightning(taskToEdit.isLightning || false);
-            if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.dueDate) {
+            if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.launchDate) {
                 setAdvancedOpen(true);
             }
         } else {
@@ -116,7 +116,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             setDescription('');
             setPriority('medium');
             setProjectId(activeProject || 'all');
-            setDueDate(undefined);
+            setLaunchDate(undefined);
             setRecurrence('none');
             setIsFrog(false);
             setAdvancedOpen(false);
@@ -126,11 +126,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 setDescription(draftTaskData.description || '');
                 setPriority(draftTaskData.priority || 'medium');
                 setProjectId(draftTaskData.projectId || activeProject || 'all');
-                if (draftTaskData.dueDate) setDueDate(new Date(draftTaskData.dueDate));
+                if (draftTaskData.launchDate) setLaunchDate(new Date(draftTaskData.launchDate));
                 setRecurrence(draftTaskData.recurrence?.toString() || 'none');
                 setIsFrog(draftTaskData.isFrog || false);
                 setIsLightning(draftTaskData.isLightning || false);
-                if (draftTaskData.description || draftTaskData.recurrence || draftTaskData.dueDate) {
+                if (draftTaskData.description || draftTaskData.recurrence || draftTaskData.launchDate) {
                     setAdvancedOpen(true);
                 }
                 setDraftTaskData(null);
@@ -241,7 +241,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 return;
             }
             const result = parseTaskInput(title, projects);
-            if (result.priority || result.dueDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting) {
+            if (result.priority || result.launchDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting) {
                 setParsedData(result);
             } else {
                 setParsedData(null);
@@ -266,7 +266,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         }
 
         let finalPriority = priority;
-        let finalDueDate = dueDate?.getTime();
+        let finalDueDate = launchDate?.getTime();
         let finalRecurrence: string | number = recurrence;
         let finalProjectId = projectId === 'all' ? undefined : projectId;
         let finalIsFrog = isFrog;
@@ -280,7 +280,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             // However, we only override state values if the user hasn't actively fought the parser.
             // The simplest approach is to always let parsed tokens win if they exist in the current string.
             if (parsedData.priority) finalPriority = parsedData.priority;
-            if (parsedData.dueDate) finalDueDate = parsedData.dueDate;
+            if (parsedData.launchDate) finalDueDate = parsedData.launchDate;
             if (parsedData.recurrence) finalRecurrence = parsedData.recurrence;
             if (parsedData.projectId) finalProjectId = parsedData.projectId;
 
@@ -295,7 +295,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 description: description.trim() || undefined,
                 priority: finalPriority,
                 projectId: finalProjectId,
-                dueDate: finalDueDate,
+                launchDate: finalDueDate,
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
                 isLightning: finalIsLightning,
                 isFrog: finalIsFrog,
@@ -321,7 +321,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             status: parsedData?.isWaiting ? 'waiting' : 'todo',
             priority: finalPriority,
             projectId: finalProjectId,
-            dueDate: finalDueDate,
+            launchDate: finalDueDate,
             recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
             isDraft: destination === 'idea' ? true : false,
             isFrog: false, // Will be made true securely by toggleFrog if requested
@@ -345,7 +345,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         description: description,
                         priority: priority,
                         projectId: projectId === 'all' ? undefined : projectId,
-                        dueDate: dueDate?.getTime(),
+                        launchDate: launchDate?.getTime(),
                         recurrence: recurrence === 'none' ? undefined : recurrence as any,
                         isFrog: isFrog,
                         isLightning: isLightning
@@ -360,7 +360,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         setDescription('');
         setPriority('medium');
         setRecurrence('none');
-        setDueDate(undefined);
+        setLaunchDate(undefined);
         setParsedData(null);
         setIsFrog(false);
         setIsLightning(false);
@@ -615,11 +615,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.dueDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting) && (
+                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
-                        {parsedData.dueDate && (
+                        {parsedData.launchDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
-                                <CalendarIcon className="w-3 h-3" /> {format(parsedData.dueDate, 'MMM d')}
+                                <CalendarIcon className="w-3 h-3" /> {format(parsedData.launchDate, 'MMM d')}
                             </span>
                         )}
                         {parsedData.priority && parsedData.priority !== 'medium' && (
@@ -698,19 +698,30 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                                 <PopoverTrigger asChild>
                                     <button className={cn(
                                         "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
-                                        dueDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
+                                        launchDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
                                     )}>
                                         <CalendarIcon className="h-3.5 w-3.5" />
-                                        {dueDate ? format(dueDate, 'MMM d') : 'Date'}
+                                        {launchDate ? format(launchDate, 'MMM d') : 'Date'}
                                     </button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="center">
                                     <CalendarComponent
                                         mode="single"
-                                        selected={dueDate}
-                                        onSelect={(d: any) => setDueDate(d)}
+                                        selected={launchDate}
+                                        onSelect={(d: any) => setLaunchDate(d)}
                                         initialFocus
                                     />
+                                    {launchDate && (
+                                        <div className="p-2 border-t border-border">
+                                            <Button 
+                                                variant="ghost" 
+                                                className="w-full text-xs text-muted-foreground hover:text-destructive h-8 font-medium" 
+                                                onClick={() => setLaunchDate(undefined)}
+                                            >
+                                                Clear Date
+                                            </Button>
+                                        </div>
+                                    )}
                                 </PopoverContent>
                             </Popover>
 

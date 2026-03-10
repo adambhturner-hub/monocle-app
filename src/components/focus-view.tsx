@@ -156,7 +156,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     // Handlers
     const handleDateSelect = (date: Date | undefined) => {
         if (!activeTask) return;
-        updateTask(activeTask.id, { dueDate: date ? date.getTime() : undefined });
+        updateTask(activeTask.id, { launchDate: date ? date.getTime() : undefined });
         setIsCalendarOpen(false);
     };
 
@@ -179,7 +179,7 @@ export function FocusView({ onExit }: FocusViewProps) {
         if (isPast(date)) return "Overdue";
         return `Due ${format(date, 'MMM d')}`;
     };
-    const dueDateText = getDueDateText(activeTask?.dueDate);
+    const launchDateText = getDueDateText(activeTask?.launchDate);
 
 
     // Action Wrappers
@@ -227,7 +227,7 @@ export function FocusView({ onExit }: FocusViewProps) {
 
             if (result?.nextTask) {
                 toast("Recurring task completed", {
-                    description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
+                    description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
                     action: { label: "Undo", onClick: () => undo() },
                     duration: 5000
                 });
@@ -497,17 +497,17 @@ export function FocusView({ onExit }: FocusViewProps) {
                                                 <PopoverTrigger asChild>
                                                     <button className={cn(
                                                         "px-3 py-1.5 rounded-full border bg-secondary/30 text-sm font-medium flex items-center gap-2 transition-all",
-                                                        activeTask.dueDate ? "text-muted-foreground" : "text-muted-foreground/50 border-dashed"
+                                                        activeTask.launchDate ? "text-muted-foreground" : "text-muted-foreground/50 border-dashed"
                                                     )}>
                                                         <Calendar className="h-4 w-4" />
-                                                        {activeTask.dueDate ? format(activeTask.dueDate, 'MMM d') : 'Set Date'}
+                                                        {activeTask.launchDate ? format(activeTask.launchDate, 'MMM d') : 'Set Date'}
                                                     </button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0" align="center">
                                                     <CalendarComponent
                                                         mode="single"
-                                                        selected={activeTask.dueDate ? new Date(activeTask.dueDate) : undefined}
-                                                        onSelect={(d) => updateTask(activeTask.id, { dueDate: d ? d.getTime() : undefined })}
+                                                        selected={activeTask.launchDate ? new Date(activeTask.launchDate) : undefined}
+                                                        onSelect={(d) => updateTask(activeTask.id, { launchDate: d ? d.getTime() : undefined })}
                                                         initialFocus
                                                     />
                                                 </PopoverContent>

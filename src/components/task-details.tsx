@@ -33,7 +33,7 @@ export function TaskDetails({ task }: TaskDetailsProps) {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     const handleDateSelect = (date: Date | undefined) => {
-        updateTask(task.id, { dueDate: date ? date.getTime() : undefined });
+        updateTask(task.id, { launchDate: date ? date.getTime() : undefined });
         setIsCalendarOpen(false);
     };
 
@@ -52,15 +52,15 @@ export function TaskDetails({ task }: TaskDetailsProps) {
             {/* Due Date */}
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className={cn("text-xs h-8 gap-1", task.dueDate && "text-primary bg-primary/10")}>
+                    <Button variant="ghost" size="sm" className={cn("text-xs h-8 gap-1", task.launchDate && "text-primary bg-primary/10")}>
                         <CalendarIcon className="h-3 w-3" />
-                        {task.dueDate ? format(task.dueDate, 'MMM d') : 'Date'}
+                        {task.launchDate ? format(task.launchDate, 'MMM d') : 'Date'}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                         mode="single"
-                        selected={task.dueDate ? new Date(task.dueDate) : undefined}
+                        selected={task.launchDate ? new Date(task.launchDate) : undefined}
                         onSelect={handleDateSelect}
                         initialFocus
                     />

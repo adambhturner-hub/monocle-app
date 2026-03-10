@@ -10,7 +10,7 @@ export interface ParsedToken {
 export interface ParsedTask {
     title: string;
     priority?: 'low' | 'medium' | 'high';
-    dueDate?: number;
+    launchDate?: number;
     recurrence?: RecurrenceInterval;
     projectId?: string;
     duration?: number; // Minutes
@@ -113,8 +113,8 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
-    // Due Date Variables (Declared early for Recurrence overlap)
-    let dueDate: number | undefined;
+    // Launch Date Variables (Declared early for Recurrence overlap)
+    let launchDate: number | undefined;
     const today = startOfDay(new Date());
 
     // 3. Recurrence Detection
@@ -174,13 +174,13 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
                 matchedTokens.push({ text: match[0], type: 'recurrence' });
                 cleanTitle = cleanTitle.replace(everyNthRegex, '');
 
-                // Set the due date to the next occurrence of this date
+                // Set the launch date to the next occurrence of this date
                 const todayForMath = startOfDay(new Date());
                 let setDate = new Date(todayForMath.getFullYear(), todayForMath.getMonth(), dateNum);
                 if (setDate < todayForMath) {
                     setDate = addMonths(setDate, 1);
                 }
-                dueDate = setDate.getTime();
+                launchDate = setDate.getTime();
             }
         }
     }
@@ -234,7 +234,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         }
     }
 
-    // 5. Due Date Detection
+    // 5. Launch Date Detection
 
     // Extended Date Patterns
     const datePatterns = [
@@ -274,7 +274,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     if (inDaysRegex.test(cleanTitle)) {
         const match = cleanTitle.match(inDaysRegex);
         if (match) {
-            dueDate = addDays(today, parseInt(match[1])).getTime();
+            launchDate = addDays(today, parseInt(match[1])).getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inDaysRegex, '');
             dateMatched = true;
@@ -282,7 +282,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     } else if (inWeeksRegex.test(cleanTitle)) {
         const match = cleanTitle.match(inWeeksRegex);
         if (match) {
-            dueDate = addWeeks(today, parseInt(match[1])).getTime();
+            launchDate = addWeeks(today, parseInt(match[1])).getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(inWeeksRegex, '');
             dateMatched = true;
@@ -303,7 +303,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             if (!match[3] && setDate < today) {
                 setDate = addYears(setDate, 1);
             }
-            dueDate = setDate.getTime();
+            launchDate = setDate.getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(monthDateRegex, '');
             dateMatched = true;
@@ -315,7 +315,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             if (pattern.regex.test(cleanTitle)) {
                 const match = cleanTitle.match(pattern.regex);
                 if (match) {
-                    dueDate = pattern.handler().getTime();
+                    launchDate = pattern.handler().getTime();
                     matchedTokens.push({ text: match[0], type: 'date' });
                     cleanTitle = cleanTitle.replace(pattern.regex, '');
                     dateMatched = true;
@@ -339,7 +339,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
                 setDate = addYears(setDate, 1);
             }
 
-            dueDate = setDate.getTime();
+            launchDate = setDate.getTime();
             matchedTokens.push({ text: match[0], type: 'date' });
             cleanTitle = cleanTitle.replace(numericDateRegex, '');
             dateMatched = true;
@@ -352,7 +352,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     return {
         title: cleanTitle,
         priority,
-        dueDate,
+        launchDate, // Now correctly scoped!
         recurrence,
         projectId,
         duration,

@@ -58,7 +58,7 @@ export function GlobalShortcuts() {
                 const result = completeTask();
                 if (result?.nextTask) {
                     toast.success("Recurring task completed!", {
-                        description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`
+                        description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`
                     });
                 } else if (result) {
                     toast.success("Task completed!");

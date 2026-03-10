@@ -24,7 +24,7 @@ export function HotkeyListener() {
                     const result = completeTask();
                     if (result?.nextTask) {
                         toast.success("Recurring task completed!", {
-                            description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`
+                            description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`
                         });
                     } else {
                         toast.success("Task completed!");

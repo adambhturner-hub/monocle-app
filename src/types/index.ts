@@ -10,7 +10,7 @@ export interface Task {
   status: 'todo' | 'done' | 'waiting';
   priority: 'low' | 'medium' | 'high';
   projectId?: string;
-  dueDate?: number;
+  launchDate?: number;
   recurrence?: RecurrenceInterval;
   isDraft?: boolean;
   createdAt: number;

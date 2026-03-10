@@ -9,8 +9,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { cn, generateId } from '@/lib/utils';
 import { Task } from '@/types';
 import { ReactNode } from 'react';
-import { format, isPast, isToday, isTomorrow, isThisWeek } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, isThisWeek, startOfDay } from 'date-fns';
 import { getIconComponent } from '@/lib/icons';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
@@ -382,8 +383,25 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
     // Evaluate pure time before render loops
     const now = Date.now();
+    const todayStart = startOfDay(now).getTime();
 
-    let activeTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (!t.skippedUntil || t.skippedUntil <= now) && matchesSearch(t));
+    let activeTasks = visibleTasks.filter(t => 
+        !t.isDraft && 
+        t.status !== 'done' && 
+        t.status !== 'waiting' && 
+        (!t.skippedUntil || t.skippedUntil <= now) && 
+        (!t.launchDate || startOfDay(t.launchDate).getTime() <= todayStart) &&
+        matchesSearch(t)
+    );
+
+    const dormantTasks = visibleTasks.filter(t => 
+        !t.isDraft && 
+        t.status !== 'done' && 
+        t.status !== 'waiting' && 
+        (!t.skippedUntil || t.skippedUntil <= now) && 
+        (t.launchDate && startOfDay(t.launchDate).getTime() > todayStart) && 
+        matchesSearch(t)
+    ).sort((a, b) => (a.launchDate || 0) - (b.launchDate || 0));
 
     // Mathematically pin the Daily Frog to the absolute top of the Active Tasks queue
     const activeFrogIndex = activeTasks.findIndex(t => t.isFrog);
@@ -496,7 +514,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             status: parsedResult.isWaiting ? 'waiting' : 'todo',
             priority: parsedResult.priority || 'medium',
             projectId: quickAddProjectId || parsedResult.projectId || activeProject || undefined,
-            dueDate: parsedResult.dueDate,
+            launchDate: parsedResult.launchDate,
             recurrence: parsedResult.recurrence,
             duration: parsedResult.duration,
             isFrog: parsedResult.isFrog,
@@ -527,7 +545,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                 status: parsedResult.isWaiting ? 'waiting' : 'todo',
                 priority: parsedResult.priority || 'medium',
                 projectId: parsedResult.projectId || activeProject || undefined,
-                dueDate: parsedResult.dueDate,
+                launchDate: parsedResult.launchDate,
                 recurrence: parsedResult.recurrence,
                 duration: parsedResult.duration,
                 isFrog: parsedResult.isFrog,
@@ -611,7 +629,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
         if (result?.nextTask) {
             toast("Recurring task archived", {
-                description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
+                description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
                 action: { label: "Undo", onClick: () => undo() },
                 duration: 5000
             });
@@ -644,7 +662,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
         if (result?.nextTask) {
             toast("Recurring task completed", {
-                description: `Next instance scheduled for ${format(result.nextTask.dueDate || Date.now(), 'MMM d')}`,
+                description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
                 action: { label: "Undo", onClick: () => undo() },
                 duration: 5000
             });
@@ -943,10 +961,10 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                     </Tooltip>
                                                                                                 )}
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                                    {task.dueDate && (
-                                                                                                        <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}>
+                                                                                                    {task.launchDate && (
+                                                                                                        <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}>
                                                                                                             <Calendar className="h-3 w-3" />
-                                                                                                            {format(task.dueDate, 'MMM d')}
+                                                                                                            {format(task.launchDate, 'MMM d')}
                                                                                                         </span>
                                                                                                     )}
                                                                                                     {task.recurrence && (
@@ -1071,6 +1089,56 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         )}
                                                     </Droppable>
 
+                                                    {/* Upcoming Section (Dormant Tasks) */}
+                                                    {dormantTasks.length > 0 && (
+                                                        <Accordion type="single" collapsible className="mt-8 transition-colors rounded-xl min-h-[50px]">
+                                                            <AccordionItem value="upcoming" className="border-none">
+                                                                <AccordionTrigger className="flex items-center gap-2 px-2 pt-2 mb-3 hover:no-underline py-0">
+                                                                    <div className="flex items-center gap-2 flex-1 justify-start">
+                                                                        <Calendar className="h-3 w-3 text-emerald-500/70" />
+                                                                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/70 flex items-center gap-2 m-0">
+                                                                            Upcoming (Dormant)
+                                                                            <span className="bg-emerald-500/10 px-1.5 py-0.5 rounded-full">{dormantTasks.length}</span>
+                                                                        </h3>
+                                                                    </div>
+                                                                </AccordionTrigger>
+                                                                <AccordionContent className="space-y-2 pb-4 pt-1">
+                                                                    {dormantTasks.map((task) => (
+                                                                        <ContextMenu key={task.id}>
+                                                                            <ContextMenuTrigger onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
+                                                                                <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-70 hover:opacity-100 cursor-pointer")}>
+                                                                                    <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                                        <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                                            <p className="text-sm font-medium truncate">
+                                                                                                <FormattedText text={task.title} />
+                                                                                            </p>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                            {task.launchDate && (
+                                                                                                <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}>
+                                                                                                    <Calendar className="h-3 w-3" />
+                                                                                                    {format(task.launchDate, 'EEE, MMM d')}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                        <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </ContextMenuTrigger>
+                                                                            <ContextMenuContent>
+                                                                                <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                                <ContextMenuSeparator />
+                                                                                <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
+                                                                            </ContextMenuContent>
+                                                                        </ContextMenu>
+                                                                    ))}
+                                                                </AccordionContent>
+                                                            </AccordionItem>
+                                                        </Accordion>
+                                                    )}
+
                                                     {/* On Hold Section */}
                                                     <Droppable droppableId="on-hold">
                                                         {(provided, snapshot) => (
@@ -1186,7 +1254,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                     </Tooltip>
                                                                                 )}
                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                    {task.dueDate && <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                    {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                     {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
@@ -1269,11 +1337,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             };
                                                             activeTasks.forEach(t => {
                                                                 if (t.isFrog) groups['Today'].push(t);
-                                                                else if (!t.dueDate) groups['No Date'].push(t);
-                                                                else if (isPast(t.dueDate) && !isToday(t.dueDate)) groups['Overdue'].push(t);
-                                                                else if (isToday(t.dueDate)) groups['Today'].push(t);
-                                                                else if (isTomorrow(t.dueDate)) groups['Tomorrow'].push(t);
-                                                                else if (isThisWeek(t.dueDate)) groups['Upcoming'].push(t);
+                                                                else if (!t.launchDate) groups['No Date'].push(t);
+                                                                else if (isPast(t.launchDate) && !isToday(t.launchDate)) groups['Overdue'].push(t);
+                                                                else if (isToday(t.launchDate)) groups['Today'].push(t);
+                                                                else if (isTomorrow(t.launchDate)) groups['Tomorrow'].push(t);
+                                                                else if (isThisWeek(t.launchDate)) groups['Upcoming'].push(t);
                                                                 else groups['Later'].push(t);
                                                             });
                                                             const groupOrder = ['Overdue', 'Today', 'Tomorrow', 'Upcoming', 'Later', 'No Date'];
@@ -1286,11 +1354,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                     if (b.isFrog) return 1;
 
                                                                     // Keep chronological order within the group
-                                                                    if (a.dueDate && b.dueDate) {
-                                                                        return a.dueDate - b.dueDate;
+                                                                    if (a.launchDate && b.launchDate) {
+                                                                        return a.launchDate - b.launchDate;
                                                                     }
-                                                                    if (a.dueDate) return -1;
-                                                                    if (b.dueDate) return 1;
+                                                                    if (a.launchDate) return -1;
+                                                                    if (b.launchDate) return 1;
 
                                                                     return 0;
                                                                 });
@@ -1366,7 +1434,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                     </Tooltip>
                                                                                                 )}
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                                    {task.dueDate && <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                                    {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                                     {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
@@ -1426,9 +1494,9 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 const sortedTasks = [...tasks].sort((a, b) => {
                                                                     if (a.isFrog) return -1;
                                                                     if (b.isFrog) return 1;
-                                                                    if (!a.dueDate) return 1;
-                                                                    if (!b.dueDate) return -1;
-                                                                    return a.dueDate - b.dueDate;
+                                                                    if (!a.launchDate) return 1;
+                                                                    if (!b.launchDate) return -1;
+                                                                    return a.launchDate - b.launchDate;
                                                                 });
 
                                                                 return (
@@ -1485,7 +1553,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                                                 </Tooltip>
                                                                                             )}
                                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                                {task.dueDate && <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                                {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                 {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                 {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                                 {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
@@ -1553,7 +1621,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         status: 'todo',
                                                         priority: parsedResult.priority || 'medium',
                                                         projectId: parsedResult.projectId || activeProject || undefined,
-                                                        dueDate: parsedResult.dueDate, // Yes, ideas can have dates too
+                                                        launchDate: parsedResult.launchDate, // Yes, ideas can have dates too
                                                         recurrence: parsedResult.recurrence,
                                                         duration: parsedResult.duration,
                                                         isFrog: parsedResult.isFrog,
