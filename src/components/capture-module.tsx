@@ -251,7 +251,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     }, [title, projects]);
 
     const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive') => {
-        const finalTitle = title.replace(/\u200B/g, '').trim();
+        let finalTitle = title.replace(/\u200B/g, '').trim();
+        if (parsedData?.title) {
+            finalTitle = parsedData.title.trim();
+        }
+
         if (!finalTitle) {
             toast.error("Task title cannot be empty");
             if (destination === 'queue') setView('queue');

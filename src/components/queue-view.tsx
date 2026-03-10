@@ -383,7 +383,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     // Evaluate pure time before render loops
     const now = Date.now();
 
-    let activeTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && (!t.skippedUntil || t.skippedUntil <= now) && matchesSearch(t));
+    let activeTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (!t.skippedUntil || t.skippedUntil <= now) && matchesSearch(t));
 
     // Mathematically pin the Daily Frog to the absolute top of the Active Tasks queue
     const activeFrogIndex = activeTasks.findIndex(t => t.isFrog);
@@ -491,7 +491,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
         const newTask: Task = {
             id: generateId(),
-            title: finalTitle,
+            title: parsedResult.title || finalTitle,
             description: '',
             status: parsedResult.isWaiting ? 'waiting' : 'todo',
             priority: parsedResult.priority || 'medium',
@@ -522,7 +522,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
             const newTask: Task = {
                 id: generateId(),
-                title: trimmed,
+                title: parsedResult.title || trimmed,
                 description: '',
                 status: parsedResult.isWaiting ? 'waiting' : 'todo',
                 priority: parsedResult.priority || 'medium',
@@ -1143,51 +1143,79 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                                 </h3>
                                                             </div>
                                                             {waitingTasks.map((task) => (
-                                                                <div
-                                                                    key={task.id}
-                                                                    className="group bg-card/60 border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 p-3 opacity-80"
-                                                                >
-                                                                    <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
-                                                                        <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
-                                                                            {(() => {
-                                                                                const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                if (!proj) return null;
-                                                                                const IconCmp = getIconComponent(proj.icon);
-                                                                                return (
-                                                                                    <div className="flex justify-center items-center shrink-0 w-3 h-3 rounded-sm opacity-60" style={{ backgroundColor: proj.color }}>
-                                                                                        <IconCmp className="h-2 w-2 text-white drop-shadow-sm" />
-                                                                                    </div>
-                                                                                );
-                                                                            })()}
-                                                                            <p className="text-sm font-medium text-slate-500 truncate">
-                                                                                <FormattedText text={task.title} />
-                                                                            </p>
+                                                                <ContextMenu key={task.id}>
+                                                                    <ContextMenuTrigger
+                                                                        onDoubleClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            handleEdit(task);
+                                                                        }}
+                                                                    >
+                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-80", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20")}>
+                                                                            <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                                <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                                    {(() => {
+                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                        if (!proj) return null;
+                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                        return (
+                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                            </div>
+                                                                                        );
+                                                                                    })()}
+                                                                                    <p className={cn(
+                                                                                        "text-sm font-medium truncate text-slate-500",
+                                                                                        task.isFrog && "text-emerald-700/70 dark:text-emerald-400/70 font-bold",
+                                                                                        task.isLightning && !task.isFrog && "text-yellow-700/70 dark:text-yellow-400/70 font-bold"
+                                                                                    )}>
+                                                                                        <FormattedText text={task.title} />
+                                                                                    </p>
+                                                                                    {task.isFrog && <span className="text-sm leading-none shrink-0 opacity-70">🐸</span>}
+                                                                                    {task.isLightning && !task.isFrog && <span className="text-sm leading-none shrink-0 opacity-70">⚡️</span>}
+                                                                                </div>
+                                                                                {task.description && (
+                                                                                    <Tooltip>
+                                                                                        <TooltipTrigger asChild>
+                                                                                            <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-0.5 max-w-[90%]">
+                                                                                                {task.description}
+                                                                                            </p>
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+                                                                                            <FormattedText text={task.description} className="text-xs" />
+                                                                                        </TooltipContent>
+                                                                                    </Tooltip>
+                                                                                )}
+                                                                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                    {task.dueDate && <span className={cn("flex items-center gap-1", isPast(task.dueDate) && !isToday(task.dueDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.dueDate, 'MMM d')}</span>}
+                                                                                    {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                    {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
+                                                                                    {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-slate-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); useMonocleStore.getState().updateTask(task.id, {status: 'todo'}); toast.success("Restored to Queue"); }} title="Restore to Active Queue"><RefreshCw className="h-3 w-3" /></Button>
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleArchive(task.id); }} title="Archive Task"><Archive className="h-3 w-3" /></Button>
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
+                                                                            </div>
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-2">
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    useMonocleStore.getState().updateTask(task.id, { status: 'todo' });
-                                                                                    toast.success("Restored to Queue");
-                                                                                }}
-                                                                                className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20 px-2 py-1 rounded-md transition-all active:scale-95 border border-slate-500/20"
-                                                                                title="Restore to Active Queue"
-                                                                            >
-                                                                                <RefreshCw className="h-3 w-3" /> Restore to Queue
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleEdit(task);
-                                                                                }}
-                                                                                className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20 px-2 py-1 rounded-md transition-all active:scale-95 border border-slate-500/20"
-                                                                                title="Edit Task"
-                                                                            >
-                                                                                <Edit2 className="h-3 w-3" /> Edit
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+                                                                    </ContextMenuTrigger>
+                                                                    <ContextMenuContent>
+                                                                        <ContextMenuItem onClick={() => {
+                                                                            useMonocleStore.getState().updateTask(task.id, {status: 'todo'});
+                                                                            toast.success("Restored to Queue");
+                                                                        }}><RefreshCw className="mr-2 h-4 w-4" /> Restore to Queue</ContextMenuItem>
+                                                                        <ContextMenuSeparator />
+                                                                        <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
+                                                                        <ContextMenuSeparator />
+                                                                        <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
+                                                                        <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                        <ContextMenuSeparator />
+                                                                        <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
+                                                                    </ContextMenuContent>
+                                                                </ContextMenu>
                                                             ))}
                                                         </div>
                                                     )}
