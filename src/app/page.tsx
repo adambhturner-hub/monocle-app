@@ -144,10 +144,8 @@ export default function Home() {
           <div className="w-full flex-1 pt-12">
             <AnalyticsView />
           </div>
-        ) : view === 'ideas' ? (
-          <QueueView variant="fullscreen" mode="drafts" />
         ) : (
-          <QueueView variant="fullscreen" mode="active" />
+          <QueueView variant="fullscreen" />
         )}
       </div>
 

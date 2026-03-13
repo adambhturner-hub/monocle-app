@@ -86,7 +86,7 @@ export interface QueueViewProps {
     variant?: 'sheet' | 'fullscreen';
 }
 
-function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defaultTab?: 'active' | 'drafts', variant?: 'sheet' | 'fullscreen', mode?: 'active' | 'drafts' }) {
+function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active' | 'drafts', variant?: 'sheet' | 'fullscreen' }) {
     const {
         tasks,
         projects,
@@ -131,9 +131,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
 
     // Determine if this specific QueueView component is actually visible to the user
     // This prevents background variants (like the hidden Sheet) from rendering portals (like Tooltips)
-    const isVisible = variant === 'fullscreen'
-        ? (mode === 'drafts' ? view === 'ideas' : view === 'queue')
-        : activeSheet === 'queue';
+    const isVisible = variant === 'fullscreen' ? view === 'queue' : activeSheet === 'queue';
 
     // Delete Confirmation State
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -297,7 +295,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                 handleMentionSelect(mentionOptions[mentionSelectedIndex]);
                 return;
             }
-            const isDraft = mode === ('drafts' as any) ? !e.shiftKey : e.shiftKey;
+            const isDraft = e.shiftKey;
             handleQuickAdd(isDraft);
         }
 
@@ -447,20 +445,9 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
             return;
         }
 
-        // Intercept drop into Idea Dump (from Active View)
-        // Since the drafts list isn't rendered, we just toggle the status instead of sorting arrays.
-        if (result.destination.droppableId === 'drafts' && result.source.droppableId === 'active') {
-            if (draggedTask) {
-                useMonocleStore.getState().toggleDraft(draggedTask.id);
-                toast("Saved to Idea Dump", {
-                    action: {
-                        label: "Undo",
-                        onClick: () => useMonocleStore.getState().toggleDraft(draggedTask.id)
-                    }
-                });
-            }
-            return;
-        }
+        // Remove automatic interception for 'drafts' so the drag can re-index into the Accordion list
+        // Update: We actually still want to allow dropping into the empty droppable or the list. 
+        // The list handles it just fine because we defined destination properly.
 
         const destList = result.destination.droppableId === 'active' ? activeTasks : draftTasks;
 
@@ -684,16 +671,11 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                     onTouchEnd={handleQueueTouchEnd}
                 >
                     <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0">
-                        <button
-                            onClick={() => setView(mode === 'active' ? 'ideas' : 'queue')}
-                            className="text-xl sm:text-2xl font-bold flex items-center gap-2 hover:opacity-75 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md px-1 -ml-1 text-left"
-                            title={mode === 'active' ? "Switch to Idea Dump" : "Switch to Queue"}
-                        >
+                        <div className="text-xl sm:text-2xl font-bold flex items-center gap-2 rounded-md px-1 -ml-1 text-left">
                             <div className="h-3 w-3 rounded-full bg-primary shrink-0" />
-                            <span>{mode === 'active' ? 'Queue' : 'Idea Dump'}</span>
-                            <ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span>Queue</span>
                             {activeProject && <span className="text-sm font-normal text-muted-foreground ml-1">(Filtered)</span>}
-                        </button>
+                        </div>
 
                         {/* Search Input */}
                         <div className="flex items-center gap-2 shrink-0">
@@ -738,7 +720,6 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                         <div className="flex-1 overflow-hidden flex flex-col">
 
                             {/* Active Queue */}
-                            {mode === 'active' && (
                                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-3 md:p-4 pb-0">
                                     <div className="flex items-center justify-between mb-3 shrink-0">
                                         <div className="flex items-center gap-2">
@@ -827,7 +808,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                             }
                                                         }}
                                                         onKeyDown={handleQuickAddKeyDown}
-                                                        placeholder={mode === ('drafts' as any) ? (isBelowMd ? "Add an idea..." : "Add an idea... (Enter = save)") : (isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)")}
+                                                        placeholder={isBelowMd ? "Add a task..." : "Add a task... (Enter = save, Shift+Enter = draft)"}
                                                         className={cn(
                                                             "bg-transparent border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50 pr-16 transition-all text-foreground caret-foreground relative z-10 w-full font-medium sm:text-sm text-base",
                                                             quickAddProjectId ? "pl-10" : "pl-4", // Update input padding
@@ -1288,25 +1269,115 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                                         </div>
                                                     )}
 
-                                                    {/* Idea Dump Dropzone (Active Mode Only) */}
-                                                    <Droppable droppableId="drafts">
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                {...provided.droppableProps}
-                                                                ref={provided.innerRef}
-                                                                className={cn(
-                                                                    "mt-4 transition-colors rounded-xl border-2 border-dashed flex items-center justify-center py-4 opacity-50 transition-opacity min-h-[50px]",
-                                                                    snapshot.isDraggingOver ? "opacity-100 bg-primary/10 border-primary/40 text-foreground" : "border-muted-foreground/20 text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                <div className="flex items-center gap-2 pointer-events-none">
-                                                                    <Lightbulb className={cn("h-4 w-4", snapshot.isDraggingOver && "text-primary")} />
-                                                                    <span className="text-xs font-medium uppercase tracking-widest">Send to Idea Dump</span>
+                                                    {/* Idea Dump Section */}
+                                                    <Accordion type="single" collapsible className="mt-8 transition-colors rounded-xl min-h-[50px]">
+                                                        <AccordionItem value="drafts" className="border-none">
+                                                            <AccordionTrigger className="flex items-center gap-2 px-2 pt-2 mb-3 hover:no-underline py-0">
+                                                                <div className="flex items-center gap-2 flex-1 justify-start">
+                                                                    <Lightbulb className="h-3 w-3 text-indigo-500/70" />
+                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-indigo-500/70 flex items-center gap-2 m-0">
+                                                                        Idea Dump
+                                                                        <span className="bg-indigo-500/10 px-1.5 py-0.5 rounded-full">{draftTasks.length}</span>
+                                                                    </h3>
                                                                 </div>
-                                                                <div className="hidden">{provided.placeholder}</div>
-                                                            </div>
-                                                        )}
-                                                    </Droppable>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent className="space-y-2 pb-4 pt-1 px-1">
+                                                                <Droppable droppableId="drafts">
+                                                                    {(provided, snapshot) => (
+                                                                        <div
+                                                                            {...provided.droppableProps}
+                                                                            ref={provided.innerRef}
+                                                                            className={cn(
+                                                                                "min-h-[50px] space-y-2 transition-colors rounded-xl",
+                                                                                snapshot.isDraggingOver ? "bg-primary/5 ring-1 ring-primary/20 ring-inset p-2" : ""
+                                                                            )}
+                                                                        >
+                                                                            {draftTasks.length === 0 && (
+                                                                                <div className="text-center py-4 px-4 text-muted-foreground/30 italic text-xs border-2 border-dashed border-muted-foreground/10 rounded-xl">
+                                                                                    Drag tasks here to send them to the Idea Dump.
+                                                                                </div>
+                                                                            )}
+                                                                            {draftTasks.map((task, index) => (
+                                                                                <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!!searchQuery || sortMode !== 'manual'}>
+                                                                                    {(provided, snapshot) => (
+                                                                                        <div
+                                                                                            ref={provided.innerRef}
+                                                                                            {...provided.draggableProps}
+                                                                                            {...provided.dragHandleProps}
+                                                                                            className={cn("user-select-none", snapshot.isDragging && "z-50 ")}
+                                                                                            style={provided.draggableProps.style}
+                                                                                        >
+                                                                                            <ContextMenu key={task.id}>
+                                                                                                <ContextMenuTrigger onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
+                                                                                                    <SwipeableTask
+                                                                                                        task={task}
+                                                                                                        isMobile={isBelowMd}
+                                                                                                        leftAction={() => { useMonocleStore.getState().toggleDraft(task.id); toast.success("Sent to Queue"); }}
+                                                                                                        rightAction={() => handleDelete(task.id)}
+                                                                                                        onTap={(task) => handleEdit(task)}
+                                                                                                        leftIcon={CornerUpLeft}
+                                                                                                        leftLabel="To Queue"
+                                                                                                        leftBgClass="bg-blue-500"
+                                                                                                        leftColorClass="text-blue-600"
+                                                                                                        rightIcon={Trash2}
+                                                                                                        rightLabel="Delete"
+                                                                                                        rightBgClass="bg-red-500"
+                                                                                                        rightColorClass="text-red-700"
+                                                                                                    >
+                                                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer opacity-70 hover:opacity-100", snapshot.isDragging && "rotate-2 scale-105 shadow-xl ring-2 ring-primary/20 cursor-grabbing")}>
+                                                                                                            <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                                                                <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                                                                    {(() => {
+                                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                                        if (!proj) return null;
+                                                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                                                        return (
+                                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                                            </div>
+                                                                                                                        );
+                                                                                                                    })()}
+                                                                                                                    <p className="text-sm font-medium truncate text-muted-foreground">
+                                                                                                                        <FormattedText text={task.title} />
+                                                                                                                    </p>
+                                                                                                                </div>
+                                                                                                                {task.description && (
+                                                                                                                    <p className="text-xs text-muted-foreground/50 line-clamp-2 mb-0.5 max-w-[90%]">
+                                                                                                                        {task.description}
+                                                                                                                    </p>
+                                                                                                                )}
+                                                                                                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
+                                                                                                                    {task.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                                    {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/50" />}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); useMonocleStore.getState().toggleDraft(task.id); toast.success("Added to Queue"); }} title="Send to Queue"><CornerUpLeft className="h-3 w-3" /></Button>
+                                                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
+                                                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-red-500 rounded-full relative leading-none" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} title="Delete"><Trash2 className="h-3 w-3" /></Button>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </SwipeableTask>
+                                                                                                </ContextMenuTrigger>
+                                                                                                <ContextMenuContent>
+                                                                                                    <ContextMenuItem onClick={() => { useMonocleStore.getState().toggleDraft(task.id); toast.success("Sent to Queue"); }}><CornerUpLeft className="mr-2 h-4 w-4" /> Send to Queue</ContextMenuItem>
+                                                                                                    <ContextMenuSeparator />
+                                                                                                    <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                                                    <ContextMenuSeparator />
+                                                                                                    <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
+                                                                                                </ContextMenuContent>
+                                                                                            </ContextMenu>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </Draggable>
+                                                                            ))}
+                                                                            {provided.placeholder}
+                                                                        </div>
+                                                                    )}
+                                                                </Droppable>
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    </Accordion>
                                                 </>
                                             ) : (
                                                 // Manual list without DnD (Search or Sort enabled)
@@ -1592,195 +1663,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Idea Dump / Drafts */}
-                            {mode === 'drafts' && (
-                                <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6" ref={draftsRef}>
-                                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between shrink-0">
-                                        Idea Dump (Drafts)
-                                        <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{draftTasks.length}</span>
-                                    </h3>
-
-                                    {/* Quick Add Input for Drafts */}
-                                    <div className="mb-4 relative">
-                                        <Input
-                                            value={quickAddValue}
-                                            onChange={(e) => setQuickAddValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    const finalTitle = quickAddValue.replace(/\u200B/g, '').trim();
-                                                    if (!finalTitle) return;
-
-                                                    const { projects } = useMonocleStore.getState();
-                                                    const parsedResult = parseTaskInput(quickAddValue, projects);
-
-                                                    const newTask: Task = {
-                                                        id: crypto.randomUUID(),
-                                                        title: finalTitle, // Clean title even for ideas? Yes.
-                                                        status: 'todo',
-                                                        priority: parsedResult.priority || 'medium',
-                                                        projectId: parsedResult.projectId || activeProject || undefined,
-                                                        launchDate: parsedResult.launchDate, // Yes, ideas can have dates too
-                                                        recurrence: parsedResult.recurrence,
-                                                        duration: parsedResult.duration,
-                                                        isFrog: parsedResult.isFrog,
-                                                        isLightning: parsedResult.isLightning,
-                                                        isDraft: true, // Always draft in this mode
-                                                        createdAt: Date.now(),
-                                                    };
-                                                    useMonocleStore.getState().addTask(newTask);
-                                                    setQuickAddValue('');
-                                                    if (activeProject) setQuickAddProjectId(null);
-                                                    toast("Added to Idea Dump", { description: newTask.title });
-                                                }
-                                            }}
-                                            placeholder="Add an idea..."
-                                            className="bg-card border-dashed border-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/50"
-                                        />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-[10px] text-muted-foreground pointer-events-none opacity-50">
-                                            <span>⏎ Add</span>
-                                        </div>
-                                    </div>
-
-
-                                    <div className="flex-1 min-h-0">
-                                        <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4">
-                                            <Droppable droppableId="drafts">
-                                                {(provided) => (
-                                                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4">
-                                                        {draftTasks.length === 0 && (
-                                                            <div className="text-center py-8 text-muted-foreground/50 italic text-sm border-2 border-dashed rounded-xl">
-                                                                {activeProject ? `No ideas in ${projects.find(p => p.id === activeProject)?.name || 'this project'}.` : "No tasks yet. Dump your brain here."}
-                                                            </div>
-                                                        )}
-                                                        {draftTasks.map((task, index) => (
-                                                            <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!!searchQuery}>
-                                                                {(provided, snapshot) => (
-                                                                    <div
-                                                                        ref={provided.innerRef}
-                                                                        {...provided.draggableProps}
-                                                                        style={{
-                                                                            ...provided.draggableProps.style,
-                                                                            left: "auto",
-                                                                            top: "auto"
-                                                                        }}
-                                                                        className={cn("w-full outline-none", snapshot.isDragging ? "z-50" : "")}
-                                                                    >
-                                                                        <SwipeableTask
-                                                                            task={task}
-                                                                            isMobile={isBelowMd}
-                                                                            leftAction={(id) => handlePromote(id)}
-                                                                            rightAction={(id) => handleDelete(id)}
-                                                                            onTap={(task) => handleEdit(task)}
-                                                                            leftIcon={ArrowUpCircle}
-                                                                            leftLabel="Promote to Queue"
-                                                                            leftBgClass="bg-yellow-500"
-                                                                            leftColorClass="text-yellow-600"
-                                                                            rightIcon={Trash2}
-                                                                            rightLabel="Delete"
-                                                                            rightBgClass="bg-red-500"
-                                                                            rightColorClass="text-red-600"
-                                                                        >
-                                                                            <div
-                                                                                {...provided.dragHandleProps}
-                                                                                className="group outline-none touch-none"
-                                                                            >
-                                                                                <ContextMenu>
-                                                                                    <ContextMenuTrigger
-                                                                                        className={cn(
-                                                                                            "block bg-muted/40 border-2 border-dashed border-transparent hover:border-muted-foreground/20 rounded-lg p-3 flex items-center gap-3 opacity-70 hover:opacity-100 transition-all font-mono cursor-pointer pointer-events-auto",
-                                                                                            snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50 bg-background"
-                                                                                        )}>
-                                                                                        <Circle className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-                                                                                        {(() => {
-                                                                                            const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                            if (!proj) return null;
-                                                                                            const IconCmp = getIconComponent(proj.icon);
-                                                                                            return (
-                                                                                                <div className="flex items-center justify-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                </div>
-                                                                                            );
-                                                                                        })()}
-                                                                                        <span className="text-sm truncate flex-1">{task.title}</span>
-                                                                                        <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
-                                                                                            <Button
-                                                                                                variant="ghost"
-                                                                                                size="icon-xs"
-                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
-                                                                                                type="button"
-                                                                                                onPointerDown={(e) => e.stopPropagation()}
-                                                                                                onMouseDown={(e) => e.stopPropagation()}
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleDump(task.id);
-                                                                                                }}
-                                                                                                title="Send to Idea Dump"
-                                                                                            >
-                                                                                                <Lightbulb className="h-3 w-3" />
-                                                                                            </Button>
-                                                                                            <Button
-                                                                                                variant="ghost"
-                                                                                                size="icon-xs"
-                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
-                                                                                                type="button"
-                                                                                                onPointerDown={(e) => e.stopPropagation()}
-                                                                                                onMouseDown={(e) => e.stopPropagation()}
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleArchive(task.id);
-                                                                                                }}
-                                                                                                title="Archive Task"
-                                                                                            >
-                                                                                                <CheckCircle2 className="h-3 w-3" />
-                                                                                            </Button>
-                                                                                            <Button
-                                                                                                variant="ghost"
-                                                                                                size="icon-xs"
-                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full"
-                                                                                                type="button"
-                                                                                                onPointerDown={(e) => e.stopPropagation()}
-                                                                                                onMouseDown={(e) => e.stopPropagation()}
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleEdit(task);
-                                                                                                }}
-                                                                                                title="Edit Task"
-                                                                                            >
-                                                                                                <Edit2 className="h-3 w-3" />
-                                                                                            </Button>
-                                                                                        </div>
-                                                                                    </ContextMenuTrigger>
-                                                                                    <ContextMenuContent>
-                                                                                        <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Promote to Focus</ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Promote to Queue</ContextMenuItem>
-                                                                                        <ContextMenuSeparator />
-                                                                                        <ContextMenuItem onClick={() => handleEdit(task)}>
-                                                                                            <Edit2 className="mr-2 h-4 w-4" /> Edit
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
-                                                                                            <FileText className="mr-2 h-4 w-4" /> Duplicate
-                                                                                        </ContextMenuItem>
-                                                                                        <ContextMenuSeparator />
-                                                                                        <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
-                                                                                        <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
-                                                                                    </ContextMenuContent>
-                                                                                </ContextMenu>
-                                                                            </div>
-                                                                        </SwipeableTask>
-                                                                    </div>
-                                                                )}
-                                                            </Draggable>
-                                                        ))}
-                                                        {provided.placeholder}
-                                                    </div>
-                                                )}
-                                            </Droppable>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                         </div>
                     </DragDropContext>
@@ -1834,7 +1717,7 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                     <AlertDialogHeader>
                         <AlertDialogTitle>Create {pendingPaste?.length} items?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            You pasted multiple lines. Do you want to create a separate {mode === 'drafts' ? 'idea' : 'task'} for each line?
+                            You pasted multiple lines. Do you want to create a separate task (or idea) for each line?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground border p-2 rounded-md bg-muted/30">
@@ -1849,10 +1732,10 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
                         <AlertDialogCancel onClick={() => setPendingPaste(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={() => {
                             if (pendingPaste) {
-                                handleBatchAdd(pendingPaste, mode === 'drafts');
+                                handleBatchAdd(pendingPaste, false);
                             }
                         }}>
-                            Create {mode === 'drafts' ? 'Ideas' : 'Tasks'}
+                            Create Tasks
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1861,21 +1744,21 @@ function QueueContent({ defaultTab, variant = 'sheet', mode = 'active' }: { defa
     );
 }
 
-export function QueueView({ customTrigger, defaultTab = 'active', variant = 'sheet', mode = 'active' }: QueueViewProps & { variant?: 'sheet' | 'fullscreen', mode?: 'active' | 'drafts' }) {
+export function QueueView({ customTrigger, defaultTab = 'active', variant = 'sheet' }: QueueViewProps) {
     const { activeSheet, setOpenSheet } = useMonocleStore();
 
     // Derived open state for the Sheet (only used when variant === 'sheet')
     const sheetOpen = variant === 'sheet' && activeSheet === 'queue';
 
     if (variant === 'fullscreen') {
-        return <QueueContent defaultTab={defaultTab} variant="fullscreen" mode={mode} />;
+        return <QueueContent defaultTab={defaultTab} variant="fullscreen" />;
     }
 
     return (
         <Sheet open={sheetOpen} onOpenChange={(val) => setOpenSheet(val ? 'queue' : null)}>
             {customTrigger && <SheetTrigger asChild>{customTrigger}</SheetTrigger>}
             <SheetContent side="left" className="w-[85vw] sm:w-[500px] p-0 border-r-0 sm:border-r" showCloseButton={false}>
-                <QueueContent defaultTab={defaultTab} variant="sheet" mode={mode} />
+                <QueueContent defaultTab={defaultTab} variant="sheet" />
             </SheetContent>
         </Sheet>
     );
