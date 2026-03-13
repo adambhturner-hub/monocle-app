@@ -445,6 +445,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             return;
         }
 
+        // Intercept drop into Waiting On
+        if (result.destination.droppableId === 'waiting') {
+            if (draggedTask) {
+                useMonocleStore.getState().updateTask(draggedTask.id, { status: 'waiting' });
+                toast.success("Moved to Waiting On");
+            }
+            return;
+        }
+
         // Remove automatic interception for 'drafts' so the drag can re-index into the Accordion list
         // Update: We actually still want to allow dropping into the empty droppable or the list. 
         // The list handles it just fine because we defined destination properly.
@@ -1182,15 +1191,23 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                     </Droppable>
 
                                                     {/* Waiting On Section */}
-                                                    {waitingTasks.length > 0 && (
-                                                        <div className="mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]">
-                                                            <div className="flex items-center gap-2 px-2 pt-2 mb-3">
-                                                                <Hourglass className="h-3 w-3 text-slate-500" />
-                                                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                                                    Waiting On
-                                                                    <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full">{waitingTasks.length}</span>
-                                                                </h3>
-                                                            </div>
+                                                    <Droppable droppableId="waiting">
+                                                        {(provided, snapshot) => (
+                                                            <div
+                                                                {...provided.droppableProps}
+                                                                ref={provided.innerRef}
+                                                                className={cn(
+                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
+                                                                    snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : (waitingTasks.length === 0 ? "hidden" : "")
+                                                                )}
+                                                            >
+                                                                <div className="flex items-center gap-2 px-2 pt-2 mb-3">
+                                                                    <Hourglass className="h-3 w-3 text-slate-500" />
+                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                                                        Waiting On
+                                                                        <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full">{waitingTasks.length}</span>
+                                                                    </h3>
+                                                                </div>
                                                             {waitingTasks.map((task) => (
                                                                 <ContextMenu key={task.id}>
                                                                     <ContextMenuTrigger
@@ -1266,8 +1283,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                     </ContextMenuContent>
                                                                 </ContextMenu>
                                                             ))}
-                                                        </div>
-                                                    )}
+                                                                {provided.placeholder}
+                                                            </div>
+                                                        )}
+                                                    </Droppable>
 
                                                     {/* Idea Dump Section */}
                                                     <Accordion type="single" collapsible className="mt-8 transition-colors rounded-xl min-h-[50px]">
