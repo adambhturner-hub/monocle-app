@@ -913,18 +913,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             >
                                                                                                 <div className="flex items-center gap-2 relative z-10 w-full overflow-hidden shrink-0">
                                                                                                     {(() => {
-                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                                        if (!proj) return null;
-                                                                                                        const IconCmp = getIconComponent(proj.icon);
-                                                                                                        return (
-                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                                </div>
-                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
-                                                                                                            </div>
-                                                                                                        );
-                                                                                                    })()}
+    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!proj) return null;
+    const IconCmp = getIconComponent(proj.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
                                                                                                     <p className={cn(
                                                                                                         "text-sm font-medium truncate",
                                                                                                         task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
@@ -954,6 +951,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     </Tooltip>
                                                                                                 )}
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                                     {task.launchDate && (
                                                                                                         <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}>
                                                                                                             <Calendar className="h-3 w-3" />
@@ -1107,6 +1109,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             </p>
                                                                                         </div>
                                                                                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                             {task.launchDate && (
                                                                                                 <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}>
                                                                                                     <Calendar className="h-3 w-3" />
@@ -1170,6 +1177,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                 </p>
                                                                             </div>
                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                 {task.skippedUntil && task.skippedUntil > Date.now() && (
                                                                                     <button
                                                                                         onClick={(e) => {
@@ -1223,18 +1235,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                             <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                     {(() => {
-                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                        if (!proj) return null;
-                                                                                        const IconCmp = getIconComponent(proj.icon);
-                                                                                        return (
-                                                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                </div>
-                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
-                                                                                            </div>
-                                                                                        );
-                                                                                    })()}
+    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!proj) return null;
+    const IconCmp = getIconComponent(proj.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
                                                                                     <p className={cn(
                                                                                         "text-sm font-medium truncate text-slate-500",
                                                                                         task.isFrog && "text-emerald-700/70 dark:text-emerald-400/70 font-bold",
@@ -1258,6 +1267,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     </Tooltip>
                                                                                 )}
                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                     {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
@@ -1353,18 +1367,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                             <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                                                     {(() => {
-                                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                                                        if (!proj) return null;
-                                                                                                                        const IconCmp = getIconComponent(proj.icon);
-                                                                                                                        return (
-                                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                                                </div>
-                                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
-                                                                                                                            </div>
-                                                                                                                        );
-                                                                                                                    })()}
+    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!proj) return null;
+    const IconCmp = getIconComponent(proj.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
                                                                                                                     <p className="text-sm font-medium truncate text-muted-foreground">
                                                                                                                         <FormattedText text={task.title} />
                                                                                                                     </p>
@@ -1499,18 +1510,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                                     {(() => {
-                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                                        if (!proj) return null;
-                                                                                                        const IconCmp = getIconComponent(proj.icon);
-                                                                                                        return (
-                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                                </div>
-                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
-                                                                                                            </div>
-                                                                                                        );
-                                                                                                    })()}
+    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!proj) return null;
+    const IconCmp = getIconComponent(proj.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
                                                                                                     <p className={cn(
                                                                                                         "text-sm font-medium truncate",
                                                                                                         task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
@@ -1536,6 +1544,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     </Tooltip>
                                                                                                 )}
                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                                     {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
@@ -1621,18 +1634,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                             <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                                 {(() => {
-                                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                                    if (!proj) return null;
-                                                                                                    const IconCmp = getIconComponent(proj.icon);
-                                                                                                    return (
-                                                                                                        <div className="flex items-center gap-1.5 shrink-0">
-                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                                            </div>
-                                                                                                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
-                                                                                                        </div>
-                                                                                                    );
-                                                                                                })()}
+    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!proj) return null;
+    const IconCmp = getIconComponent(proj.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
                                                                                                 <p className={cn(
                                                                                                     "text-sm font-medium truncate",
                                                                                                     task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
@@ -1658,6 +1668,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 </Tooltip>
                                                                                             )}
                                                                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
                                                                                                 {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                 {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                 {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
