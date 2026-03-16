@@ -917,8 +917,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         if (!proj) return null;
                                                                                                         const IconCmp = getIconComponent(proj.icon);
                                                                                                         return (
-                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                                </div>
+                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
                                                                                                             </div>
                                                                                                         );
                                                                                                     })()}
@@ -1224,8 +1227,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         if (!proj) return null;
                                                                                         const IconCmp = getIconComponent(proj.icon);
                                                                                         return (
-                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                </div>
+                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
                                                                                             </div>
                                                                                         );
                                                                                     })()}
@@ -1351,8 +1357,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                                         if (!proj) return null;
                                                                                                                         const IconCmp = getIconComponent(proj.icon);
                                                                                                                         return (
-                                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                                                </div>
+                                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
                                                                                                                             </div>
                                                                                                                         );
                                                                                                                     })()}
@@ -1494,8 +1503,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         if (!proj) return null;
                                                                                                         const IconCmp = getIconComponent(proj.icon);
                                                                                                         return (
-                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                                </div>
+                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
                                                                                                             </div>
                                                                                                         );
                                                                                                     })()}
@@ -1613,8 +1625,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     if (!proj) return null;
                                                                                                     const IconCmp = getIconComponent(proj.icon);
                                                                                                     return (
-                                                                                                        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                                            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                                                                            <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                                <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                            </div>
+                                                                                                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[80px] leading-none mt-[1px]">{proj.name}</span>
                                                                                                         </div>
                                                                                                     );
                                                                                                 })()}
