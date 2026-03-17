@@ -531,20 +531,20 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const innerContent = (
         <>
             {attachments.length > 0 && (
-                <div className="absolute top-5 right-5 z-50">
+                <div className="absolute top-4 right-4 z-50">
                     <Button 
-                        variant="ghost" 
+                        variant="secondary" 
                         size="sm" 
-                        className="h-8 text-xs font-medium text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10 gap-1.5 rounded-full px-3 transition-colors"
+                        className="h-8 text-xs font-semibold text-foreground hover:text-emerald-500 bg-secondary shadow-sm hover:bg-secondary/80 focus:ring-2 focus:ring-emerald-500 gap-1.5 rounded-full px-4 transition-all"
                         onClick={(e) => {
                             e.preventDefault();
                             handleParseImage(attachments[0]);
                         }}
                         disabled={isParsing}
-                        title="Parse task details from the first attached image"
+                        title="Parse task details from the attached image"
                     >
-                        {isParsing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        Parse Image
+                        {isParsing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-emerald-500" />}
+                        {isParsing ? "Parsing..." : "Parse Image"}
                     </Button>
                 </div>
             )}
