@@ -12,6 +12,7 @@ export interface Task {
   projectId?: string;
   launchDate?: number;
   recurrence?: RecurrenceInterval;
+  attachments?: string[];
   isDraft?: boolean;
   createdAt: number;
   archivedAt?: number;

@@ -145,6 +145,7 @@ interface MonocleState {
     undo: () => void;
     duplicateTask: (id: string) => void;
     toggleDraft: (id: string) => void;
+    addAttachment: (taskId: string, url: string) => void;
 
     // Queue Actions
     completeTask: (taskId?: string) => { nextTask?: Task } | void;
@@ -554,6 +555,14 @@ export const useMonocleStore = create<MonocleState>()(
 
                 toggleDraft: (id) => set((state) => ({
                     tasks: state.tasks.map(t => t.id === id ? { ...t, isDraft: !t.isDraft, updatedAt: Date.now() } : t)
+                })),
+
+                addAttachment: (taskId, url) => set(state => ({
+                    tasks: state.tasks.map(t =>
+                        t.id === taskId
+                            ? { ...t, attachments: [...(t.attachments || []), url], updatedAt: Date.now() }
+                            : t
+                    )
                 })),
 
                 toggleFrog: (id) =>

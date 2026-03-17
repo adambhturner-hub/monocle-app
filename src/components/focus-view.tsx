@@ -5,7 +5,7 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones, Layers } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones, Layers, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
@@ -40,6 +40,7 @@ import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
 import { HoldButton } from './ui/hold-button';
 import { getIconComponent } from '@/lib/icons';
+import { uploadTaskAttachment } from '@/lib/storage';
 import { AnimatedLogo } from './animated-logo';
 import { FormattedText } from './ui/formatted-text';
 
@@ -128,6 +129,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
     const [isDetailsSheetOpen, setIsDetailsSheetOpen] = React.useState(false);
     const [isCompleting, setIsCompleting] = React.useState(false);
+    const [isUploading, setIsUploading] = React.useState(false);
 
     const [renderTick, setRenderTick] = React.useState(0);
 
@@ -158,6 +160,48 @@ export function FocusView({ onExit }: FocusViewProps) {
         if (!activeTask) return;
         updateTask(activeTask.id, { launchDate: date ? date.getTime() : undefined });
         setIsCalendarOpen(false);
+    };
+
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        if (!activeTask) return;
+        const items = e.clipboardData.items;
+        const imageItem = Array.from(items).find(item => item.type.startsWith("image/"));
+        
+        if (imageItem) {
+            e.preventDefault();
+            const file = imageItem.getAsFile();
+            if (!file) return;
+            
+            setIsUploading(true);
+            const toastId = toast.loading("Uploading image...", { description: file.name });
+            try {
+                const url = await uploadTaskAttachment(activeTask.id, file);
+                useMonocleStore.getState().addAttachment(activeTask.id, url);
+                toast.success("Image attached", { id: toastId });
+            } catch (err: any) {
+                toast.error("Upload failed", { id: toastId, description: err.message });
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!activeTask || !e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        
+        setIsUploading(true);
+        const toastId = toast.loading("Uploading image...", { description: file.name });
+        try {
+            const url = await uploadTaskAttachment(activeTask.id, file);
+            useMonocleStore.getState().addAttachment(activeTask.id, url);
+            toast.success("Image attached", { id: toastId });
+        } catch (err: any) {
+            toast.error("Upload failed", { id: toastId, description: err.message });
+        } finally {
+            setIsUploading(false);
+            e.target.value = ""; // reset
+        }
     };
 
     const handlePrioritySelect = (value: string) => {
@@ -432,6 +476,11 @@ export function FocusView({ onExit }: FocusViewProps) {
                                     className="flex items-center justify-center gap-3 w-full group/title relative px-2 py-4 cursor-pointer hover:bg-foreground/5 dark:hover:bg-foreground/10 rounded-xl transition-colors"
                                     onClick={() => setIsDetailsSheetOpen(true)}
                                 >
+                                    {activeTask.attachments && activeTask.attachments.length > 0 && (
+                                        <div className="absolute top-2 right-2 flex items-center gap-1.5 text-muted-foreground/30 transition-colors group-hover/title:text-muted-foreground/60" title={`${activeTask.attachments.length} attachments`}>
+                                            <ImageIcon className="h-4 w-4" />
+                                        </div>
+                                    )}
                                     <h1
                                         className={cn(
                                             "bg-transparent border-none text-3xl md:text-5xl font-bold tracking-tight leading-tight text-center w-full focus:outline-none focus:ring-2 focus:ring-ring/20 rounded-md py-1 transition-all duration-500",
@@ -482,6 +531,7 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             <TextareaAutosize
                                                 value={activeTask.description || ''}
                                                 onChange={(e) => updateTask(activeTask.id, { description: e.target.value })}
+                                                onPaste={handlePaste}
                                                 placeholder="Add a description..."
                                                 minRows={1}
                                                 maxRows={4}
@@ -490,8 +540,38 @@ export function FocusView({ onExit }: FocusViewProps) {
                                             />
                                         </div>
 
+                                        {/* Attachments Grid */}
+                                        {activeTask.attachments && activeTask.attachments.length > 0 && (
+                                            <div className="w-full flex gap-3 overflow-x-auto pb-2 shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onClick={(e) => e.stopPropagation()}>
+                                                {activeTask.attachments.map((url, i) => (
+                                                    <div key={i} className="relative h-24 w-24 md:h-32 md:w-32 shrink-0 rounded-lg overflow-hidden border bg-muted/30 group shadow-sm hover:shadow-md transition-all">
+                                                        <img src={url} alt={`Attachment ${i+1}`} className="w-full h-full object-cover" />
+                                                        <a href={url} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <ImageIcon className="h-6 w-6 text-white drop-shadow-md" />
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         {/* Metadata Chips Row */}
                                         <div className="flex flex-wrap items-center justify-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                            {/* Attach Image Chip */}
+                                            <div className="relative">
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                                    onChange={handleFileUpload}
+                                                    disabled={isUploading}
+                                                    title="Attach Image"
+                                                />
+                                                <button disabled={isUploading} className="px-3 py-1.5 rounded-full border bg-secondary/30 text-sm font-medium flex items-center gap-2 transition-all text-muted-foreground hover:bg-secondary disabled:opacity-50">
+                                                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                                                    {isUploading ? "Uploading..." : "Attach"}
+                                                </button>
+                                            </div>
+
                                             {/* Due Date Chip */}
                                             <Popover>
                                                 <PopoverTrigger asChild>

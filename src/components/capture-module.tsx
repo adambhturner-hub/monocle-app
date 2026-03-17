@@ -8,7 +8,7 @@ import { Task } from '@/types';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
@@ -21,6 +21,7 @@ import { Textarea } from './ui/textarea';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
+import { uploadTaskAttachment } from '@/lib/storage';
 
 import { ParsedToken } from '@/lib/smart-parser';
 
@@ -95,6 +96,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [isFrog, setIsFrog] = useState(false);
     const [isLightning, setIsLightning] = useState(false);
+    const [attachments, setAttachments] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Initializer for Edit Mode or Undo Drafts
     useEffect(() => {
@@ -108,7 +111,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             setRecurrence(taskToEdit.recurrence?.toString() || 'none');
             setIsFrog(taskToEdit.isFrog || false);
             setIsLightning(taskToEdit.isLightning || false);
-            if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.launchDate) {
+            setAttachments(taskToEdit.attachments || []);
+            if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.launchDate || (taskToEdit.attachments && taskToEdit.attachments.length > 0)) {
                 setAdvancedOpen(true);
             }
         } else {
@@ -130,7 +134,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 setRecurrence(draftTaskData.recurrence?.toString() || 'none');
                 setIsFrog(draftTaskData.isFrog || false);
                 setIsLightning(draftTaskData.isLightning || false);
-                if (draftTaskData.description || draftTaskData.recurrence || draftTaskData.launchDate) {
+                setAttachments(draftTaskData.attachments || []);
+                if (draftTaskData.description || draftTaskData.recurrence || draftTaskData.launchDate || (draftTaskData.attachments && draftTaskData.attachments.length > 0)) {
                     setAdvancedOpen(true);
                 }
                 setDraftTaskData(null);
@@ -377,6 +382,49 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         if (onComplete) onComplete();
     };
 
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        const imageItem = Array.from(items).find(item => item.type.startsWith("image/"));
+        
+        if (imageItem) {
+            e.preventDefault();
+            const file = imageItem.getAsFile();
+            if (!file) return;
+            
+            setIsUploading(true);
+            const toastId = toast.loading("Uploading image...", { description: file.name });
+            try {
+                const tempId = isEditMode && taskToEdit ? taskToEdit.id : generateId();
+                const url = await uploadTaskAttachment(tempId, file);
+                setAttachments(prev => [...prev, url]);
+                toast.success("Image attached", { id: toastId });
+            } catch (err: any) {
+                toast.error("Upload failed", { id: toastId, description: err.message });
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        
+        setIsUploading(true);
+        const toastId = toast.loading("Uploading image...", { description: file.name });
+        try {
+            const tempId = isEditMode && taskToEdit ? taskToEdit.id : generateId();
+            const url = await uploadTaskAttachment(tempId, file);
+            setAttachments(prev => [...prev, url]);
+            toast.success("Image attached", { id: toastId });
+        } catch (err: any) {
+            toast.error("Upload failed", { id: toastId, description: err.message });
+        } finally {
+            setIsUploading(false);
+            e.target.value = ""; // reset
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Backspace' && inputRef.current && parsedData?.matchedTokens) {
             const cursorPosition = inputRef.current.selectionStart;
@@ -588,6 +636,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             setTitle(e.target.value);
                             onMentionChange();
                         }}
+                        onPaste={handlePaste}
                         onKeyDown={handleKeyDown}
                         placeholder="What's on your mind?"
                         className={cn(
@@ -673,6 +722,26 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             className="min-h-[60px] resize-none text-sm bg-card hover:bg-secondary/50 focus:bg-secondary transition-colors border-border/50 rounded-xl px-3 py-2"
                         />
 
+                        {attachments && attachments.length > 0 && (
+                            <div className="w-full flex gap-3 overflow-x-auto shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
+                                {attachments.map((url, i) => (
+                                    <div key={i} className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm">
+                                        <img src={url} alt={`Attachment ${i+1}`} className="w-full h-full object-cover" />
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                setAttachments(prev => prev.filter((_, idx) => idx !== i));
+                                            }}
+                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex flex-wrap justify-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -757,6 +826,27 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             >
                                 <span className="text-sm leading-none mr-1.5">⚡️</span> Quick
                             </button>
+
+                            <div className="relative flex-1">
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                    onChange={handleFileUpload}
+                                    disabled={isUploading}
+                                    title="Attach Image"
+                                />
+                                <button
+                                    disabled={isUploading}
+                                    className={cn(
+                                        "w-full justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
+                                        "hover:bg-secondary text-muted-foreground border-border/50 disabled:opacity-50"
+                                    )}
+                                >
+                                    {isUploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
+                                    {isUploading ? "Uploading..." : "Attach"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

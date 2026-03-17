@@ -16,7 +16,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -967,6 +967,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                             <Repeat className="h-3 w-3" />
                                                                                                         </span>
                                                                                                     )}
+                                                                                                    {task.attachments && task.attachments.length > 0 && (
+                                                                                                        <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments">
+                                                                                                            <ImageIcon className="h-3 w-3" />
+                                                                                                        </span>
+                                                                                                    )}
                                                                                                     {task.priority === 'high' && (
                                                                                                         <AlertCircle className="h-3 w-3 text-red-500" />
                                                                                                     )}
@@ -1274,6 +1279,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     })()}
                                                                                     {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                    {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                     {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
                                                                                 </div>
@@ -1387,6 +1393,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                                 )}
                                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
                                                                                                                     {task.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                                    {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/50" />}
                                                                                                                 </div>
                                                                                                             </div>
@@ -1551,6 +1558,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     })()}
                                                                                                     {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                                    {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                                     {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
                                                                                                 </div>
@@ -1675,6 +1683,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     })()}
                                                                                                 {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                 {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                                {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                 {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                                                                                                 {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
                                                                                             </div>
