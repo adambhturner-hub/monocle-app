@@ -530,6 +530,24 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
     const innerContent = (
         <>
+            {attachments.length > 0 && (
+                <div className="absolute top-5 right-5 z-50">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs font-medium text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10 gap-1.5 rounded-full px-3 transition-colors"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleParseImage(attachments[0]);
+                        }}
+                        disabled={isParsing}
+                        title="Parse task details from the first attached image"
+                    >
+                        {isParsing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        Parse Image
+                    </Button>
+                </div>
+            )}
             <div className="w-full px-8 md:px-16 flex flex-col items-center justify-center relative flex-1 py-6">
                 <div className={cn("mb-6 animate-in fade-in slide-in-from-top-4 duration-500", isModal && "mt-12")}>
                     {(() => {
@@ -738,22 +756,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {attachments.map((url, i) => (
                             <div key={i} className="relative h-20 w-fit shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm flex items-center">
                                 <img src={url} alt={`Attachment ${i+1}`} className="w-20 h-20 object-cover" />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                    <Button 
-                                        variant="secondary" 
-                                        size="sm" 
-                                        className="h-7 text-[10px] pointer-events-auto shadow-sm"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleParseImage(url);
-                                        }}
-                                        disabled={isParsing}
-                                    >
-                                        {isParsing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />}
-                                        Parse
-                                    </Button>
-                                </div>
                                 <button 
                                     onClick={(e) => {
                                         e.stopPropagation();
