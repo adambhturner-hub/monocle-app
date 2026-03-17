@@ -456,6 +456,49 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         }
     };
 
+    const handleDirectParse = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        
+        setIsParsing(true);
+        const toastId = toast.loading("Processing image...", { description: file.name });
+        try {
+            // 1. Upload temporarily purely for parsing
+            const tempId = isEditMode && taskToEdit ? taskToEdit.id : generateId();
+            const url = await uploadTaskAttachment(tempId, file);
+            
+            // 2. Add to attachments so they can see the context if they want
+            setAttachments(prev => [...prev, url]);
+            
+            // 3. Immediately parse
+            toast.loading("Analyzing content...", { id: toastId });
+            const res = await fetch('/api/parse-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: url })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to parse image');
+            }
+
+            const data: ParsedTask = await res.json();
+            
+            if (data.title) setTitle(data.title);
+            if (data.description) setDescription(data.description);
+            if (data.launchDate) setLaunchDate(new Date(data.launchDate));
+            setAdvancedOpen(true);
+            
+            toast.success('Task details extracted!', { id: toastId });
+        } catch (err: any) {
+            toast.error("Failed to parse", { id: toastId, description: err.message });
+        } finally {
+            setIsParsing(false);
+            e.target.value = ""; // reset
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Backspace' && inputRef.current && parsedData?.matchedTokens) {
             const cursorPosition = inputRef.current.selectionStart;
@@ -530,24 +573,26 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
     const innerContent = (
         <>
-            {attachments.length > 0 && (
-                <div className="absolute top-4 right-4 z-50">
+            <div className="absolute top-4 right-4 z-50">
+                <div className="relative overflow-hidden rounded-full">
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                        onChange={handleDirectParse}
+                        disabled={isParsing || isUploading}
+                        title="Upload an image to auto-fill task details"
+                    />
                     <Button 
                         variant="secondary" 
                         size="sm" 
-                        className="h-8 text-xs font-semibold text-foreground hover:text-emerald-500 bg-secondary shadow-sm hover:bg-secondary/80 focus:ring-2 focus:ring-emerald-500 gap-1.5 rounded-full px-4 transition-all"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            handleParseImage(attachments[0]);
-                        }}
-                        disabled={isParsing}
-                        title="Parse task details from the attached image"
+                        className="h-8 text-xs font-semibold text-foreground hover:text-emerald-500 bg-secondary shadow-sm hover:bg-secondary/80 focus:ring-2 focus:ring-emerald-500 gap-1.5 px-4 transition-all relative pointer-events-none"
                     >
                         {isParsing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-emerald-500" />}
                         {isParsing ? "Parsing..." : "Parse Image"}
                     </Button>
                 </div>
-            )}
+            </div>
             <div className="w-full px-8 md:px-16 flex flex-col items-center justify-center relative flex-1 py-6">
                 <div className={cn("mb-6 animate-in fade-in slide-in-from-top-4 duration-500", isModal && "mt-12")}>
                     {(() => {
