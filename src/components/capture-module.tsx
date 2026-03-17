@@ -391,8 +391,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             e.preventDefault();
             const file = imageItem.getAsFile();
             if (!file) return;
-            
             setIsUploading(true);
+            setAdvancedOpen(true);
             const toastId = toast.loading("Uploading image...", { description: file.name });
             try {
                 const tempId = isEditMode && taskToEdit ? taskToEdit.id : generateId();
@@ -410,8 +410,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
         const file = e.target.files[0];
-        
         setIsUploading(true);
+        setAdvancedOpen(true);
         const toastId = toast.loading("Uploading image...", { description: file.name });
         try {
             const tempId = isEditMode && taskToEdit ? taskToEdit.id : generateId();
@@ -733,6 +733,42 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                     </div>
                 )}
 
+                {attachments && attachments.length > 0 && (
+                    <div className="w-full max-w-sm mx-auto flex gap-3 overflow-x-auto shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-3">
+                        {attachments.map((url, i) => (
+                            <div key={i} className="relative h-20 w-fit shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm flex items-center">
+                                <img src={url} alt={`Attachment ${i+1}`} className="w-20 h-20 object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <Button 
+                                        variant="secondary" 
+                                        size="sm" 
+                                        className="h-7 text-[10px] pointer-events-auto shadow-sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleParseImage(url);
+                                        }}
+                                        disabled={isParsing}
+                                    >
+                                        {isParsing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />}
+                                        Parse
+                                    </Button>
+                                </div>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setAttachments(prev => prev.filter((_, idx) => idx !== i));
+                                    }}
+                                    className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex justify-center">
                     <button
                         onClick={() => setAdvancedOpen(!advancedOpen)}
@@ -753,41 +789,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             className="min-h-[60px] resize-none text-sm bg-card hover:bg-secondary/50 focus:bg-secondary transition-colors border-border/50 rounded-xl px-3 py-2"
                         />
 
-                        {attachments && attachments.length > 0 && (
-                            <div className="w-full flex gap-3 overflow-x-auto shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-                                {attachments.map((url, i) => (
-                                    <div key={i} className="relative h-20 w-fit shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm flex items-center">
-                                        <img src={url} alt={`Attachment ${i+1}`} className="w-20 h-20 object-cover" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                            <Button 
-                                                variant="secondary" 
-                                                size="sm" 
-                                                className="h-7 text-[10px] pointer-events-auto shadow-sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    e.preventDefault();
-                                                    handleParseImage(url);
-                                                }}
-                                                disabled={isParsing}
-                                            >
-                                                {isParsing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />}
-                                                Parse
-                                            </Button>
-                                        </div>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                                setAttachments(prev => prev.filter((_, idx) => idx !== i));
-                                            }}
-                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        {/* Attachments renderer moved outside to ensure visibility */}
 
                         <div className="flex flex-wrap justify-center gap-2">
                             <DropdownMenu>
