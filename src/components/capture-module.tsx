@@ -8,7 +8,7 @@ import { Task } from '@/types';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass, Image as ImageIcon, Loader2, X, Sparkles } from 'lucide-react';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
@@ -98,6 +98,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [isLightning, setIsLightning] = useState(false);
     const [attachments, setAttachments] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isParsing, setIsParsing] = useState(false);
 
     // Initializer for Edit Mode or Undo Drafts
     useEffect(() => {
@@ -425,6 +426,36 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         }
     };
 
+    const handleParseImage = async (url: string) => {
+        setIsParsing(true);
+        const toastId = toast.loading('Parsing structure from image...');
+        try {
+            const res = await fetch('/api/parse-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: url })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to parse image');
+            }
+
+            const data: ParsedTask = await res.json();
+            
+            if (data.title) setTitle(data.title);
+            if (data.description) setDescription(data.description);
+            if (data.launchDate) setLaunchDate(new Date(data.launchDate));
+            
+            toast.success('Task details extracted!', { id: toastId });
+        } catch (error: any) {
+            console.error('Parsing Error:', error);
+            toast.error(error.message || 'Failed to extract details from image.', { id: toastId });
+        } finally {
+            setIsParsing(false);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Backspace' && inputRef.current && parsedData?.matchedTokens) {
             const cursorPosition = inputRef.current.selectionStart;
@@ -725,15 +756,31 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {attachments && attachments.length > 0 && (
                             <div className="w-full flex gap-3 overflow-x-auto shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
                                 {attachments.map((url, i) => (
-                                    <div key={i} className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm">
-                                        <img src={url} alt={`Attachment ${i+1}`} className="w-full h-full object-cover" />
+                                    <div key={i} className="relative h-20 w-fit shrink-0 rounded-lg overflow-hidden border bg-muted/40 group shadow-sm flex items-center">
+                                        <img src={url} alt={`Attachment ${i+1}`} className="w-20 h-20 object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                            <Button 
+                                                variant="secondary" 
+                                                size="sm" 
+                                                className="h-7 text-[10px] pointer-events-auto shadow-sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    handleParseImage(url);
+                                                }}
+                                                disabled={isParsing}
+                                            >
+                                                {isParsing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />}
+                                                Parse
+                                            </Button>
+                                        </div>
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 e.preventDefault();
                                                 setAttachments(prev => prev.filter((_, idx) => idx !== i));
                                             }}
-                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
                                         >
                                             <X className="w-3 h-3" />
                                         </button>

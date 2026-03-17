@@ -9,6 +9,7 @@ export interface ParsedToken {
 
 export interface ParsedTask {
     title: string;
+    description?: string;
     priority?: 'low' | 'medium' | 'high';
     launchDate?: number;
     recurrence?: RecurrenceInterval;

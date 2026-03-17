@@ -5,7 +5,7 @@ import { useMonocleStore } from '@/lib/store';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones, Layers, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Check, CheckCircle2, Pause, CornerUpRight, Shuffle, AlertCircle, Clock, Calendar, Repeat, MoreHorizontal, Edit, Copy, FileText, Trash2, Archive, X, Smile, Star, Dices, ChevronUp, Plus, Music, Headphones, Layers, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast, isToday, isTomorrow, format } from 'date-fns';
 import { toast } from "sonner"
@@ -36,6 +36,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar'; // Ren
 import { AddTaskModal } from './add-task-modal';
 import TextareaAutosize from 'react-textarea-autosize';
 import { RecurrenceInterval, Project } from '@/types';
+import { ParsedTask } from '@/lib/smart-parser';
 import { FocusAtmosphere } from './focus-atmosphere';
 import { SwipeableTask } from './ui/swipeable-task';
 import { HoldButton } from './ui/hold-button';
@@ -130,6 +131,7 @@ export function FocusView({ onExit }: FocusViewProps) {
     const [isDetailsSheetOpen, setIsDetailsSheetOpen] = React.useState(false);
     const [isCompleting, setIsCompleting] = React.useState(false);
     const [isUploading, setIsUploading] = React.useState(false);
+    const [isParsing, setIsParsing] = React.useState(false);
 
     const [renderTick, setRenderTick] = React.useState(0);
 
@@ -201,6 +203,42 @@ export function FocusView({ onExit }: FocusViewProps) {
         } finally {
             setIsUploading(false);
             e.target.value = ""; // reset
+        }
+    };
+
+    const handleParseImage = async (url: string) => {
+        if (!activeTask) return;
+        setIsParsing(true);
+        const toastId = toast.loading('Parsing structure from image...');
+        try {
+            const res = await fetch('/api/parse-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: url })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to parse image');
+            }
+
+            const data: ParsedTask = await res.json();
+            
+            const updates: Partial<typeof activeTask> = {};
+            if (data.title) updates.title = data.title;
+            if (data.description) updates.description = data.description;
+            if (data.launchDate) updates.launchDate = new Date(data.launchDate).getTime();
+            
+            if (Object.keys(updates).length > 0) {
+                updateTask(activeTask.id, updates);
+            }
+            
+            toast.success('Task details extracted!', { id: toastId });
+        } catch (error: any) {
+            console.error('Parsing Error:', error);
+            toast.error(error.message || 'Failed to extract details from image.', { id: toastId });
+        } finally {
+            setIsParsing(false);
         }
     };
 
@@ -544,10 +582,26 @@ export function FocusView({ onExit }: FocusViewProps) {
                                         {activeTask.attachments && activeTask.attachments.length > 0 && (
                                             <div className="w-full flex gap-3 overflow-x-auto pb-2 shrink-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onClick={(e) => e.stopPropagation()}>
                                                 {activeTask.attachments.map((url, i) => (
-                                                    <div key={i} className="relative h-24 w-24 md:h-32 md:w-32 shrink-0 rounded-lg overflow-hidden border bg-muted/30 group shadow-sm hover:shadow-md transition-all">
-                                                        <img src={url} alt={`Attachment ${i+1}`} className="w-full h-full object-cover" />
-                                                        <a href={url} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <ImageIcon className="h-6 w-6 text-white drop-shadow-md" />
+                                                    <div key={i} className="relative h-24 w-fit md:h-32 shrink-0 rounded-lg overflow-hidden border bg-muted/30 group shadow-sm hover:shadow-md transition-all flex items-center">
+                                                        <img src={url} alt={`Attachment ${i+1}`} className="w-24 h-24 md:w-32 md:h-32 object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                                            <Button 
+                                                                variant="secondary" 
+                                                                size="sm" 
+                                                                className="h-7 text-[10px] pointer-events-auto shadow-sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    e.preventDefault();
+                                                                    handleParseImage(url);
+                                                                }}
+                                                                disabled={isParsing}
+                                                            >
+                                                                {isParsing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />}
+                                                                Parse
+                                                            </Button>
+                                                        </div>
+                                                        <a href={url} target="_blank" rel="noreferrer" className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                                                            <ImageIcon className="h-3 w-3" />
                                                         </a>
                                                     </div>
                                                 ))}
