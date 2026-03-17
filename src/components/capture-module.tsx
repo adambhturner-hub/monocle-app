@@ -307,6 +307,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 isFrog: finalIsFrog,
                 isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
                 status: destination === 'archive' ? 'done' : (parsedData?.isWaiting ? 'waiting' : taskToEdit.status),
+                attachments: attachments.length > 0 ? attachments : undefined,
             });
 
             if (destination === 'archive') {
@@ -333,6 +334,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             isFrog: false, // Will be made true securely by toggleFrog if requested
             isLightning: finalIsLightning,
             createdAt: Date.now(),
+            attachments: attachments.length > 0 ? attachments : undefined,
         };
 
         addTask(newTask);
@@ -371,6 +373,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         setIsFrog(false);
         setIsLightning(false);
         setAdvancedOpen(false);
+        setAttachments([]);
 
         if (destination === 'queue') {
             setView('queue');
