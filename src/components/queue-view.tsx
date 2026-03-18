@@ -402,7 +402,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         matchesSearch(t)
     );
 
-    const dormantTasks = visibleTasks.filter(t => 
+    let dormantTasks = visibleTasks.filter(t => 
         !t.isDraft && 
         t.status !== 'done' && 
         t.status !== 'waiting' && 
@@ -419,9 +419,24 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         activeTasks.unshift(frog);
     }
 
-    const snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
-    const waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t));
-    const draftTasks = visibleTasks.filter(t => t.isDraft && t.status !== 'done' && matchesSearch(t));
+    let snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
+    let waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t));
+    let draftTasks = visibleTasks.filter(t => t.isDraft && t.status !== 'done' && matchesSearch(t));
+
+    if (searchQuery) {
+        activeTasks = [
+            ...activeTasks,
+            ...dormantTasks,
+            ...snoozedTasks,
+            ...waitingTasks,
+            ...draftTasks
+        ].sort((a, b) => b.createdAt - a.createdAt);
+
+        dormantTasks = [];
+        snoozedTasks = [];
+        waitingTasks = [];
+        draftTasks = [];
+    }
 
     const currentActiveTask = getAutoPickedTask();
 
@@ -1035,6 +1050,18 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     )}
                                                                                                     {task.priority === 'low' && (
                                                                                                         <ArrowUpDown className="h-3 w-3 text-blue-500" />
+                                                                                                    )}
+                                                                                                    {searchQuery && task.status === 'waiting' && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500">WAITING</span>
+                                                                                                    )}
+                                                                                                    {searchQuery && task.isDraft && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500">IDEA</span>
+                                                                                                    )}
+                                                                                                    {searchQuery && !task.isDraft && task.status !== 'waiting' && task.skippedUntil && task.skippedUntil > now && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500">SNOOZED</span>
+                                                                                                    )}
+                                                                                                    {searchQuery && !task.isDraft && task.status !== 'waiting' && (!task.skippedUntil || task.skippedUntil <= now) && (task.launchDate && startOfDay(task.launchDate).getTime() > todayStart) && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">DORMANT</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </ContextMenuTrigger>
