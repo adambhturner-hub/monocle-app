@@ -136,7 +136,23 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 }
 
                 const prefix = preListenTitleRef.current ? preListenTitleRef.current + (preListenTitleRef.current.endsWith(' ') ? '' : ' ') : '';
-                setTitle(prefix + finalTranscript + interimTranscript);
+                const fullText = prefix + finalTranscript + interimTranscript;
+                
+                const submitRegex = /\b(?:save|add|submit|create)\s*(?:task|it)?\b\.?$/i;
+                if (submitRegex.test(fullText.trim())) {
+                    const cleanTitle = fullText.trim().replace(submitRegex, '').trim();
+                    setTitle(cleanTitle);
+                    
+                    if (recognitionRef.current) {
+                        recognitionRef.current.stop();
+                        setIsListening(false);
+                    }
+                    
+                    const syncParsedData = parseTaskInput(cleanTitle, useMonocleStore.getState().projects);
+                    submitTask(isModal ? 'capture' : 'queue', cleanTitle, syncParsedData);
+                } else {
+                    setTitle(fullText);
+                }
             };
         }
     }, []);
@@ -310,10 +326,14 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         return () => clearTimeout(timer);
     }, [title, projects]);
 
-    const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive') => {
-        let finalTitle = title.replace(/\u200B/g, '').trim();
-        if (parsedData?.title) {
-            finalTitle = parsedData.title.trim();
+    const submitTask = (destination: 'capture' | 'queue' | 'focus' | 'idea' | 'save' | 'archive', overrideTitle?: string, overrideParsedData?: ParsedTask | null) => {
+        let currentTitle = overrideTitle !== undefined ? overrideTitle : title;
+        let finalTitle = currentTitle.replace(/\u200B/g, '').trim();
+        
+        const activeParsedData = overrideParsedData !== undefined ? overrideParsedData : parsedData;
+
+        if (activeParsedData?.title) {
+            finalTitle = activeParsedData.title.trim();
         }
 
         if (!finalTitle) {
@@ -332,21 +352,14 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         let finalIsFrog = isFrog;
         let finalIsLightning = isLightning;
 
-        if (parsedData) {
-            // The parsedData.title here is already stripped of tokens, but we use finalTitle for the actual task title.
-            // We still use parsedData to extract the *values* of the tokens.
+        if (activeParsedData) {
+            if (activeParsedData.priority) finalPriority = activeParsedData.priority;
+            if (activeParsedData.launchDate) finalDueDate = activeParsedData.launchDate;
+            if (activeParsedData.recurrence) finalRecurrence = activeParsedData.recurrence;
+            if (activeParsedData.projectId) finalProjectId = activeParsedData.projectId;
 
-            // In Edit mode, we still want to apply parsed tokens.
-            // However, we only override state values if the user hasn't actively fought the parser.
-            // The simplest approach is to always let parsed tokens win if they exist in the current string.
-            if (parsedData.priority) finalPriority = parsedData.priority;
-            if (parsedData.launchDate) finalDueDate = parsedData.launchDate;
-            if (parsedData.recurrence) finalRecurrence = parsedData.recurrence;
-            if (parsedData.projectId) finalProjectId = parsedData.projectId;
-
-            // Auto-apply Frog and Lightning tags if they typed it
-            if (parsedData.isFrog) finalIsFrog = true;
-            if (parsedData.isLightning) finalIsLightning = true;
+            if (activeParsedData.isFrog) finalIsFrog = true;
+            if (activeParsedData.isLightning) finalIsLightning = true;
         }
 
         if (isEditMode && taskToEdit) {
@@ -360,7 +373,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 isLightning: finalIsLightning,
                 isFrog: finalIsFrog,
                 isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
-                status: destination === 'archive' ? 'done' : (parsedData?.isWaiting ? 'waiting' : taskToEdit.status),
+                status: destination === 'archive' ? 'done' : (activeParsedData?.isWaiting ? 'waiting' : taskToEdit.status),
                 attachments: attachments.length > 0 ? attachments : undefined,
             });
 
@@ -379,7 +392,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             id: taskId,
             title: finalTitle,
             description: description.trim() || undefined,
-            status: parsedData?.isWaiting ? 'waiting' : 'todo',
+            status: activeParsedData?.isWaiting ? 'waiting' : 'todo',
             priority: finalPriority,
             projectId: finalProjectId,
             launchDate: finalDueDate,
