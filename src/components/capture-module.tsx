@@ -22,6 +22,7 @@ import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
 import { uploadTaskAttachment } from '@/lib/storage';
+import { auth } from '@/lib/firebase';
 
 import { ParsedToken } from '@/lib/smart-parser';
 
@@ -433,9 +434,13 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         setIsParsing(true);
         const toastId = toast.loading('Parsing structure from image...');
         try {
+            const idToken = await auth.currentUser?.getIdToken();
             const res = await fetch('/api/parse-image', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
                 body: JSON.stringify({ imageUrl: url })
             });
 
@@ -475,9 +480,13 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             
             // 3. Immediately parse
             toast.loading("Analyzing content...", { id: toastId });
+            const idToken = await auth.currentUser?.getIdToken();
             const res = await fetch('/api/parse-image', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
                 body: JSON.stringify({ imageUrl: url })
             });
 

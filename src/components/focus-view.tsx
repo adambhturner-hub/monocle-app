@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useMonocleStore } from '@/lib/store';
+import { auth } from '@/lib/firebase';
 import { FocusTimer } from './focus-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -211,9 +212,13 @@ export function FocusView({ onExit }: FocusViewProps) {
         setIsParsing(true);
         const toastId = toast.loading('Parsing structure from image...');
         try {
+            const idToken = await auth.currentUser?.getIdToken();
             const res = await fetch('/api/parse-image', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
                 body: JSON.stringify({ imageUrl: url })
             });
 

@@ -1,12 +1,34 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import * as admin from 'firebase-admin';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+if (!admin.apps.length) {
+    admin.initializeApp({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    });
+}
+
 export async function POST(req: Request) {
     try {
+        // 1. Verify Authentication
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized: Missing or invalid token' }, { status: 401 });
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+            await admin.auth().verifyIdToken(idToken);
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+        }
+
+        // 2. Parse payload
         const { imageUrl } = await req.json();
 
         if (!imageUrl) {
