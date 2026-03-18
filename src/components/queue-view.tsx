@@ -844,6 +844,46 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                         />
                                                     </div>
                                                 )}
+
+                                                {/* Meta Chips */}
+                                                {(quickAddProjectId || parsedQuickAddResult?.launchDate || parsedQuickAddResult?.priority || parsedQuickAddResult?.projectId || parsedQuickAddResult?.recurrence || parsedQuickAddResult?.isFrog || parsedQuickAddResult?.isLightning || parsedQuickAddResult?.isWaiting) && (
+                                                    <div className="flex flex-wrap items-center gap-2 mt-2 pointer-events-none animate-in fade-in slide-in-from-top-1">
+                                                        {(quickAddProjectId || parsedQuickAddResult?.projectId) && (() => {
+                                                            const activeId = parsedQuickAddResult?.projectId || quickAddProjectId;
+                                                            const p = projects.find(proj => proj.id === activeId);
+                                                            if (!p) return null;
+                                                            const IconCmp = getIconComponent(p.icon);
+                                                            return (
+                                                                <span className="text-[10.5px] font-semibold px-2 py-[3px] rounded items-center gap-1.5 text-white shadow-sm inline-flex shrink-0" style={{ backgroundColor: p.color }}>
+                                                                    <IconCmp className="w-3 h-3 drop-shadow-sm" /> {p.name}
+                                                                </span>
+                                                            );
+                                                        })()}
+                                                        {parsedQuickAddResult?.launchDate && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md shrink-0 border border-indigo-500/20">
+                                                                <Calendar className="w-3 h-3" /> {format(parsedQuickAddResult.launchDate, 'MMM d')}
+                                                            </span>
+                                                        )}
+                                                        {parsedQuickAddResult?.priority && parsedQuickAddResult.priority !== 'medium' && (
+                                                            <span className={cn(
+                                                                "text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 backdrop-blur-md shrink-0 border",
+                                                                parsedQuickAddResult.priority === 'high' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                                                            )}>
+                                                                <AlertCircle className="w-3 h-3" /> {parsedQuickAddResult.priority.toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                        {parsedQuickAddResult?.isFrog && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 backdrop-blur-md shrink-0 border border-emerald-500/20">
+                                                                <span>🐸</span> FROG
+                                                            </span>
+                                                        )}
+                                                        {parsedQuickAddResult?.isLightning && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 backdrop-blur-md shrink-0 border border-amber-500/20">
+                                                                <span>⚡️</span> FAST
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}

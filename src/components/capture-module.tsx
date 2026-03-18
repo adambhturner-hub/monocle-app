@@ -71,6 +71,17 @@ const COLORS = [
     '#8b5cf6', // Violet 500
     '#d946ef', // Fuchsia 500
     '#64748b', // Slate 500
+    '#f43f5e', // Rose 500
+    '#f59e0b', // Amber 500
+    '#84cc16', // Lime 500
+    '#10b981', // Emerald 500
+    '#14b8a6', // Teal 500
+    '#0ea5e9', // Sky 500
+    '#6366f1', // Indigo 500
+    '#a855f7', // Purple 500
+    '#ec4899', // Pink 500
+    '#71717a', // Zinc 500
+    '#111827', // Gray 900
 ];
 
 export interface CaptureModuleProps {
