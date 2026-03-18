@@ -21,12 +21,36 @@ export async function POST(req: Request) {
         }
 
         const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
         try {
-            await admin.auth().verifyIdToken(idToken);
+            decodedToken = await admin.auth().verifyIdToken(idToken);
         } catch (error) {
             console.error('Token verification failed:', error);
             return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
         }
+
+        const userId = decodedToken.uid;
+        const db = admin.firestore();
+        const quotaRef = db.collection('user_quotas').doc(userId);
+        const today = new Date().toISOString().split('T')[0];
+        const DAILY_LIMIT = 20;
+
+        const docSnap = await quotaRef.get();
+        let currentCount = 0;
+
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            if (data?.date === today) {
+                currentCount = data.count || 0;
+            }
+        }
+
+        if (currentCount >= DAILY_LIMIT) {
+            return NextResponse.json({ error: 'Daily parse limit reached. Please try again tomorrow.' }, { status: 429 });
+        }
+
+        // Increment quota usage immediately
+        await quotaRef.set({ date: today, count: currentCount + 1 }, { merge: true });
 
         // 2. Parse payload
         const { imageUrl } = await req.json();
