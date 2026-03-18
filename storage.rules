@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Lock down everything by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Allow users to upload and read their own attachments ONLY
+    // We expect the path to be /users/{userId}/tasks/{taskId}/{filename}
+    match /users/{userId}/{allPaths=**} {
+      // Must be authenticated, and their UID must exactly match the {userId} in the path
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

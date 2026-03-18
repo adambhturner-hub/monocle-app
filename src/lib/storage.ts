@@ -1,15 +1,20 @@
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from './firebase';
+import { storage, auth } from './firebase';
 
 export async function uploadTaskAttachment(taskId: string, file: File, onProgress?: (progress: number) => void): Promise<string> {
     if (!storage) {
         throw new Error("Firebase Storage is not initialized.");
     }
+    
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Must be logged in to upload attachments.");
+    }
 
     // Create a unique filename to prevent collisions natively
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    const path = `tasks/${taskId}/${timestamp}_${safeName}`;
+    const path = `users/${user.uid}/tasks/${taskId}/${timestamp}_${safeName}`;
     const storageRef = ref(storage, path);
 
     return new Promise((resolve, reject) => {
