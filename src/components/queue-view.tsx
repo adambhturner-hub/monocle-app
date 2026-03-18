@@ -513,6 +513,8 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         const { projects } = useMonocleStore.getState();
         const parsedResult = parseTaskInput(quickAddValue, projects);
 
+        const finalIsDraft = isDraft || parsedResult.isIdea;
+
         const newTask: Task = {
             id: generateId(),
             title: parsedResult.title || finalTitle,
@@ -525,13 +527,13 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             duration: parsedResult.duration,
             isFrog: parsedResult.isFrog,
             isLightning: parsedResult.isLightning,
-            isDraft,
+            isDraft: finalIsDraft,
             createdAt: Date.now(),
         };
         useMonocleStore.getState().addTask(newTask);
         setQuickAddValue('');
         setQuickAddProjectId(null);
-        toast(isDraft ? "Added to Idea Dump" : "Added to Queue", { description: newTask.title });
+        toast(finalIsDraft ? "Added to Idea Dump" : "Added to Queue", { description: newTask.title });
     };
 
     const handleBatchAdd = (lines: string[], isDraft: boolean) => {
@@ -543,6 +545,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             if (!trimmed) return;
 
             const parsedResult = parseTaskInput(line, projects);
+            const finalIsDraft = isDraft || parsedResult.isIdea;
 
             const newTask: Task = {
                 id: generateId(),
@@ -556,7 +559,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                 duration: parsedResult.duration,
                 isFrog: parsedResult.isFrog,
                 isLightning: parsedResult.isLightning,
-                isDraft,
+                isDraft: finalIsDraft,
                 createdAt: Date.now() + count, // offset to maintain order
             };
             addTask(newTask);
@@ -846,7 +849,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                 )}
 
                                                 {/* Meta Chips */}
-                                                {(quickAddProjectId || parsedQuickAddResult?.launchDate || parsedQuickAddResult?.priority || parsedQuickAddResult?.projectId || parsedQuickAddResult?.recurrence || parsedQuickAddResult?.isFrog || parsedQuickAddResult?.isLightning || parsedQuickAddResult?.isWaiting) && (
+                                                {(quickAddProjectId || parsedQuickAddResult?.launchDate || parsedQuickAddResult?.priority || parsedQuickAddResult?.projectId || parsedQuickAddResult?.recurrence || parsedQuickAddResult?.isFrog || parsedQuickAddResult?.isLightning || parsedQuickAddResult?.isWaiting || parsedQuickAddResult?.isIdea) && (
                                                     <div className="flex flex-wrap items-center gap-2 mt-2 pointer-events-none animate-in fade-in slide-in-from-top-1">
                                                         {(quickAddProjectId || parsedQuickAddResult?.projectId) && (() => {
                                                             const activeId = parsedQuickAddResult?.projectId || quickAddProjectId;
@@ -880,6 +883,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                         {parsedQuickAddResult?.isLightning && (
                                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 backdrop-blur-md shrink-0 border border-amber-500/20">
                                                                 <span>⚡️</span> FAST
+                                                            </span>
+                                                        )}
+                                                        {parsedQuickAddResult?.isIdea && (
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5 backdrop-blur-md shrink-0 border border-purple-500/20">
+                                                                <Lightbulb className="w-3 h-3" /> IDEA
                                                             </span>
                                                         )}
                                                     </div>

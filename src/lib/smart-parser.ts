@@ -3,7 +3,7 @@ import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'dat
 
 export interface ParsedToken {
     text: string;
-    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting';
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'idea';
     color?: string;
 }
 
@@ -18,6 +18,7 @@ export interface ParsedTask {
     isFrog?: boolean;
     isLightning?: boolean;
     isWaiting?: boolean;
+    isIdea?: boolean;
     matchedTokens: ParsedToken[];
 }
 
@@ -53,6 +54,17 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         if (match && match[1]) {
             isLightning = true;
             matchedTokens.push({ text: match[1], type: 'lightning' });
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+        }
+    }
+
+    let isIdea = false;
+    const ideaRegex = /(?:^|\s)(idea|@idea|!idea|dump|@dump|!dump|brainstorm)(?=\s|$)/i;
+    if (ideaRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(ideaRegex);
+        if (match && match[1]) {
+            isIdea = true;
+            matchedTokens.push({ text: match[1], type: 'idea' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
@@ -375,6 +387,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isFrog,
         isLightning,
         isWaiting,
+        isIdea,
         matchedTokens
     };
 }

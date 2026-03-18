@@ -49,6 +49,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
                 case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
+                case 'idea': colorClass = "bg-purple-500/20 text-transparent"; break;
             }
 
             return (
@@ -383,7 +384,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
                 isLightning: finalIsLightning,
                 isFrog: finalIsFrog,
-                isDraft: destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft,
+                isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : (destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft),
                 status: destination === 'archive' ? 'done' : (activeParsedData?.isWaiting ? 'waiting' : taskToEdit.status),
                 attachments: attachments.length > 0 ? attachments : undefined,
             });
@@ -408,7 +409,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             projectId: finalProjectId,
             launchDate: finalDueDate,
             recurrence: finalRecurrence === 'none' ? undefined : finalRecurrence as any,
-            isDraft: destination === 'idea' ? true : false,
+            isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : false,
             isFrog: false, // Will be made true securely by toggleFrog if requested
             isLightning: finalIsLightning,
             createdAt: Date.now(),
@@ -862,7 +863,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting) && (
+                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting || parsedData?.isIdea) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.launchDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
@@ -895,6 +896,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {parsedData.isWaiting && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 flex items-center gap-1.5 backdrop-blur-md">
                                 <Hourglass className="w-3 h-3" /> Waiting
+                            </span>
+                        )}
+                        {parsedData.isIdea && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5 backdrop-blur-md">
+                                <Lightbulb className="w-3 h-3" /> Idea
                             </span>
                         )}
                     </div>
