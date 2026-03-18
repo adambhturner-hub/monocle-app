@@ -37,7 +37,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
     // 0. Special Flags (Frog/Lightning/Waiting)
     // Use (?:^|\s) to catch tags at start of string or after a space, since \b doesn't trigger on @ or !
     const frogRegex = /(?:^|\s)(frog|@frog|!frog)(?=\s|$)/i;
-    const lightningRegex = /(?:^|\s)(lightning|@lightning|!lightning|bolt|quick)(?=\s|$)/i;
+    const lightningRegex = /(?:^|\s)(lightning|@lightning|!lightning|bolt|quick|fast)(?=\s|$)/i;
 
     if (frogRegex.test(cleanTitle)) {
         const match = cleanTitle.match(frogRegex);

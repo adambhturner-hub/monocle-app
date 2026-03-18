@@ -377,7 +377,17 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     // Then separate active vs draft
     // And apply search filter
-    const matchesSearch = (t: Task) => !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (t: Task) => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        if (t.title.toLowerCase().includes(query)) return true;
+        if (t.description?.toLowerCase().includes(query)) return true;
+        if (t.projectId) {
+            const project = projects.find(p => p.id === t.projectId);
+            if (project && project.name.toLowerCase().includes(query)) return true;
+        }
+        return false;
+    };
 
     // Evaluate pure time before render loops
     const now = Date.now();

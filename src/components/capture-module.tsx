@@ -8,7 +8,7 @@ import { Task } from '@/types';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass, Image as ImageIcon, Loader2, X, Sparkles } from 'lucide-react';
+import { Calendar as CalendarIcon, AlertCircle, Repeat, Plus, Target, Layers, Lightbulb, ChevronDown, ChevronUp, Folder, Save, Zap, Hourglass, Image as ImageIcon, Loader2, X, Sparkles, Mic } from 'lucide-react';
 import { SwipeableTask } from './ui/swipeable-task';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
@@ -100,6 +100,59 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [attachments, setAttachments] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isParsing, setIsParsing] = useState(false);
+
+    // Speech Recognition State
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+    const preListenTitleRef = useRef('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = true;
+            recognitionRef.current.interimResults = true;
+
+            recognitionRef.current.onstart = () => setIsListening(true);
+            recognitionRef.current.onend = () => setIsListening(false);
+            recognitionRef.current.onerror = (event: any) => {
+                console.error("Speech recognition error", event.error);
+                setIsListening(false);
+                if (event.error === 'not-allowed') {
+                    toast.error("Microphone access denied. Please allow permissions in your browser.");
+                }
+            };
+
+            recognitionRef.current.onresult = (event: any) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                const prefix = preListenTitleRef.current ? preListenTitleRef.current + (preListenTitleRef.current.endsWith(' ') ? '' : ' ') : '';
+                setTitle(prefix + finalTranscript + interimTranscript);
+            };
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+        } else {
+            if (recognitionRef.current) {
+                preListenTitleRef.current = title;
+                recognitionRef.current.start();
+            } else {
+                toast.error("Voice dictation is not supported in this browser.");
+            }
+        }
+    };
 
     // Initializer for Edit Mode or Undo Drafts
     useEffect(() => {
@@ -753,6 +806,21 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         maxRows={5}
                         maxLength={255}
                     />
+                    
+                    {/* Voice Dictation Button */}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            toggleListening();
+                        }}
+                        className={cn(
+                            "absolute right-2 bottom-0 p-2 rounded-full transition-all z-20",
+                            isListening ? "text-red-500 bg-red-500/10 animate-pulse" : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                        )}
+                        title="Voice Dictation"
+                    >
+                        <Mic className={cn("w-5 h-5", isListening && "scale-110 transition-transform")} />
+                    </button>
                 </div>
 
 
