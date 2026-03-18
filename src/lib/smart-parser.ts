@@ -235,6 +235,21 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         }
     }
 
+    if (!projectId) {
+        for (const project of sortedProjects) {
+            const prefixRegex = new RegExp(`\\b(?:category|project|folder)\\s+${escapeRegExp(project.name)}\\b`, 'i');
+            if (prefixRegex.test(cleanTitle)) {
+                const match = cleanTitle.match(prefixRegex);
+                if (match) {
+                    projectId = project.id;
+                    matchedTokens.push({ text: match[0], type: 'project', color: project.color });
+                    cleanTitle = cleanTitle.replace(prefixRegex, '');
+                    break;
+                }
+            }
+        }
+    }
+
     // 5. Launch Date Detection
 
     // Extended Date Patterns
