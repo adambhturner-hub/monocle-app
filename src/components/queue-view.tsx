@@ -20,6 +20,7 @@ import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, 
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
+import { HabitsWidget } from './habits-widget';
 import { parseTaskInput, ParsedToken } from '@/lib/smart-parser';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -913,6 +914,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
                                     <div className="flex-1 min-h-0">
                                         <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4">
+                                            <HabitsWidget />
                                             {sortMode === 'manual' && !searchQuery ? (
                                                 <>
                                                     <Droppable droppableId="active">

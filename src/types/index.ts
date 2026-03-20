@@ -55,3 +55,14 @@ export interface FocusSession {
   outcome?: SessionOutcome;
   updatedAt?: number;
 }
+
+export interface Habit {
+  id: string;
+  title: string;
+  icon?: string;
+  color?: string;
+  streak: number;
+  lastCompletedAt?: number;
+  createdAt: number;
+  updatedAt?: number;
+}

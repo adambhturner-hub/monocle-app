@@ -15,7 +15,7 @@ export const idbStorage: StateStorage = {
         await del(name);
     }
 };
-import { Task, Project, FocusSession, SessionOutcome } from '@/types';
+import { Task, Project, FocusSession, SessionOutcome, Habit } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
 import { haptics } from '@/lib/haptics';
 import { generateId } from '@/lib/utils';
@@ -111,6 +111,7 @@ const DEMO_TASKS: Task[] = [
 interface MonocleState {
     tasks: Task[];
     projects: Project[];
+    habits: Habit[];
     deletedIds: string[];
     activeProject: string | null; // 'null' means All Projects
     lastModified: number; // For sync conflict resolution
@@ -126,6 +127,11 @@ interface MonocleState {
     deleteProject: (id: string) => void;
     setActiveProject: (id: string | null) => void;
     reorderProjects: (startIndex: number, endIndex: number) => void;
+
+    addHabit: (habit: Habit) => void;
+    updateHabit: (id: string, updates: Partial<Habit>) => void;
+    deleteHabit: (id: string) => void;
+    toggleHabit: (id: string) => void;
 
     // UI State
     activeSheet: 'queue' | 'archive' | 'settings' | 'stats' | null;
@@ -234,7 +240,7 @@ export const useMonocleStore = create<MonocleState>()(
                     if (!partial) return partial as Partial<MonocleState>;
 
                     // Automatically bump lastModified if syncable data changed
-                    const touchedSyncable = ['tasks', 'projects', 'deletedIds', 'settings', 'sessionHistory']
+                    const touchedSyncable = ['tasks', 'projects', 'habits', 'deletedIds', 'settings', 'sessionHistory']
                         .some(key => (partial as any)[key] !== undefined);
 
                     if (touchedSyncable && (partial as any).lastModified === undefined) {
@@ -247,6 +253,7 @@ export const useMonocleStore = create<MonocleState>()(
             return ({
                 tasks: [],
                 projects: [],
+                habits: [],
                 deletedIds: [],
                 activeProject: null,
                 lastModified: Date.now(),
@@ -416,6 +423,7 @@ export const useMonocleStore = create<MonocleState>()(
                         deletedIds: Array.from(combinedDeletedIds),
                         tasks: mergedTasks,
                         projects: cloudState.projects !== undefined ? mergeById(state.projects, cloudState.projects) : state.projects,
+                        habits: cloudState.habits !== undefined ? mergeById(state.habits, cloudState.habits) : state.habits, // Merged habits
                         settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
                         sessionHistory: cloudState.sessionHistory !== undefined ? mergeById(state.sessionHistory, cloudState.sessionHistory) : state.sessionHistory,
                         lastModified: cloudState.lastModified !== undefined ? cloudState.lastModified : state.lastModified,
@@ -493,11 +501,70 @@ export const useMonocleStore = create<MonocleState>()(
                     set((state) => ({
                         projects: state.projects.filter((p) => p.id !== id),
                         deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now(),
-                        // Remove project reference from all tasks that had it
                         tasks: state.tasks.map(t => t.projectId === id ? { ...t, projectId: undefined, updatedAt: Date.now() } : t),
                         // If the active project is the one being deleted, switch to 'All Projects'
                         activeProject: state.activeProject === id ? null : state.activeProject
                     })),
+
+                addHabit: (habit) => set((state) => ({
+                    habits: [...(state.habits || []), { ...habit, updatedAt: Date.now() }], lastModified: Date.now()
+                })),
+
+                updateHabit: (id, updates) => set((state) => ({
+                    habits: (state.habits || []).map((h) => (h.id === id ? { ...h, ...updates, updatedAt: Date.now() } : h)), lastModified: Date.now()
+                })),
+
+                deleteHabit: (id) => set((state) => ({
+                    habits: (state.habits || []).filter((h) => h.id !== id),
+                    deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now()
+                })),
+
+                toggleHabit: (id) => set((state) => {
+                    const habit = (state.habits || []).find(h => h.id === id);
+                    if (!habit) return {};
+
+                    const now = Date.now();
+                    const today = startOfDay(now).getTime();
+                    const lastCompletedOfDay = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt).getTime() : 0;
+
+                    let newStreak = habit.streak;
+                    let newLastCompletedAt: number | undefined = habit.lastCompletedAt;
+
+                    if (lastCompletedOfDay === today) {
+                        // Already completed today. Untoggle it.
+                        // Decrease streak by 1 (cannot go below 0)
+                        newStreak = Math.max(0, habit.streak - 1);
+                        newLastCompletedAt = undefined; 
+                        
+                        if (state.settings?.soundEnabled !== false) {
+                            // No reverse complete sound exists, but could vibrate
+                            haptics.click();
+                        }
+                    } else {
+                        // Completing it today
+                        const yesterday = startOfDay(addDays(now, -1)).getTime();
+
+                        if (lastCompletedOfDay === yesterday) {
+                            newStreak = habit.streak + 1; // Maintained streak
+                        } else if (lastCompletedOfDay < yesterday) {
+                            newStreak = 1; // Streak broken, restart
+                        } else {
+                            newStreak = habit.streak + 1; // Fallback or first time
+                        }
+                        newLastCompletedAt = now;
+
+                        if (state.settings?.soundEnabled !== false) {
+                            // Re-using the task complete sound
+                            soundEngine.playComplete();
+                            haptics.heavy();
+                        }
+                    }
+
+                    return {
+                        habits: state.habits.map(h => h.id === id ? { ...h, streak: newStreak, lastCompletedAt: newLastCompletedAt, updatedAt: Date.now() } : h),
+                        lastModified: Date.now()
+                    };
+                }),
 
                 setActiveProject: (id) => set({ activeProject: id }),
 
