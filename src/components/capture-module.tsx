@@ -405,7 +405,8 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 id: generateId(),
                 title: finalTitle,
                 streak: 0,
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                daysOfWeek: activeParsedData.daysOfWeek
             });
 
             toast.success("Habit Created", { description: finalTitle });

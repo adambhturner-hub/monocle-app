@@ -57,12 +57,12 @@ export interface FocusSession {
 }
 
 export interface Habit {
-  id: string;
-  title: string;
-  icon?: string;
-  color?: string;
-  streak: number;
-  lastCompletedAt?: number;
-  createdAt: number;
-  updatedAt?: number;
+    id: string;
+    title: string;
+    streak: number;
+    lastCompletedAt?: number; // Unix timestamp for determining rollover and streaks
+    createdAt: number;
+    icon?: string;
+    color?: string;
+    daysOfWeek?: number[]; // [0-6] where 0 is Sunday. If undefined, assume daily.
 }

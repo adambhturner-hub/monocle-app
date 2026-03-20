@@ -535,7 +535,8 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                 id: generateId(),
                 title: parsedResult.title || finalTitle,
                 streak: 0,
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                daysOfWeek: parsedResult.daysOfWeek
             });
             setQuickAddValue('');
             setQuickAddProjectId(null);

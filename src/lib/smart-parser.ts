@@ -3,7 +3,7 @@ import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'dat
 
 export interface ParsedToken {
     text: string;
-    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'idea';
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'idea' | 'habit';
     color?: string;
 }
 
@@ -19,6 +19,8 @@ export interface ParsedTask {
     isLightning?: boolean;
     isWaiting?: boolean;
     isIdea?: boolean;
+    isHabit?: boolean;
+    daysOfWeek?: number[];
     matchedTokens: ParsedToken[];
 }
 
@@ -76,6 +78,55 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             isWaiting = true;
             matchedTokens.push({ text: match[1], type: 'waiting' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+        }
+    }
+
+    let isHabit = false;
+    let habitDaysOfWeek: number[] | undefined;
+    const habitRegex = /(?:^|\s)(!habit|@habit|#habit|routine|!routine|@routine)(?=\s|$)/i;
+    if (habitRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(habitRegex);
+        if (match && match[1]) {
+            isHabit = true;
+            matchedTokens.push({ text: match[1], type: 'habit' });
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+            
+            // Extract schedules like "weekdays" or "weekends"
+            const groupingRegex = /(?:\b|^)(every\s+)?(weekday|weekend|day)s?(?=\b|$)/gi;
+            let groupMatch;
+            const foundDays = new Set<number>();
+
+            while ((groupMatch = groupingRegex.exec(cleanTitle)) !== null) {
+                const word = groupMatch[2].toLowerCase();
+                if (word === 'weekday') { [1,2,3,4,5].forEach(d => foundDays.add(d)); }
+                else if (word === 'weekend') { [0,6].forEach(d => foundDays.add(d)); }
+                
+                if (word !== 'day') {
+                    matchedTokens.push({ text: groupMatch[0].trim(), type: 'recurrence' });
+                }
+            }
+            cleanTitle = cleanTitle.replace(groupingRegex, ' ').replace(/\s+/g, ' ').trim();
+
+            // Extract specific days like "every Friday", "Mon Wed Fri", "Tuesdays"
+            const localDaysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const localShortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const dayExtractionRegex = /(?:\b|^)(?:every\s+)?(monday|mon|tuesday|tue|wednesday|wed|thursday|thu|friday|fri|saturday|sat|sunday|sun)s?(?=\b|$)/gi;
+            
+            let dayMatch;
+            while ((dayMatch = dayExtractionRegex.exec(cleanTitle)) !== null) {
+                const dayStr = dayMatch[1].toLowerCase();
+                let dayIndex = localDaysOfWeek.indexOf(dayStr);
+                if (dayIndex === -1) dayIndex = localShortDays.indexOf(dayStr);
+                if (dayIndex !== -1) {
+                    foundDays.add(dayIndex);
+                    matchedTokens.push({ text: dayMatch[0].trim(), type: 'recurrence' });
+                }
+            }
+            cleanTitle = cleanTitle.replace(dayExtractionRegex, ' ').replace(/\s+/g, ' ').trim();
+
+            if (foundDays.size > 0 && foundDays.size < 7) {
+                habitDaysOfWeek = Array.from(foundDays).sort();
+            }
         }
     }
 
@@ -388,6 +439,8 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isLightning,
         isWaiting,
         isIdea,
+        isHabit,
+        daysOfWeek: habitDaysOfWeek,
         matchedTokens
     };
 }

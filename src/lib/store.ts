@@ -546,14 +546,24 @@ export const useMonocleStore = create<MonocleState>()(
                         }
                     } else {
                         // Completing it today
-                        const yesterday = startOfDay(addDays(logicalNow, -1)).getTime();
+                        let previousValidLogical = startOfDay(addDays(logicalNow, -1)).getTime();
 
-                        if (lastCompletedLogical === yesterday) {
+                        if (habit.daysOfWeek && habit.daysOfWeek.length > 0) {
+                            for (let i = 1; i <= 7; i++) {
+                                const checkDate = startOfDay(addDays(logicalNow, -i));
+                                if (habit.daysOfWeek.includes(checkDate.getDay())) {
+                                    previousValidLogical = checkDate.getTime();
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (lastCompletedLogical >= previousValidLogical) {
                             newStreak = habit.streak + 1; // Maintained streak
-                        } else if (lastCompletedLogical < yesterday) {
+                        } else if (lastCompletedLogical > 0 && lastCompletedLogical < previousValidLogical) {
                             newStreak = 1; // Streak broken, restart
                         } else {
-                            newStreak = habit.streak + 1; // Fallback or first time
+                            newStreak = 1; // First time ever
                         }
                         newLastCompletedAt = now;
 

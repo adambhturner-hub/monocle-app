@@ -71,12 +71,15 @@ export function HabitsWidget() {
         );
     }
 
+    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+    const logicalNow = Date.now() - FOUR_HOURS_MS;
+    const currentDayOfWeek = new Date(logicalNow).getDay();
+    const activeHabits = habits.filter(habit => !habit.daysOfWeek || habit.daysOfWeek.length === 0 || habit.daysOfWeek.includes(currentDayOfWeek));
+
     return (
         <div className="w-full mb-6 relative group">
             <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 px-1 scrollbar-hide snap-x">
-                {habits.map(habit => {
-                    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
-                    const logicalNow = Date.now() - FOUR_HOURS_MS;
+                {activeHabits.map(habit => {
                     const today = startOfDay(logicalNow).getTime();
                     const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
                     const completedToday = lastCompletedLogical === today;
