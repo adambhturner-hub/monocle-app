@@ -110,6 +110,15 @@ export function HabitsWidget() {
                                     )}>
                                         {habit.title}
                                     </span>
+
+                                    {habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7 && (
+                                        <span className={cn(
+                                            "text-[10px] ml-0.5 tracking-tighter uppercase font-bold",
+                                            completedToday ? "text-emerald-700/60 dark:text-emerald-400/60" : "text-muted-foreground/50"
+                                        )}>
+                                            {habit.daysOfWeek.map(d => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
+                                        </span>
+                                    )}
                                     
                                     {habit.streak > 0 && (
                                         <div className={cn(

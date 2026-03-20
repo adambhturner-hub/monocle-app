@@ -83,7 +83,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
 
     let isHabit = false;
     let habitDaysOfWeek: number[] | undefined;
-    const habitRegex = /(?:^|\s)(!habit|@habit|#habit|routine|!routine|@routine)(?=\s|$)/i;
+    const habitRegex = /(?:^|\s)(!habit|@habit|#habit|routine|!routine|@routine|habit)(?=\s|$)/i;
     if (habitRegex.test(cleanTitle)) {
         const match = cleanTitle.match(habitRegex);
         if (match && match[1]) {
