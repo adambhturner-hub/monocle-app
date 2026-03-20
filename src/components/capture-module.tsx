@@ -49,6 +49,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
                 case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
+                case 'habit': colorClass = "bg-orange-500/20 text-transparent"; break;
                 case 'idea': colorClass = "bg-purple-500/20 text-transparent"; break;
             }
 
@@ -329,7 +330,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 return;
             }
             const result = parseTaskInput(title, projects);
-            if (result.priority || result.launchDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting) {
+            if (result.priority || result.launchDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting || result.isIdea || result.isHabit) {
                 setParsedData(result);
             } else {
                 setParsedData(null);
@@ -396,6 +397,21 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             }
 
             if (onComplete) onComplete();
+            return;
+        }
+
+        if (activeParsedData?.isHabit && !isEditMode) {
+            useMonocleStore.getState().addHabit({
+                id: generateId(),
+                title: finalTitle,
+                streak: 0,
+                createdAt: Date.now()
+            });
+
+            toast.success("Habit Created", { description: finalTitle });
+
+            if (onComplete) onComplete();
+            setTitle('');
             return;
         }
 

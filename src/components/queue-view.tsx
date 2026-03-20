@@ -69,6 +69,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
                 case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
+                case 'habit': colorClass = "bg-orange-500/20 text-transparent"; break;
             }
 
             return (
@@ -526,8 +527,21 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         const finalTitle = quickAddValue.replace(/\u200B/g, '').trim();
         if (!finalTitle) return;
 
-        const { projects } = useMonocleStore.getState();
+        const { projects, addHabit, addTask } = useMonocleStore.getState();
         const parsedResult = parseTaskInput(quickAddValue, projects);
+
+        if (parsedResult.isHabit) {
+            addHabit({
+                id: generateId(),
+                title: parsedResult.title || finalTitle,
+                streak: 0,
+                createdAt: Date.now()
+            });
+            setQuickAddValue('');
+            setQuickAddProjectId(null);
+            toast.success("Habit Created", { description: parsedResult.title || finalTitle });
+            return;
+        }
 
         const finalIsDraft = isDraft || parsedResult.isIdea;
 
@@ -546,14 +560,14 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             isDraft: finalIsDraft,
             createdAt: Date.now(),
         };
-        useMonocleStore.getState().addTask(newTask);
+        addTask(newTask);
         setQuickAddValue('');
         setQuickAddProjectId(null);
         toast(finalIsDraft ? "Added to Idea Dump" : "Added to Queue", { description: newTask.title });
     };
 
     const handleBatchAdd = (lines: string[], isDraft: boolean) => {
-        const { projects, addTask } = useMonocleStore.getState();
+        const { projects, addTask, addHabit } = useMonocleStore.getState();
         let count = 0;
 
         lines.forEach(line => {
@@ -561,6 +575,18 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             if (!trimmed) return;
 
             const parsedResult = parseTaskInput(line, projects);
+
+            if (parsedResult.isHabit) {
+                addHabit({
+                    id: generateId(),
+                    title: parsedResult.title || trimmed,
+                    streak: 0,
+                    createdAt: Date.now()
+                });
+                count++;
+                return;
+            }
+
             const finalIsDraft = isDraft || parsedResult.isIdea;
 
             const newTask: Task = {
@@ -865,7 +891,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                 )}
 
                                                 {/* Meta Chips */}
-                                                {(quickAddProjectId || parsedQuickAddResult?.launchDate || parsedQuickAddResult?.priority || parsedQuickAddResult?.projectId || parsedQuickAddResult?.recurrence || parsedQuickAddResult?.isFrog || parsedQuickAddResult?.isLightning || parsedQuickAddResult?.isWaiting || parsedQuickAddResult?.isIdea) && (
+                                                {(quickAddProjectId || parsedQuickAddResult?.launchDate || parsedQuickAddResult?.priority || parsedQuickAddResult?.projectId || parsedQuickAddResult?.recurrence || parsedQuickAddResult?.isFrog || parsedQuickAddResult?.isLightning || parsedQuickAddResult?.isWaiting || parsedQuickAddResult?.isIdea || parsedQuickAddResult?.isHabit) && (
                                                     <div className="flex flex-wrap items-center gap-2 mt-2 pointer-events-none animate-in fade-in slide-in-from-top-1">
                                                         {(quickAddProjectId || parsedQuickAddResult?.projectId) && (() => {
                                                             const activeId = parsedQuickAddResult?.projectId || quickAddProjectId;
