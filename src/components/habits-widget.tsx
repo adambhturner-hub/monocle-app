@@ -84,6 +84,8 @@ export function HabitsWidget() {
                     const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
                     const completedToday = lastCompletedLogical === today;
 
+                    const isScheduled = habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7;
+
                     return (
                         <ContextMenu key={habit.id}>
                             <ContextMenuTrigger asChild>
@@ -93,13 +95,17 @@ export function HabitsWidget() {
                                     className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all snap-start shrink-0 select-none cursor-pointer border",
                                         completedToday 
-                                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 shadow-sm" 
+                                            ? isScheduled 
+                                                ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-400 shadow-sm"
+                                                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 shadow-sm"
                                             : "bg-transparent border-transparent text-muted-foreground opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
                                     )}
                                 >
                                     <div className={cn(
                                         "flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors shrink-0",
-                                        completedToday ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/40 bg-transparent"
+                                        completedToday 
+                                            ? isScheduled ? "bg-indigo-500 border-indigo-500" : "bg-emerald-500 border-emerald-500" 
+                                            : "border-muted-foreground/40 bg-transparent"
                                     )}>
                                         {completedToday && <Check className="w-2.5 h-2.5 text-white" />}
                                     </div>
@@ -111,19 +117,23 @@ export function HabitsWidget() {
                                         {habit.title}
                                     </span>
 
-                                    {habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7 && (
+                                    {isScheduled && (
                                         <span className={cn(
                                             "text-[10px] ml-0.5 tracking-tighter uppercase font-bold",
-                                            completedToday ? "text-emerald-700/60 dark:text-emerald-400/60" : "text-muted-foreground/50"
+                                            completedToday 
+                                                ? isScheduled ? "text-indigo-700/60 dark:text-indigo-400/60" : "text-emerald-700/60 dark:text-emerald-400/60"
+                                                : "text-muted-foreground/50"
                                         )}>
-                                            {habit.daysOfWeek.map(d => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
+                                            {habit.daysOfWeek!.map(d => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
                                         </span>
                                     )}
                                     
                                     {habit.streak > 0 && (
                                         <div className={cn(
                                             "flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ml-0.5 transition-colors",
-                                            completedToday ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                                            completedToday 
+                                                ? isScheduled ? "bg-indigo-500/20 text-indigo-700 dark:text-indigo-400" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" 
+                                                : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
                                         )}>
                                             <Flame className="w-2.5 h-2.5" strokeWidth={3} />
                                             {habit.streak}
