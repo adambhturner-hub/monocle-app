@@ -524,14 +524,18 @@ export const useMonocleStore = create<MonocleState>()(
                     if (!habit) return {};
 
                     const now = Date.now();
-                    const today = startOfDay(now).getTime();
-                    const lastCompletedOfDay = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt).getTime() : 0;
+                    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+                    
+                    // Offset by 4 hours so "midnight" is effectively 4 AM
+                    const logicalNow = now - FOUR_HOURS_MS;
+                    const today = startOfDay(logicalNow).getTime();
+                    const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
 
                     let newStreak = habit.streak;
                     let newLastCompletedAt: number | undefined = habit.lastCompletedAt;
 
-                    if (lastCompletedOfDay === today) {
-                        // Already completed today. Untoggle it.
+                    if (lastCompletedLogical === today) {
+                        // Already completed "today". Untoggle it.
                         // Decrease streak by 1 (cannot go below 0)
                         newStreak = Math.max(0, habit.streak - 1);
                         newLastCompletedAt = undefined; 
@@ -542,11 +546,11 @@ export const useMonocleStore = create<MonocleState>()(
                         }
                     } else {
                         // Completing it today
-                        const yesterday = startOfDay(addDays(now, -1)).getTime();
+                        const yesterday = startOfDay(addDays(logicalNow, -1)).getTime();
 
-                        if (lastCompletedOfDay === yesterday) {
+                        if (lastCompletedLogical === yesterday) {
                             newStreak = habit.streak + 1; // Maintained streak
-                        } else if (lastCompletedOfDay < yesterday) {
+                        } else if (lastCompletedLogical < yesterday) {
                             newStreak = 1; // Streak broken, restart
                         } else {
                             newStreak = habit.streak + 1; // Fallback or first time

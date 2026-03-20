@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Flame, Plus, Settings2, Trash2, Check, CheckCircle2 } from 'lucide-react';
-import { isToday } from 'date-fns';
+import { isToday, startOfDay, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { generateId } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 export function HabitsWidget() {
-    const { habits, toggleHabit, addHabit, deleteHabit } = useMonocleStore();
+    const { habits, toggleHabit, addHabit, deleteHabit, addTask } = useMonocleStore();
     const [isManagerOpen, setIsManagerOpen] = useState(false);
     const [newHabitTitle, setNewHabitTitle] = useState('');
 
@@ -25,6 +28,32 @@ export function HabitsWidget() {
             createdAt: Date.now()
         });
         setNewHabitTitle('');
+    };
+
+    const handleToggle = (id: string, currentStreak: number, isCurrentlyCompleted: boolean) => {
+        toggleHabit(id);
+        if (!isCurrentlyCompleted) {
+            const nextStreak = currentStreak + 1;
+            if ([3, 7, 14, 30, 90, 365].includes(nextStreak)) {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+    };
+
+    const promoteToQueue = (title: string, isFrog: boolean) => {
+        addTask({
+            id: generateId(),
+            title,
+            status: 'todo',
+            priority: isFrog ? 'high' : 'medium',
+            createdAt: Date.now(),
+            isDraft: false,
+            isFrog
+        });
     };
 
     if (habits.length === 0 && !isManagerOpen) {
@@ -46,43 +75,59 @@ export function HabitsWidget() {
         <div className="w-full mb-6 relative group">
             <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 px-1 scrollbar-hide snap-x">
                 {habits.map(habit => {
-                    const completedToday = habit.lastCompletedAt ? isToday(habit.lastCompletedAt) : false;
+                    const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+                    const logicalNow = Date.now() - FOUR_HOURS_MS;
+                    const today = startOfDay(logicalNow).getTime();
+                    const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
+                    const completedToday = lastCompletedLogical === today;
+
                     return (
-                        <button
-                            key={habit.id}
-                            onClick={() => toggleHabit(habit.id)}
-                            className={cn(
-                                "flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border transition-all snap-start shrink-0 select-none",
-                                completedToday 
-                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 shadow-sm" 
-                                    : "bg-card border-border hover:bg-muted text-foreground hover:border-muted-foreground/30",
-                                !completedToday && "active:scale-95"
-                            )}
-                        >
-                            <div className={cn(
-                                "flex items-center justify-center w-5 h-5 rounded-full border transition-colors shrink-0",
-                                completedToday ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30 bg-transparent"
-                            )}>
-                                {completedToday && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                            
-                            <span className={cn(
-                                "text-sm whitespace-nowrap",
-                                completedToday ? "font-bold" : "font-medium"
-                            )}>
-                                {habit.title}
-                            </span>
-                            
-                            {habit.streak > 0 && (
-                                <div className={cn(
-                                    "flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-md shrink-0 ml-1 transition-colors",
-                                    completedToday ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
-                                )}>
-                                    <Flame className="w-3 h-3" strokeWidth={3} />
-                                    {habit.streak}
-                                </div>
-                            )}
-                        </button>
+                        <ContextMenu key={habit.id}>
+                            <ContextMenuTrigger asChild>
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleToggle(habit.id, habit.streak, completedToday)}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all snap-start shrink-0 select-none cursor-pointer border",
+                                        completedToday 
+                                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 shadow-sm" 
+                                            : "bg-transparent border-transparent text-muted-foreground opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors shrink-0",
+                                        completedToday ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/40 bg-transparent"
+                                    )}>
+                                        {completedToday && <Check className="w-2.5 h-2.5 text-white" />}
+                                    </div>
+                                    
+                                    <span className={cn(
+                                        "text-[13px] whitespace-nowrap",
+                                        completedToday ? "font-bold" : "font-medium"
+                                    )}>
+                                        {habit.title}
+                                    </span>
+                                    
+                                    {habit.streak > 0 && (
+                                        <div className={cn(
+                                            "flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ml-0.5 transition-colors",
+                                            completedToday ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                                        )}>
+                                            <Flame className="w-2.5 h-2.5" strokeWidth={3} />
+                                            {habit.streak}
+                                        </div>
+                                    )}
+                                </motion.button>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuItem onClick={() => promoteToQueue(habit.title, false)}>
+                                    Promote to Active Queue
+                                </ContextMenuItem>
+                                <ContextMenuItem className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50" onClick={() => promoteToQueue(habit.title, true)}>
+                                    Make Today's Frog
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
                     )
                 })}
                 
