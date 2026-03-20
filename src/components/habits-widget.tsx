@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { Flame, Plus, Settings2, Trash2, Check, CheckCircle2 } from 'lucide-react';
+import { Flame, Plus, Settings2, Trash2, Check, CheckCircle2, Edit2 } from 'lucide-react';
 import { isToday, startOfDay, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
@@ -11,6 +11,8 @@ import { generateId } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
+import { parseTaskInput } from '@/lib/smart-parser';
+
 export function HabitsWidget() {
     const { habits, toggleHabit, addHabit, deleteHabit, addTask } = useMonocleStore();
     const [isManagerOpen, setIsManagerOpen] = useState(false);
@@ -18,12 +20,18 @@ export function HabitsWidget() {
 
     const handleCreateHabit = (e: React.FormEvent) => {
         e.preventDefault();
-        const title = newHabitTitle.trim();
-        if (!title) return;
+        const rawTitle = newHabitTitle.trim();
+        if (!rawTitle) return;
+
+        // Parse explicitly to allow "Read 10 pages Mon Wed Fri" directly from the modal
+        const parsedData = parseTaskInput(rawTitle);
+        // Cleanse the title from trigger words
+        const finalTitle = parsedData.title.replace(/(!habit|#habit|@habit|routine)\b/gi, '').trim() || rawTitle;
 
         addHabit({
             id: generateId(),
-            title,
+            title: finalTitle,
+            daysOfWeek: parsedData.daysOfWeek,
             streak: 0,
             createdAt: Date.now()
         });
@@ -169,6 +177,24 @@ export function HabitsWidget() {
 }
 
 function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate, habits, onDelete }: any) {
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+
+    const handleSaveEdit = (e: React.FormEvent, id: string) => {
+        e.preventDefault();
+        const rawTitle = editTitle.trim();
+        if (!rawTitle) return;
+
+        const parsedData = parseTaskInput(rawTitle);
+        const finalTitle = parsedData.title.replace(/(!habit|#habit|@habit|routine)\b/gi, '').trim() || rawTitle;
+
+        useMonocleStore.getState().updateHabit(id, {
+            title: finalTitle,
+            daysOfWeek: parsedData.daysOfWeek,
+        });
+        setEditingId(null);
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
@@ -190,26 +216,64 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
                         <Button type="submit" disabled={!newTitle.trim()}>Add</Button>
                     </form>
 
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                         {habits.length === 0 ? (
                             <p className="text-center text-sm text-muted-foreground py-8">No habits tracked yet.</p>
                         ) : (
                             habits.map((habitCard: any) => (
                                 <div key={habitCard.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-sm">{habitCard.title}</span>
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            Current Streak: <Flame className="w-3 h-3 text-orange-500" /> {habitCard.streak}
-                                        </span>
-                                    </div>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                        onClick={() => onDelete(habitCard.id)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                    {editingId === habitCard.id ? (
+                                        <form className="flex-1 flex items-center gap-2" onSubmit={(e) => handleSaveEdit(e, habitCard.id)}>
+                                            <Input
+                                                value={editTitle}
+                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                autoFocus
+                                                className="h-8 text-sm"
+                                            />
+                                            <Button type="submit" size="sm" className="h-8 shrink-0">Save</Button>
+                                            <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0" onClick={() => setEditingId(null)}>Cancel</Button>
+                                        </form>
+                                    ) : (
+                                        <>
+                                            <div className="flex flex-col min-w-0 pr-2">
+                                                <span className="font-medium text-sm truncate">{habitCard.title}</span>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Flame className="w-3 h-3 text-orange-500 shrink-0" /> {habitCard.streak}
+                                                    </span>
+                                                    {habitCard.daysOfWeek && habitCard.daysOfWeek.length > 0 && habitCard.daysOfWeek.length < 7 && (
+                                                        <span className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">
+                                                            {habitCard.daysOfWeek.map((d: number) => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => {
+                                                        const existingDays = habitCard.daysOfWeek 
+                                                            ? habitCard.daysOfWeek.map((d: number) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(' ') 
+                                                            : '';
+                                                        setEditTitle(habitCard.title + (existingDays ? ` ${existingDays}` : ''));
+                                                        setEditingId(habitCard.id);
+                                                    }}
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => onDelete(habitCard.id)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ))
                         )}
