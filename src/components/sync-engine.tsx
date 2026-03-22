@@ -91,6 +91,7 @@ export function SyncEngine() {
                             deletedIds: cloudData.deletedIds || [],
                             settings: cloudData.settings,
                             sessionHistory: cloudData.sessionHistory || [],
+                            habits: cloudData.habits || [],
                             lastModified: cloudData.lastModified || 0
                         });
 
@@ -113,6 +114,7 @@ export function SyncEngine() {
                                 deletedIds: cloudData.deletedIds || [],
                                 settings: cloudData.settings,
                                 sessionHistory: cloudData.sessionHistory || [],
+                                habits: cloudData.habits || [],
                                 lastModified: cloudData.lastModified,
                             });
                             useMonocleStore.getState().setLastSyncTime(Date.now());
@@ -144,6 +146,7 @@ export function SyncEngine() {
                             deletedIds: state.deletedIds,
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
+                            habits: state.habits,
                             lastModified: state.lastModified || Date.now()
                         };
 
@@ -164,6 +167,7 @@ export function SyncEngine() {
                             deletedIds: state.deletedIds,
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
+                            habits: state.habits,
                             lastModified: state.lastModified || Date.now()
                         });
 
@@ -210,6 +214,7 @@ export function SyncEngine() {
                 state.deletedIds !== prevState.deletedIds ||
                 state.settings !== prevState.settings ||
                 state.sessionHistory !== prevState.sessionHistory ||
+                state.habits !== prevState.habits ||
                 state.lastModified !== prevState.lastModified;
 
             // Only push if data changed AND we have already performed our initial pull from the network
@@ -231,6 +236,7 @@ export function SyncEngine() {
                     deletedIds: state.deletedIds,
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
+                    habits: state.habits,
                     lastModified: state.lastModified || 0
                 });
 
@@ -271,6 +277,7 @@ export function SyncEngine() {
                     deletedIds: state.deletedIds,
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
+                    habits: state.habits,
                     lastModified: state.lastModified || Date.now()
                 };
 
