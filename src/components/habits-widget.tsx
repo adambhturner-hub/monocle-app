@@ -216,11 +216,14 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
                         <Button type="submit" disabled={!newTitle.trim()}>Add</Button>
                     </form>
 
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 pb-2">
                         {habits.length === 0 ? (
                             <p className="text-center text-sm text-muted-foreground py-8">No habits tracked yet.</p>
-                        ) : (
-                            habits.map((habitCard: any) => (
+                        ) : (() => {
+                            const dailyHabits = habits.filter((h: any) => !h.daysOfWeek || h.daysOfWeek.length === 0 || h.daysOfWeek.length === 7);
+                            const weeklyHabits = habits.filter((h: any) => h.daysOfWeek && h.daysOfWeek.length > 0 && h.daysOfWeek.length < 7);
+
+                            const renderHabitRow = (habitCard: any) => (
                                 <div key={habitCard.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                                     {editingId === habitCard.id ? (
                                         <form className="flex-1 flex items-center gap-2" onSubmit={(e) => handleSaveEdit(e, habitCard.id)}>
@@ -275,8 +278,31 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
                                         </>
                                     )}
                                 </div>
-                            ))
-                        )}
+                            );
+
+                            return (
+                                <>
+                                    {dailyHabits.length > 0 && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Daily</span>
+                                                <div className="h-px bg-border flex-1"></div>
+                                            </div>
+                                            {dailyHabits.map(renderHabitRow)}
+                                        </div>
+                                    )}
+                                    {weeklyHabits.length > 0 && (
+                                        <div className="space-y-2 mt-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Weekly</span>
+                                                <div className="h-px bg-border flex-1"></div>
+                                            </div>
+                                            {weeklyHabits.map(renderHabitRow)}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             </DialogContent>

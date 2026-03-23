@@ -107,17 +107,36 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
             }
             cleanTitle = cleanTitle.replace(groupingRegex, ' ').replace(/\s+/g, ' ').trim();
 
-            // Extract specific days like "every Friday", "Mon Wed Fri", "Tuesdays"
+            // Extract specific days like "every Friday", "Mon Wed Fri", "Tuesdays", "M, W, F"
             const localDaysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             const localShortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-            const dayExtractionRegex = /(?:\b|^)(?:every\s+)?(monday|mon|tuesday|tue|wednesday|wed|thursday|thu|friday|fri|saturday|sat|sunday|sun)s?(?=\b|$)/gi;
+            const localMicroDays = ['su', 'm', 'tu', 'w', 'th', 'f', 'sa'];
+            
+            // Matches monday, mon, m, tuesday, tue, tu, etc. 
+            // We use \b boundary but also allow , so M,W,F works smoothly
+            const regexChoices = [
+                'monday', 'mon', 'm',
+                'tuesday', 'tue', 'tu',
+                'wednesday', 'wed', 'w',
+                'thursday', 'thu', 'th',
+                'friday', 'fri', 'f',
+                'saturday', 'sat', 'sa',
+                'sunday', 'sun', 'su'
+            ].join('|');
+            
+            const dayExtractionRegex = new RegExp(`(?:\\b|^)(?:every\\s+)?(${regexChoices})s?(?=\\b|,|$)`, 'gi');
             
             let dayMatch;
             while ((dayMatch = dayExtractionRegex.exec(cleanTitle)) !== null) {
+                // Because 'm', 'w', 'f' are so short, ensure they aren't just parts of words. \b handles most, but we must be careful.
                 const dayStr = dayMatch[1].toLowerCase();
                 let dayIndex = localDaysOfWeek.indexOf(dayStr);
                 if (dayIndex === -1) dayIndex = localShortDays.indexOf(dayStr);
+                if (dayIndex === -1) dayIndex = localMicroDays.indexOf(dayStr);
+                
                 if (dayIndex !== -1) {
+                    // Only accept single letters if they are explicitly part of a comma list or very isolated.
+                    // The \b takes care of this, e.g., " M " or "M,".
                     foundDays.add(dayIndex);
                     matchedTokens.push({ text: dayMatch[0].trim(), type: 'recurrence' });
                 }
