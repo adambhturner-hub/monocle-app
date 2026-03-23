@@ -23,10 +23,10 @@ export function HabitsWidget() {
         const rawTitle = newHabitTitle.trim();
         if (!rawTitle) return;
 
-        // Parse explicitly to allow "Read 10 pages Mon Wed Fri" directly from the modal
-        const parsedData = parseTaskInput(rawTitle);
-        // Cleanse the title from trigger words
-        const finalTitle = parsedData.title.replace(/(!habit|#habit|@habit|routine)\b/gi, '').trim() || rawTitle;
+        // Append explicit tag so the parser detects it as a habit and extracts daysOfWeek
+        const parsedData = parseTaskInput(rawTitle + ' !habit');
+        // The parser automatically removes the tag from parsedData.title
+        const finalTitle = parsedData.title || rawTitle;
 
         addHabit({
             id: generateId(),
@@ -182,11 +182,12 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
 
     const handleSaveEdit = (e: React.FormEvent, id: string) => {
         e.preventDefault();
-        const rawTitle = editTitle.trim();
-        if (!rawTitle) return;
+        const rawTitle = editTitle;
+        if (!rawTitle.trim()) return;
 
-        const parsedData = parseTaskInput(rawTitle);
-        const finalTitle = parsedData.title.replace(/(!habit|#habit|@habit|routine)\b/gi, '').trim() || rawTitle;
+        // Append explicit tag so the parser detects it as a habit and extracts daysOfWeek
+        const parsedData = parseTaskInput(rawTitle + ' !habit');
+        const finalTitle = parsedData.title || rawTitle;
 
         useMonocleStore.getState().updateHabit(id, {
             title: finalTitle,
