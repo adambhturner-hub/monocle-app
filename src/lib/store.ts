@@ -18,7 +18,7 @@ export const idbStorage: StateStorage = {
 import { Task, Project, FocusSession, SessionOutcome, Habit } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
 import { haptics } from '@/lib/haptics';
-import { generateId } from '@/lib/utils';
+import { generateId, getMostRecentResetDate, getPreviousResetDate } from '@/lib/utils';
 import { fetchUrlMeta } from '@/app/actions/unfurl';
 import * as linkify from 'linkifyjs';
 
@@ -528,39 +528,29 @@ export const useMonocleStore = create<MonocleState>()(
                     
                     // Offset by 4 hours so "midnight" is effectively 4 AM
                     const logicalNow = now - FOUR_HOURS_MS;
-                    const today = startOfDay(logicalNow).getTime();
                     const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
+                    
+                    const mostRecentReset = getMostRecentResetDate(habit.daysOfWeek, logicalNow);
+                    const completedToday = lastCompletedLogical >= mostRecentReset;
 
                     let newStreak = habit.streak;
                     let newLastCompletedAt: number | undefined = habit.lastCompletedAt;
 
-                    if (lastCompletedLogical === today) {
-                        // Already completed "today". Untoggle it.
-                        // Decrease streak by 1 (cannot go below 0)
+                    if (completedToday) {
+                        // Untoggle it
                         newStreak = Math.max(0, habit.streak - 1);
                         newLastCompletedAt = undefined; 
                         
                         if (state.settings?.soundEnabled !== false) {
-                            // No reverse complete sound exists, but could vibrate
                             haptics.click();
                         }
                     } else {
                         // Completing it today
-                        let previousValidLogical = startOfDay(addDays(logicalNow, -1)).getTime();
+                        const previousReset = getPreviousResetDate(habit.daysOfWeek, mostRecentReset);
 
-                        if (habit.daysOfWeek && habit.daysOfWeek.length > 0) {
-                            for (let i = 1; i <= 7; i++) {
-                                const checkDate = startOfDay(addDays(logicalNow, -i));
-                                if (habit.daysOfWeek.includes(checkDate.getDay())) {
-                                    previousValidLogical = checkDate.getTime();
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (lastCompletedLogical >= previousValidLogical) {
+                        if (lastCompletedLogical >= previousReset) {
                             newStreak = habit.streak + 1; // Maintained streak
-                        } else if (lastCompletedLogical > 0 && lastCompletedLogical < previousValidLogical) {
+                        } else if (lastCompletedLogical > 0 && lastCompletedLogical < previousReset) {
                             newStreak = 1; // Streak broken, restart
                         } else {
                             newStreak = 1; // First time ever
@@ -568,7 +558,6 @@ export const useMonocleStore = create<MonocleState>()(
                         newLastCompletedAt = now;
 
                         if (state.settings?.soundEnabled !== false) {
-                            // Re-using the task complete sound
                             soundEngine.playComplete();
                             haptics.heavy();
                         }
