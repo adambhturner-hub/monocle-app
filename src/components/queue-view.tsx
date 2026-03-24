@@ -29,7 +29,7 @@ import { FormattedText } from './ui/formatted-text';
 import { soundEngine } from '@/lib/sound-engine';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from '@/components/mentions-list';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowUpToLine } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -1101,6 +1101,9 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 <ContextMenuItem onClick={() => handleEdit(task)}>
                                                                                                     <Edit2 className="mr-2 h-4 w-4" /> Edit
                                                                                                 </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().jumpTaskToTop(task.id)}>
+                                                                                                    <ArrowUpToLine className="mr-2 h-4 w-4" /> Jump to Top
+                                                                                                </ContextMenuItem>
                                                                                                 <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
                                                                                                     <FileText className="mr-2 h-4 w-4" /> Duplicate
                                                                                                 </ContextMenuItem>
@@ -1175,6 +1178,21 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 title="Archive Task"
                                                                                             >
                                                                                                 <Archive className="h-3 w-3" />
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon-xs"
+                                                                                                className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative"
+                                                                                                type="button"
+                                                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    useMonocleStore.getState().jumpTaskToTop(task.id);
+                                                                                                }}
+                                                                                                title="Jump to Top"
+                                                                                            >
+                                                                                                <ArrowUpToLine className="h-3 w-3" />
                                                                                             </Button>
                                                                                             <Button
                                                                                                 variant="ghost"

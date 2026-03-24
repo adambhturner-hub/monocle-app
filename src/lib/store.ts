@@ -128,6 +128,8 @@ interface MonocleState {
     setActiveProject: (id: string | null) => void;
     reorderProjects: (startIndex: number, endIndex: number) => void;
 
+    jumpTaskToTop: (taskId: string) => void;
+
     addHabit: (habit: Habit) => void;
     updateHabit: (id: string, updates: Partial<Habit>) => void;
     deleteHabit: (id: string) => void;
@@ -481,6 +483,17 @@ export const useMonocleStore = create<MonocleState>()(
                     if (updates.title) autoUnfurlTask(useMonocleStore, id, updates.title, 'title');
                     if (updates.description) autoUnfurlTask(useMonocleStore, id, updates.description, 'description');
                 },
+
+                jumpTaskToTop: (taskId) => set((state) => {
+                    const task = state.tasks.find(t => t.id === taskId);
+                    if (!task) return {};
+                    
+                    const otherTasks = state.tasks.filter(t => t.id !== taskId);
+                    return {
+                        tasks: [task, ...otherTasks],
+                        lastModified: Date.now()
+                    };
+                }),
 
                 deleteTask: (id) =>
                     set((state) => ({
