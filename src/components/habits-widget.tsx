@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
-import { cn, generateId, getMostRecentResetDate } from '@/lib/utils';
+import { cn, generateId, getMostRecentResetDate, getPreviousResetDate } from '@/lib/utils';
 import { GripVertical, AlertCircle, Play, Flame, Settings2, Plus, Calendar, Ghost, ChevronRight, Hash, X, RefreshCw, CheckCircle2, Circle, MoreVertical, Archive, Repeat, Check, Trash2, Edit2 } from 'lucide-react';
 import { format, startOfDay, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -93,6 +93,14 @@ export function HabitsWidget() {
 
         const isScheduled = habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7;
 
+        let visualStreak = habit.streak;
+        if (visualStreak > 0 && lastCompletedLogical > 0 && !completedToday) {
+            const previousReset = getPreviousResetDate(habit.daysOfWeek, mostRecentReset);
+            if (lastCompletedLogical < previousReset) {
+                visualStreak = 0;
+            }
+        }
+
         return (
             <ContextMenu key={habit.id}>
                 <ContextMenuTrigger asChild>
@@ -135,7 +143,7 @@ export function HabitsWidget() {
                             </span>
                         )}
                         
-                        {habit.streak > 0 && (
+                        {visualStreak > 0 && (
                             <div className={cn(
                                 "flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ml-0.5 transition-colors",
                                 completedToday 
@@ -143,7 +151,7 @@ export function HabitsWidget() {
                                     : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
                             )}>
                                 <Flame className="w-2.5 h-2.5" strokeWidth={3} />
-                                {habit.streak}
+                                {visualStreak}
                             </div>
                         )}
                     </motion.button>
