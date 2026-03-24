@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
-import { cn } from '@/lib/utils';
-import { Flame, Plus, Settings2, Trash2, Check, CheckCircle2, Edit2 } from 'lucide-react';
-import { isToday, startOfDay, addDays } from 'date-fns';
+import { cn, generateId, getMostRecentResetDate } from '@/lib/utils';
+import { GripVertical, AlertCircle, Play, Flame, Settings2, Plus, Calendar, Ghost, ChevronRight, Hash, X, RefreshCw, CheckCircle2, Circle, MoreVertical, Archive, Repeat, Check, Trash2, Edit2 } from 'lucide-react';
+import { format, startOfDay, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { generateId } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
@@ -81,15 +80,16 @@ export function HabitsWidget() {
 
     const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
     const logicalNow = Date.now() - FOUR_HOURS_MS;
-    const currentDayOfWeek = new Date(logicalNow).getDay();
-    const activeHabits = habits.filter(habit => !habit.daysOfWeek || habit.daysOfWeek.length === 0 || habit.daysOfWeek.includes(currentDayOfWeek));
+    
+    // Remove the day-of-week filtering entirely. ALL habits are active.
+    const activeHabits = habits;
     const activeDaily = activeHabits.filter(habit => !habit.daysOfWeek || habit.daysOfWeek.length === 0 || habit.daysOfWeek.length === 7);
     const activeWeekly = activeHabits.filter(habit => habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7);
 
     const renderHabitBubble = (habit: any) => {
-        const today = startOfDay(logicalNow).getTime();
+        const mostRecentReset = getMostRecentResetDate(habit.daysOfWeek, logicalNow);
         const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
-        const completedToday = lastCompletedLogical === today;
+        const completedToday = lastCompletedLogical >= mostRecentReset;
 
         const isScheduled = habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7;
 
