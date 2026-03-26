@@ -1080,16 +1080,16 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     {task.priority === 'low' && (
                                                                                                         <ArrowUpDown className="h-3 w-3 text-blue-500" />
                                                                                                     )}
-                                                                                                    {searchQuery && task.status === 'waiting' && (
+                                                                                                    {task.status === 'waiting' && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500">WAITING</span>
                                                                                                     )}
-                                                                                                    {searchQuery && task.isDraft && (
+                                                                                                    {task.isDraft && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500">IDEA</span>
                                                                                                     )}
-                                                                                                    {searchQuery && !task.isDraft && task.status !== 'waiting' && task.skippedUntil && task.skippedUntil > now && (
-                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500">SNOOZED</span>
+                                                                                                    {!task.isDraft && task.status !== 'waiting' && task.skippedUntil && task.skippedUntil > now && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500">HOLD</span>
                                                                                                     )}
-                                                                                                    {searchQuery && !task.isDraft && task.status !== 'waiting' && (!task.skippedUntil || task.skippedUntil <= now) && (task.launchDate && startOfDay(task.launchDate).getTime() > todayStart) && (
+                                                                                                    {!task.isDraft && task.status !== 'waiting' && (!task.skippedUntil || task.skippedUntil <= now) && (task.launchDate && startOfDay(task.launchDate).getTime() > todayStart) && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">DORMANT</span>
                                                                                                     )}
                                                                                                 </div>

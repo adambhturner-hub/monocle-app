@@ -1032,11 +1032,15 @@ export const useMonocleStore = create<MonocleState>()(
                 randomTask: () =>
                     set((state) => {
                         const now = Date.now();
+                        const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+                        const todayStart = startOfDay(now - FOUR_HOURS_MS).getTime();
+                        
                         const visible = state.tasks.filter(t =>
                             !t.isDraft &&
-                            t.status !== 'done' &&
+                            t.status === 'todo' &&
                             (state.activeProject ? t.projectId === state.activeProject : true) &&
-                            (!t.skippedUntil || t.skippedUntil < now)
+                            (!t.skippedUntil || t.skippedUntil < now) &&
+                            (!t.launchDate || startOfDay(t.launchDate).getTime() <= todayStart)
                         );
 
                         if (visible.length < 2) return {};
