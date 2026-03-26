@@ -19,9 +19,10 @@ import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
-import { Plus, Command } from 'lucide-react';
+import { Plus, Command, ListTodo, Target, PenLine } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 import { SyncIndicator } from '@/components/ui/sync-indicator';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated } = useMonocleStore();
@@ -135,7 +136,8 @@ export default function Home() {
       </header>
 
       {/* Main Content (Always render Queue or Drafts underneath) */}
-      <div className="w-full flex-1 flex flex-col items-center justify-center">
+      {/* We add pb-20 on mobile to account for the bottom nav bar */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center pb-20 sm:pb-0">
         {view === 'capture' ? (
           <div className="w-full h-full flex items-center justify-center pt-4 md:pt-8 relative z-0">
             <CaptureView />
@@ -169,6 +171,42 @@ export default function Home() {
       <StatsView />
 
       <OnboardingSlideshow />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-xl border border-border shadow-lg z-[60] flex items-center justify-between px-2 py-2 rounded-full w-[90%] max-w-[320px]">
+        <button 
+          onClick={() => setView('queue')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            view === 'queue' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <ListTodo className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Queue</span>
+        </button>
+        
+        <button 
+          onClick={() => setView('capture')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            view === 'capture' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <PenLine className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Capture</span>
+        </button>
+        
+        <button 
+          onClick={() => setView('focus')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            view === 'focus' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <Target className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Focus</span>
+        </button>
+      </div>
     </main >
   );
 }
