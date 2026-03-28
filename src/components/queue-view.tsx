@@ -1078,7 +1078,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         <AlertCircle className="h-3 w-3 text-red-500" />
                                                                                                     )}
                                                                                                     {task.priority === 'low' && (
-                                                                                                        <ArrowUpDown className="h-3 w-3 text-blue-500" />
+                                                                                                        <AlertCircle className="h-3 w-3 text-blue-500" />
                                                                                                     )}
                                                                                                     {task.status === 'waiting' && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500">WAITING</span>
@@ -1413,7 +1413,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                     {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
-                                                                                    {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
+                                                                                    {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
@@ -1692,7 +1692,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                     {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
-                                                                                                    {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
+                                                                                                    {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
                                                                                                 </div>
                                                                                             </div>
                                                                                             {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
@@ -1817,7 +1817,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                 {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                 {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
-                                                                                                {task.priority === 'low' && <ArrowUpDown className="h-3 w-3 text-blue-500" />}
+                                                                                                {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
                                                                                             </div>
                                                                                         </div>
                                                                                         {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
