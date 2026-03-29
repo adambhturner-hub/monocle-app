@@ -502,14 +502,32 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             movedTask.isDraft = result.destination.droppableId === 'drafts';
         }
 
-        // Now reconstruct the GLOBAL state
+        // Now reconstruct the GLOBAL state without altering the order of uninvolved tasks
         const involvedIds = new Set([...activeTasks.map(t => t.id), ...draftTasks.map(t => t.id)]);
-        const uninvolvedTasks = tasks.filter(t => !involvedIds.has(t.id));
 
         let finalActive = result.destination.droppableId === 'active' ? newDest : (result.source.droppableId === 'active' ? newSource : activeTasks);
         let finalDrafts = result.destination.droppableId === 'drafts' ? newDest : (result.source.droppableId === 'drafts' ? newSource : draftTasks);
 
-        setTask([...finalActive, ...finalDrafts, ...uninvolvedTasks, ...snoozedTasks, ...waitingTasks]);
+        const newInvolved = [...finalActive, ...finalDrafts];
+
+        // Find the global indices where these involved tasks currently sit
+        const originalIndices: number[] = [];
+        tasks.forEach((t, i) => {
+            if (involvedIds.has(t.id)) originalIndices.push(i);
+        });
+
+        // Slot the reordered tasks back into their original global footprint
+        if (originalIndices.length === newInvolved.length) {
+            const newTasks = [...tasks];
+            for (let i = 0; i < originalIndices.length; i++) {
+                newTasks[originalIndices[i]] = newInvolved[i];
+            }
+            setTask(newTasks);
+        } else {
+            // Fallback (should never be reached unless state desyncs)
+            const uninvolvedTasks = tasks.filter(t => !involvedIds.has(t.id));
+            setTask([...finalActive, ...finalDrafts, ...uninvolvedTasks]);
+        }
     };
 
     const handleSnoozeDrop = (durationMinutes: number, label: string) => {
