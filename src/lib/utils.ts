@@ -66,3 +66,29 @@ export function getPreviousResetDate(daysOfWeek: number[] | undefined, mostRecen
     }
     return d.getTime();
 }
+
+export function getNextResetDate(daysOfWeek: number[] | undefined, mostRecentResetDate: number): number {
+    const days = (!daysOfWeek || daysOfWeek.length === 0) ? [0,1,2,3,4,5,6] : daysOfWeek;
+
+    const d = new Date(mostRecentResetDate);
+    const currentDay = d.getDay();
+    const sortedDays = [...days].sort((a,b) => a - b);
+    
+    let nextDay = -1;
+    for (let i = 0; i < sortedDays.length; i++) {
+        if (sortedDays[i] > currentDay) { 
+            nextDay = sortedDays[i];
+            break;
+        }
+    }
+    
+    if (nextDay === -1) {
+        nextDay = sortedDays[0]; 
+        const daysToAdd = 7 - currentDay + nextDay;
+        d.setDate(d.getDate() + daysToAdd);
+    } else {
+        const daysToAdd = nextDay - currentDay;
+        d.setDate(d.getDate() + daysToAdd);
+    }
+    return d.getTime();
+}

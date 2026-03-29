@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMonocleStore } from '@/lib/store';
-import { cn, generateId, getMostRecentResetDate, getPreviousResetDate } from '@/lib/utils';
+import { cn, generateId, getMostRecentResetDate, getPreviousResetDate, getNextResetDate } from '@/lib/utils';
 import { GripVertical, AlertCircle, Play, Flame, Settings2, Plus, Calendar, Ghost, ChevronRight, Hash, X, RefreshCw, CheckCircle2, Circle, MoreVertical, Archive, Repeat, Check, Trash2, Edit2 } from 'lucide-react';
 import { format, startOfDay, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -83,8 +83,39 @@ export function HabitsWidget() {
     
     // Remove the day-of-week filtering entirely. ALL habits are active.
     const activeHabits = habits;
-    const activeDaily = activeHabits.filter(habit => !habit.daysOfWeek || habit.daysOfWeek.length === 0 || habit.daysOfWeek.length === 7);
-    const activeWeekly = activeHabits.filter(habit => habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7);
+    
+    // Sort Daily: Uncompleted first
+    const activeDaily = activeHabits
+        .filter(habit => !habit.daysOfWeek || habit.daysOfWeek.length === 0 || habit.daysOfWeek.length === 7)
+        .map(habit => {
+            const mostRecentReset = getMostRecentResetDate(habit.daysOfWeek, logicalNow);
+            const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
+            const completedToday = lastCompletedLogical >= mostRecentReset;
+            return { habit, completedToday };
+        })
+        .sort((a, b) => {
+            if (a.completedToday && !b.completedToday) return 1;
+            if (!a.completedToday && b.completedToday) return -1;
+            return 0;
+        })
+        .map(x => x.habit);
+
+    // Sort Weekly: Uncompleted first, then by earliest next reset date
+    const activeWeekly = activeHabits
+        .filter(habit => habit.daysOfWeek && habit.daysOfWeek.length > 0 && habit.daysOfWeek.length < 7)
+        .map(habit => {
+            const mostRecentReset = getMostRecentResetDate(habit.daysOfWeek, logicalNow);
+            const nextResetDate = getNextResetDate(habit.daysOfWeek, mostRecentReset);
+            const lastCompletedLogical = habit.lastCompletedAt ? startOfDay(habit.lastCompletedAt - FOUR_HOURS_MS).getTime() : 0;
+            const completedToday = lastCompletedLogical >= mostRecentReset;
+            return { habit, completedToday, nextResetDate };
+        })
+        .sort((a, b) => {
+            if (a.completedToday && !b.completedToday) return 1;
+            if (!a.completedToday && b.completedToday) return -1;
+            return a.nextResetDate - b.nextResetDate;
+        })
+        .map(x => x.habit);
 
     const renderHabitBubble = (habit: any) => {
         const mostRecentReset = getMostRecentResetDate(habit.daysOfWeek, logicalNow);
