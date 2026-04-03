@@ -123,9 +123,9 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const [pendingPaste, setPendingPaste] = useState<string[] | null>(null);
 
     // Derived state for open/close based on variant
-    // If fullscreen, we are always "open" in context of this component rendering
+    // If fullscreen/sidebar, we are always "open" in context of this component rendering
     // If sheet, we use activeSheet
-    const open = variant === 'fullscreen' || activeSheet === 'queue';
+    const open = variant === 'fullscreen' || variant === 'sidebar' || activeSheet === 'queue';
 
     // Edit State
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -133,7 +133,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     // Determine if this specific QueueView component is actually visible to the user
     // This prevents background variants (like the hidden Sheet) from rendering portals (like Tooltips)
-    const isVisible = variant === 'fullscreen' ? view === 'queue' : activeSheet === 'queue';
+    const isVisible = (variant === 'fullscreen' || variant === 'sidebar') ? true : activeSheet === 'queue';
 
     // Delete Confirmation State
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -745,14 +745,17 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             });
         }
     };
-
     const parsedQuickAddResult = quickAddValue ? parseTaskInput(quickAddValue, projects) : null;
 
     return (
         <>
             <TooltipProvider>
                 <div
-                    className={cn("flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", variant === 'fullscreen' ? "w-full max-w-3xl mx-auto md:border-x shadow-2xl h-[95vh] md:rounded-xl md:my-4" : "")}
+                    className={cn(
+                        "flex flex-col h-full bg-background/95 backdrop-blur p-0 gap-0", 
+                        variant === 'fullscreen' ? "w-full max-w-3xl mx-auto md:border-x shadow-2xl h-[95vh] md:rounded-xl md:my-4" : 
+                        variant === 'sidebar' ? "w-full h-full pb-20 sm:pb-0 relative" : ""
+                    )}
                     onTouchStart={handleQueueTouchStart}
                     onTouchEnd={handleQueueTouchEnd}
                 >
@@ -1998,8 +2001,12 @@ export function QueueView({ customTrigger, defaultTab = 'active', variant = 'she
     // Derived open state for the Sheet (only used when variant === 'sheet')
     const sheetOpen = variant === 'sheet' && activeSheet === 'queue';
 
-    if (variant === 'fullscreen') {
-        return <QueueContent defaultTab={defaultTab} variant="fullscreen" />;
+    if (variant === 'fullscreen' || variant === 'sidebar') {
+        return (
+            <div className={cn("w-full h-full bg-transparent overflow-hidden", variant === 'fullscreen' ? "p-0 sm:p-4" : "p-0")}>
+                <QueueContent defaultTab={defaultTab} variant={variant} />
+            </div>
+        );
     }
 
     return (
