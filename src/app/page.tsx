@@ -16,11 +16,12 @@ import { SettingsView } from '@/components/settings-view';
 import { StatsView } from '@/components/stats-view';
 import { AnalyticsView } from '@/components/analytics-view';
 import { CalendarView } from '@/components/calendar-view';
+import { PlannerView } from '@/components/planner-view';
 import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
-import { Plus, Command, ListTodo, Target, PenLine, CalendarDays } from 'lucide-react';
+import { Plus, Command, ListTodo, Target, PenLine, CalendarDays, Clock } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 import { SyncIndicator } from '@/components/ui/sync-indicator';
 import { cn } from '@/lib/utils';
@@ -151,6 +152,10 @@ export default function Home() {
           <div className="w-full flex-1 pt-4 md:pt-8 relative z-0">
             <CalendarView />
           </div>
+        ) : view === 'planner' ? (
+          <div className="w-full h-full flex-1 relative z-0">
+            <PlannerView />
+          </div>
         ) : (
           <QueueView variant="fullscreen" />
         )}
@@ -210,6 +215,17 @@ export default function Home() {
         >
           <CalendarDays className="h-5 w-5" />
           <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Upcoming</span>
+        </button>
+
+        <button 
+          onClick={() => setView('planner')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
+            view === 'planner' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <Clock className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Planner</span>
         </button>
         
         <button 

@@ -384,6 +384,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         }
 
         if (isEditMode && taskToEdit) {
+            const wasFrog = taskToEdit.isFrog || false;
             updateTask(taskToEdit.id, {
                 title: finalTitle,
                 description: description.trim() || undefined,
@@ -398,6 +399,10 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 status: destination === 'archive' ? 'done' : (activeParsedData?.isWaiting ? 'waiting' : taskToEdit.status),
                 attachments: attachments.length > 0 ? attachments : undefined,
             });
+
+            if (finalIsFrog !== wasFrog) {
+                useMonocleStore.getState().toggleFrog(taskToEdit.id);
+            }
 
             if (destination === 'archive') {
                 toast.success("Archived");
@@ -960,6 +965,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
                 <div className="flex justify-center">
                     <button
+                        type="button"
                         onClick={() => setAdvancedOpen(!advancedOpen)}
                         className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors bg-secondary/30 px-3 py-1.5 rounded-full"
                     >
@@ -983,7 +989,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         <div className="flex flex-wrap justify-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className={cn(
+                                    <button type="button" className={cn(
                                         "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
                                         priority === 'high' ? "text-amber-500 border-amber-500/30" :
                                             priority === 'low' ? "text-blue-500 border-blue-500/30" : "text-muted-foreground border-border/50"
@@ -1003,7 +1009,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <button className={cn(
+                                    <button type="button" className={cn(
                                         "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-1.5 transition-all bg-card hover:bg-secondary",
                                         launchDate ? "text-indigo-500 border-indigo-500/30" : "text-muted-foreground border-border/50"
                                     )}>
@@ -1046,6 +1052,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             </Select>
 
                             <button
+                                type="button"
                                 onClick={() => { setIsFrog(!isFrog); setIsLightning(false); }}
                                 className={cn(
                                     "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
@@ -1056,6 +1063,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                             </button>
 
                             <button
+                                type="button"
                                 onClick={() => { setIsLightning(!isLightning); setIsFrog(false); }}
                                 className={cn(
                                     "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
@@ -1075,6 +1083,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                                     title="Attach Image"
                                 />
                                 <button
+                                    type="button"
                                     disabled={isUploading}
                                     className={cn(
                                         "w-full justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",

@@ -9,7 +9,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, Target, List, Lightbulb, Archive, Settings, BarChart3, Activity, PenLine, CalendarDays } from "lucide-react"
+import { ChevronDown, Target, List, Lightbulb, Archive, Settings, BarChart3, Activity, PenLine, CalendarDays, Clock } from "lucide-react"
 import { useMonocleStore } from "@/lib/store";
 import { auth } from "@/lib/firebase";
 
@@ -33,7 +33,7 @@ export function ViewSelector() {
                                             <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                                         </span>
                                     )}
-                                    {view === 'focus' ? 'Focus Mode' : view === 'queue' ? 'Queue' : view === 'analytics' ? 'Analytics' : view === 'capture' ? 'Capture' : view === 'calendar' ? 'Upcoming' : 'Idea Dump'}
+                                    {view === 'focus' ? 'Focus Mode' : view === 'queue' ? 'Queue' : view === 'analytics' ? 'Analytics' : view === 'capture' ? 'Capture' : view === 'calendar' ? 'Upcoming' : view === 'planner' ? 'Planner' : 'Idea Dump'}
                                     <ChevronDown className="h-4 w-4 opacity-50" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -74,6 +74,13 @@ export function ViewSelector() {
                     }}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         Upcoming
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                        setView('planner');
+                        setOpenSheet(null);
+                    }}>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Planner
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
                         setView('ideas');

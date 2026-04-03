@@ -15,7 +15,7 @@ export const idbStorage: StateStorage = {
         await del(name);
     }
 };
-import { Task, Project, FocusSession, SessionOutcome, Habit } from '@/types';
+import { Task, Project, FocusSession, SessionOutcome, Habit, TimeBlock } from '@/types';
 import { soundEngine } from '@/lib/sound-engine';
 import { haptics } from '@/lib/haptics';
 import { generateId, getMostRecentResetDate, getPreviousResetDate } from '@/lib/utils';
@@ -112,6 +112,7 @@ interface MonocleState {
     tasks: Task[];
     projects: Project[];
     habits: Habit[];
+    timeBlocks: TimeBlock[];
     deletedIds: string[];
     activeProject: string | null; // 'null' means All Projects
     lastModified: number; // For sync conflict resolution
@@ -135,6 +136,11 @@ interface MonocleState {
     deleteHabit: (id: string) => void;
     toggleHabit: (id: string) => void;
 
+    // Planner Actions
+    addTimeBlock: (block: TimeBlock) => void;
+    updateTimeBlock: (id: string, updates: Partial<TimeBlock>) => void;
+    deleteTimeBlock: (id: string) => void;
+
     // UI State
     activeSheet: 'queue' | 'archive' | 'settings' | 'stats' | null;
     setOpenSheet: (sheet: 'queue' | 'archive' | 'settings' | 'stats' | null) => void;
@@ -144,8 +150,8 @@ interface MonocleState {
     draftTaskData: Partial<Task> | null;
     setDraftTaskData: (draft: Partial<Task> | null) => void;
 
-    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar';
-    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar') => void;
+    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner';
+    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner') => void;
 
     // Undo Logic
     lastState: Task[] | null;
@@ -242,7 +248,7 @@ export const useMonocleStore = create<MonocleState>()(
                     if (!partial) return partial as Partial<MonocleState>;
 
                     // Automatically bump lastModified if syncable data changed
-                    const touchedSyncable = ['tasks', 'projects', 'habits', 'deletedIds', 'settings', 'sessionHistory']
+                    const touchedSyncable = ['tasks', 'projects', 'habits', 'timeBlocks', 'deletedIds', 'settings', 'sessionHistory']
                         .some(key => (partial as any)[key] !== undefined);
 
                     if (touchedSyncable && (partial as any).lastModified === undefined) {
@@ -256,6 +262,7 @@ export const useMonocleStore = create<MonocleState>()(
                 tasks: [],
                 projects: [],
                 habits: [],
+                timeBlocks: [],
                 deletedIds: [],
                 activeProject: null,
                 lastModified: Date.now(),
@@ -425,7 +432,8 @@ export const useMonocleStore = create<MonocleState>()(
                         deletedIds: Array.from(combinedDeletedIds),
                         tasks: mergedTasks,
                         projects: cloudState.projects !== undefined ? mergeById(state.projects, cloudState.projects) : state.projects,
-                        habits: cloudState.habits !== undefined ? mergeById(state.habits, cloudState.habits) : state.habits, // Merged habits
+                        habits: cloudState.habits !== undefined ? mergeById(state.habits, cloudState.habits) : state.habits,
+                        timeBlocks: cloudState.timeBlocks !== undefined ? mergeById(state.timeBlocks, cloudState.timeBlocks) : state.timeBlocks,
                         settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
                         sessionHistory: cloudState.sessionHistory !== undefined ? mergeById(state.sessionHistory, cloudState.sessionHistory) : state.sessionHistory,
                         lastModified: cloudState.lastModified !== undefined ? cloudState.lastModified : state.lastModified,
@@ -529,6 +537,19 @@ export const useMonocleStore = create<MonocleState>()(
 
                 deleteHabit: (id) => set((state) => ({
                     habits: (state.habits || []).filter((h) => h.id !== id),
+                    deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now()
+                })),
+
+                addTimeBlock: (block) => set((state) => ({
+                    timeBlocks: [...(state.timeBlocks || []), { ...block, updatedAt: Date.now() }], lastModified: Date.now()
+                })),
+
+                updateTimeBlock: (id, updates) => set((state) => ({
+                    timeBlocks: (state.timeBlocks || []).map((b) => (b.id === id ? { ...b, ...updates, updatedAt: Date.now() } : b)), lastModified: Date.now()
+                })),
+
+                deleteTimeBlock: (id) => set((state) => ({
+                    timeBlocks: (state.timeBlocks || []).filter((b) => b.id !== id),
                     deletedIds: [...(state.deletedIds || []), id], lastModified: Date.now()
                 })),
 

@@ -67,3 +67,14 @@ export interface Habit {
     color?: string;
     daysOfWeek?: number[]; // [0-6] where 0 is Sunday. If undefined, assume daily.
 }
+
+export interface TimeBlock {
+    id: string;
+    date: number; // Midnight timestamp for the intended day
+    startTime: number; // Minutes since midnight (e.g., 540 = 9:00 AM)
+    duration: number; // Minutes
+    title: string;
+    taskId?: string; // If this links directly to an existing Monocle Task
+    color?: string; // Optional UI hex override
+    updatedAt?: number;
+}

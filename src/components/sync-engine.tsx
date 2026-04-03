@@ -92,6 +92,7 @@ export function SyncEngine() {
                             settings: cloudData.settings,
                             sessionHistory: cloudData.sessionHistory || [],
                             habits: cloudData.habits || [],
+                            timeBlocks: cloudData.timeBlocks || [],
                             lastModified: cloudData.lastModified || 0
                         });
 
@@ -115,6 +116,7 @@ export function SyncEngine() {
                                 settings: cloudData.settings,
                                 sessionHistory: cloudData.sessionHistory || [],
                                 habits: cloudData.habits || [],
+                                timeBlocks: cloudData.timeBlocks || [],
                                 lastModified: cloudData.lastModified,
                             });
                             useMonocleStore.getState().setLastSyncTime(Date.now());
@@ -147,6 +149,7 @@ export function SyncEngine() {
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
                             habits: state.habits,
+                            timeBlocks: state.timeBlocks,
                             lastModified: state.lastModified || Date.now()
                         };
 
@@ -168,6 +171,7 @@ export function SyncEngine() {
                             settings: state.settings,
                             sessionHistory: state.sessionHistory,
                             habits: state.habits,
+                            timeBlocks: state.timeBlocks,
                             lastModified: state.lastModified || Date.now()
                         });
 
@@ -215,6 +219,7 @@ export function SyncEngine() {
                 state.settings !== prevState.settings ||
                 state.sessionHistory !== prevState.sessionHistory ||
                 state.habits !== prevState.habits ||
+                state.timeBlocks !== prevState.timeBlocks ||
                 state.lastModified !== prevState.lastModified;
 
             // Only push if data changed AND we have already performed our initial pull from the network
@@ -237,6 +242,7 @@ export function SyncEngine() {
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
                     habits: state.habits,
+                    timeBlocks: state.timeBlocks,
                     lastModified: state.lastModified || 0
                 });
 
@@ -278,6 +284,7 @@ export function SyncEngine() {
                     settings: state.settings,
                     sessionHistory: state.sessionHistory,
                     habits: state.habits,
+                    timeBlocks: state.timeBlocks,
                     lastModified: state.lastModified || Date.now()
                 };
 
