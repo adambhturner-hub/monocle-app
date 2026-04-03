@@ -270,6 +270,38 @@ export function PlannerView() {
                         className="flex-1 relative pb-4 py-4 min-w-0" 
                         style={{ height: (24 * HOUR_HEIGHT) + 32 }}
                         onClick={handleGridClick}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'copy';
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            try {
+                                const dataStr = e.dataTransfer.getData('application/json');
+                                if (!dataStr) return;
+                                
+                                const data = JSON.parse(dataStr);
+                                if (!data.taskId) return;
+
+                                const bounds = e.currentTarget.getBoundingClientRect();
+                                const y = e.clientY - bounds.top;
+                                
+                                let droppedMinutes = Math.floor(y / MINUTE_HEIGHT);
+                                droppedMinutes = Math.max(0, Math.round(droppedMinutes / 15) * 15);
+
+                                addTimeBlock({
+                                    id: generateId(),
+                                    date: currentDate,
+                                    title: data.title || '',
+                                    startTime: droppedMinutes,
+                                    duration: 60,
+                                    taskId: data.taskId,
+                                    createdAt: Date.now(),
+                                } as TimeBlock & { createdAt?: number });
+                            } catch (err) {
+                                console.error("Drop parsing failed", err);
+                            }
+                        }}
                     >
                         {/* Grid Lines */}
                         {HOURS.map(hour => (
