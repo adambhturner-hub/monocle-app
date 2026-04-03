@@ -422,7 +422,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     }
 
     let snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
-    let waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t));
+    let waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t)).sort((a,b) => {
+        if (a.isBlocked === b.isBlocked) return 0;
+        return a.isBlocked ? -1 : 1;
+    });
     let draftTasks = visibleTasks.filter(t => t.isDraft && t.status !== 'done' && matchesSearch(t));
 
     if (searchQuery) {
@@ -1397,10 +1400,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                     >
                                                                         <AccordionTrigger className="hover:no-underline py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group">
                                                                             <div className="flex items-center gap-2">
-                                                                                <Hourglass className="h-4 w-4 text-slate-500" />
-                                                                                <h3 className="text-xs font-bold tracking-wide text-slate-500 flex items-center gap-2">
+                                                                                <Hourglass className={cn("h-4 w-4", waitingTasks.some(t => t.isBlocked) ? "text-orange-500" : "text-slate-500")} />
+                                                                                <h3 className={cn("text-xs font-bold tracking-wide flex items-center gap-2", waitingTasks.some(t => t.isBlocked) ? "text-orange-600" : "text-slate-500")}>
                                                                                     Waiting On
                                                                                     <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full text-[10px] text-slate-500">{waitingTasks.length}</span>
+                                                                                    {waitingTasks.some(t => t.isBlocked) && (
+                                                                                        <span className="bg-orange-500/15 px-2 py-0.5 rounded-full text-[10px] text-orange-600 font-bold ml-1">
+                                                                                            {waitingTasks.filter(t => t.isBlocked).length} Blocked 🔗
+                                                                                        </span>
+                                                                                    )}
                                                                                 </h3>
                                                                             </div>
                                                                         </AccordionTrigger>
@@ -1413,7 +1421,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                             handleEdit(task);
                                                                         }}
                                                                     >
-                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-80", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20")}>
+                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-80", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isBlocked && "!opacity-100 bg-orange-500/5 border-orange-500/30 ring-1 ring-orange-500/10 hover:bg-orange-500/10")}>
                                                                             <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                     {(() => {
