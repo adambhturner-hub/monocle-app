@@ -1295,23 +1295,28 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                     )}
 
                                                     {/* On Hold Section */}
-                                                    <Droppable droppableId="on-hold">
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                {...provided.droppableProps}
-                                                                ref={provided.innerRef}
-                                                                className={cn(
-                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
-                                                                    snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
-                                                                )}
-                                                            >
-                                                                <div className="flex items-center gap-2 px-2 pt-2 mb-3">
-                                                                    <Moon className="h-3 w-3 text-muted-foreground" />
-                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                                        On Hold
-                                                                        <span className="bg-muted px-1.5 py-0.5 rounded-full">{snoozedTasks.length}</span>
-                                                                    </h3>
-                                                                </div>
+                                                    <Accordion type="single" collapsible className={cn("w-full mt-4", snoozedTasks.length === 0 && "hidden")}>
+                                                        <AccordionItem value="on-hold" className="border-none">
+                                                            <Droppable droppableId="on-hold">
+                                                                {(provided, snapshot) => (
+                                                                    <div
+                                                                        {...provided.droppableProps}
+                                                                        ref={provided.innerRef}
+                                                                        className={cn(
+                                                                            "space-y-0 rounded-xl min-h-[50px] transition-colors",
+                                                                            snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
+                                                                        )}
+                                                                    >
+                                                                        <AccordionTrigger className="hover:no-underline py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Moon className="h-4 w-4 text-muted-foreground" />
+                                                                                <h3 className="text-xs font-bold tracking-wide text-muted-foreground flex items-center gap-2">
+                                                                                    On Hold
+                                                                                    <span className="bg-muted px-1.5 py-0.5 rounded-full text-[10px]">{snoozedTasks.length}</span>
+                                                                                </h3>
+                                                                            </div>
+                                                                        </AccordionTrigger>
+                                                                        <AccordionContent className="pt-2 px-1 pb-4 space-y-2">
                                                                 {snoozedTasks.length === 0 && (
                                                                     <div className="text-center py-4 px-4 text-muted-foreground/30 italic text-xs border-2 border-dashed border-muted-foreground/10 rounded-xl">
                                                                         Drop tasks here to hold them.
@@ -1335,7 +1340,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     {(() => {
                                                                                                         const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
                                                                                                         if (!proj) return null;
-                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                                        return (
+                                                                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                                                                <div className="flex items-center justify-center shrink-0 w-3 h-3 rounded-[3px]" style={{ backgroundColor: proj.color }}>
+                                                                                                                    <IconCmp className="h-[8px] w-[8px] text-white drop-shadow-sm" />
+                                                                                                                </div>
+                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>
+                                                                                                            </div>
+                                                                                                        );
                                                                                                     })()}
                                                                                 {task.skippedUntil && task.skippedUntil > Date.now() && (
                                                                                     <button
@@ -1356,28 +1369,36 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                     </div>
                                                                 ))}
                                                                 {provided.placeholder}
-                                                            </div>
-                                                        )}
-                                                    </Droppable>
+                                                                        </AccordionContent>
+                                                                    </div>
+                                                                )}
+                                                            </Droppable>
+                                                        </AccordionItem>
+                                                    </Accordion>
 
                                                     {/* Waiting On Section */}
-                                                    <Droppable droppableId="waiting">
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                {...provided.droppableProps}
-                                                                ref={provided.innerRef}
-                                                                className={cn(
-                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
-                                                                    snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : (waitingTasks.length === 0 ? "hidden" : "")
-                                                                )}
-                                                            >
-                                                                <div className="flex items-center gap-2 px-2 pt-2 mb-3">
-                                                                    <Hourglass className="h-3 w-3 text-slate-500" />
-                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                                                        Waiting On
-                                                                        <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full">{waitingTasks.length}</span>
-                                                                    </h3>
-                                                                </div>
+                                                    <Accordion type="single" collapsible className={cn("w-full mt-4", waitingTasks.length === 0 && "hidden")}>
+                                                        <AccordionItem value="waiting-on" className="border-none">
+                                                            <Droppable droppableId="waiting">
+                                                                {(provided, snapshot) => (
+                                                                    <div
+                                                                        {...provided.droppableProps}
+                                                                        ref={provided.innerRef}
+                                                                        className={cn(
+                                                                            "space-y-0 rounded-xl min-h-[50px] transition-colors",
+                                                                            snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
+                                                                        )}
+                                                                    >
+                                                                        <AccordionTrigger className="hover:no-underline py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Hourglass className="h-4 w-4 text-slate-500" />
+                                                                                <h3 className="text-xs font-bold tracking-wide text-slate-500 flex items-center gap-2">
+                                                                                    Waiting On
+                                                                                    <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full text-[10px] text-slate-500">{waitingTasks.length}</span>
+                                                                                </h3>
+                                                                            </div>
+                                                                        </AccordionTrigger>
+                                                                        <AccordionContent className="pt-2 px-1 pb-4 space-y-2">
                                                             {waitingTasks.map((task) => (
                                                                 <ContextMenu key={task.id}>
                                                                     <ContextMenuTrigger
@@ -1460,9 +1481,12 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                 </ContextMenu>
                                                             ))}
                                                                 {provided.placeholder}
-                                                            </div>
-                                                        )}
-                                                    </Droppable>
+                                                                        </AccordionContent>
+                                                                    </div>
+                                                                )}
+                                                            </Droppable>
+                                                        </AccordionItem>
+                                                    </Accordion>
 
                                                     {/* Idea Dump Section */}
                                                     <Accordion type="single" collapsible className="mt-8 transition-colors rounded-xl min-h-[50px]">
