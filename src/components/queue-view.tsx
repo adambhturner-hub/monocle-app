@@ -1164,25 +1164,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         {/* Indicators and Actions */}
                                                                                         {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
                                                                                         <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                             <Button
                                                                                                 variant="ghost"
                                                                                                 size="icon-xs"
@@ -1309,25 +1311,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                         <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
                                                                                     </div>
                                                                                 </div>
@@ -1511,25 +1515,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-slate-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); useMonocleStore.getState().updateTask(task.id, {status: 'todo'}); toast.success("Restored to Queue"); }} title="Restore to Active Queue"><RefreshCw className="h-3 w-3" /></Button>
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
@@ -1646,25 +1652,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                                 </div>
                                                                                                             </div>
                                                                                                             <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); useMonocleStore.getState().toggleDraft(task.id); toast.success("Added to Queue"); }} title="Send to Queue"><CornerUpLeft className="h-3 w-3" /></Button>
                                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
                                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-red-500 rounded-full relative leading-none" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} title="Delete"><Trash2 className="h-3 w-3" /></Button>
@@ -1705,25 +1713,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                         <FormattedText text={task.title} className="text-sm font-medium truncate" />
                                                                     </div>
                                                                     <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                         <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
                                                                         <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
                                                                         <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleFocusNow(task.id); }} title="Promote to Focus"><CornerUpLeft className="h-3 w-3" /></Button>
@@ -1851,25 +1861,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             </div>
                                                                                             {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
                                                                                             <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
                                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleArchive(task.id); }} title="Archive Task"><Archive className="h-3 w-3" /></Button>
@@ -1996,25 +2008,27 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         </div>
                                                                                         {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
                                                                                         <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
-    <div 
-        draggable={true} 
-        onDragStart={(e) => { 
-            e.stopPropagation();
-            e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
-            e.dataTransfer.effectAllowed = 'copy';
-            const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.opacity = '0';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 0, 0);
-            setTimeout(() => document.body.removeChild(ghost), 0);
-        }}
-        className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
-        title="Drag to Planner"
-    >
-        <Calendar className="h-3 w-3" />
-    </div>
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
                                                                                             <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
                                                                                             <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
                                                                                             <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleArchive(task.id); }} title="Archive Task"><Archive className="h-3 w-3" /></Button>
