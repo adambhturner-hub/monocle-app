@@ -1267,15 +1267,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     {(() => {
                                                                                                         const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
                                                                                                         if (!proj) return null;
-                                                                                                        const IconCmp = getIconComponent(proj.icon);
-                                                                                                        return (
-                                                                                                            <div className="flex items-center gap-1 shrink-0">
-                                                                                                                <div className="flex items-center justify-center shrink-0 w-3 h-3 rounded-[3px]" style={{ backgroundColor: proj.color }}>
-                                                                                                                    <IconCmp className="h-[8px] w-[8px] text-white drop-shadow-sm" />
-                                                                                                                </div>
-                                                                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>
-                                                                                                            </div>
-                                                                                                        );
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
                                                                                                     })()}
                                                                                             {task.launchDate && (
                                                                                                 <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}>
@@ -1303,108 +1295,89 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                     )}
 
                                                     {/* On Hold Section */}
-                                                    <Accordion type="single" collapsible className="w-full mt-8">
-                                                        <AccordionItem value="on-hold" className="border-none">
-                                                            <Droppable droppableId="on-hold">
-                                                                {(provided, snapshot) => (
-                                                                    <div
-                                                                        {...provided.droppableProps}
-                                                                        ref={provided.innerRef}
-                                                                        className={cn(
-                                                                            "space-y-0 rounded-xl min-h-[50px] transition-colors",
-                                                                            snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
-                                                                        )}
-                                                                    >
-                                                                        <AccordionTrigger className="hover:no-underline py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Moon className="h-3 w-3 text-muted-foreground" />
-                                                                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                                                    On Hold
-                                                                                    <span className="bg-muted px-1.5 py-0.5 rounded-full">{snoozedTasks.length}</span>
-                                                                                </h3>
-                                                                            </div>
-                                                                        </AccordionTrigger>
-                                                                        <AccordionContent className="pt-2 px-1 pb-4 space-y-2">
-                                                                            {snoozedTasks.length === 0 && (
-                                                                                <div className="text-center py-4 px-4 text-muted-foreground/30 italic text-xs border-2 border-dashed border-muted-foreground/10 rounded-xl">
-                                                                                    Drop tasks here to hold them.
-                                                                                </div>
-                                                                            )}
-                                                                            {snoozedTasks.map((task) => (
-                                                                                <div
-                                                                                    key={task.id}
-                                                                                    className="group bg-card/50 border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 p-3 opacity-60 bg-muted/40"
-                                                                                >
-                                                                                    {/* Content Area */}
-                                                                                    <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <p className="text-sm font-medium truncate">
-                                                                                                <FormattedText text={task.title} />
-                                                                                            </p>
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                                                                                                {(() => {
-                                                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                                                    if (!proj) return null;
-                                                                                                                    const IconCmp = getIconComponent(proj.icon);
-                                                                                                                    return (
-                                                                                                                        <div className="flex items-center gap-1 shrink-0">
-                                                                                                                            <div className="flex items-center justify-center shrink-0 w-3 h-3 rounded-[3px]" style={{ backgroundColor: proj.color }}>
-                                                                                                                                <IconCmp className="h-[8px] w-[8px] text-white drop-shadow-sm" />
-                                                                                                                            </div>
-                                                                                                                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>
-                                                                                                                        </div>
-                                                                                                                    );
-                                                                                                                })()}
-                                                                                            {task.skippedUntil && task.skippedUntil > Date.now() && (
-                                                                                                <button
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        wakeTask(task.id);
-                                                                                                        toast("Task woke up", { description: "Moved to active queue" });
-                                                                                                    }}
-                                                                                                    className="flex items-center gap-1 text-muted-foreground/80 hover:text-foreground bg-muted/50 hover:bg-muted px-1.5 py-0.5 rounded-md transition-all active:scale-95"
-                                                                                                    title="Click to wake up early"
-                                                                                                >
-                                                                                                    <Moon className="h-3 w-3" />
-                                                                                                    Hidden till {format(task.skippedUntil, 'h:mm a')}
-                                                                                                </button>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            ))}
-                                                                            {provided.placeholder}
-                                                                        </AccordionContent>
+                                                    <Droppable droppableId="on-hold">
+                                                        {(provided, snapshot) => (
+                                                            <div
+                                                                {...provided.droppableProps}
+                                                                ref={provided.innerRef}
+                                                                className={cn(
+                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
+                                                                    snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
+                                                                )}
+                                                            >
+                                                                <div className="flex items-center gap-2 px-2 pt-2 mb-3">
+                                                                    <Moon className="h-3 w-3 text-muted-foreground" />
+                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                                        On Hold
+                                                                        <span className="bg-muted px-1.5 py-0.5 rounded-full">{snoozedTasks.length}</span>
+                                                                    </h3>
+                                                                </div>
+                                                                {snoozedTasks.length === 0 && (
+                                                                    <div className="text-center py-4 px-4 text-muted-foreground/30 italic text-xs border-2 border-dashed border-muted-foreground/10 rounded-xl">
+                                                                        Drop tasks here to hold them.
                                                                     </div>
                                                                 )}
-                                                            </Droppable>
-                                                        </AccordionItem>
-                                                    </Accordion>
+                                                                {snoozedTasks.map((task) => (
+                                                                    // Not Draggable out of the Snooze area purely for simplicity right now.
+                                                                    // We use the Wake Up button or wait for timeout.
+                                                                    <div
+                                                                        key={task.id}
+                                                                        className="group bg-card/50 border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 p-3 opacity-60 bg-muted/40"
+                                                                    >
+                                                                        {/* Content Area */}
+                                                                        <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="text-sm font-medium truncate">
+                                                                                    <FormattedText text={task.title} />
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!proj) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                                    })()}
+                                                                                {task.skippedUntil && task.skippedUntil > Date.now() && (
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            wakeTask(task.id);
+                                                                                            toast("Task woke up", { description: "Moved to active queue" });
+                                                                                        }}
+                                                                                        className="flex items-center gap-1 text-muted-foreground/80 hover:text-foreground bg-muted/50 hover:bg-muted px-1.5 py-0.5 rounded-md transition-all active:scale-95"
+                                                                                        title="Click to wake up early"
+                                                                                    >
+                                                                                        <Moon className="h-3 w-3" />
+                                                                                        Hidden till {format(task.skippedUntil, 'h:mm a')}
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                {provided.placeholder}
+                                                            </div>
+                                                        )}
+                                                    </Droppable>
 
                                                     {/* Waiting On Section */}
-                                                    <Accordion type="single" collapsible className={cn("w-full mt-4", waitingTasks.length === 0 && "hidden")}>
-                                                        <AccordionItem value="waiting-on" className="border-none">
-                                                            <Droppable droppableId="waiting">
-                                                                {(provided, snapshot) => (
-                                                                    <div
-                                                                        {...provided.droppableProps}
-                                                                        ref={provided.innerRef}
-                                                                        className={cn(
-                                                                            "space-y-0 rounded-xl min-h-[50px] transition-colors",
-                                                                            snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : ""
-                                                                        )}
-                                                                    >
-                                                                        <AccordionTrigger className="hover:no-underline py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Hourglass className="h-3 w-3 text-slate-500" />
-                                                                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                                                                                    Waiting On
-                                                                                    <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full text-slate-500">{waitingTasks.length}</span>
-                                                                                </h3>
-                                                                            </div>
-                                                                        </AccordionTrigger>
-                                                                        <AccordionContent className="pt-2 px-1 pb-4 space-y-2">
+                                                    <Droppable droppableId="waiting">
+                                                        {(provided, snapshot) => (
+                                                            <div
+                                                                {...provided.droppableProps}
+                                                                ref={provided.innerRef}
+                                                                className={cn(
+                                                                    "mt-8 space-y-2 pb-4 transition-colors rounded-xl min-h-[50px]",
+                                                                    snapshot.isDraggingOver ? "bg-muted/50 ring-2 ring-primary/20 ring-inset" : (waitingTasks.length === 0 ? "hidden" : "")
+                                                                )}
+                                                            >
+                                                                <div className="flex items-center gap-2 px-2 pt-2 mb-3">
+                                                                    <Hourglass className="h-3 w-3 text-slate-500" />
+                                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                                                        Waiting On
+                                                                        <span className="bg-slate-500/10 px-1.5 py-0.5 rounded-full">{waitingTasks.length}</span>
+                                                                    </h3>
+                                                                </div>
                                                             {waitingTasks.map((task) => (
                                                                 <ContextMenu key={task.id}>
                                                                     <ContextMenuTrigger
@@ -1595,10 +1568,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                 </Draggable>
                                                                             ))}
                                                                             {provided.placeholder}
-                                                                        </AccordionContent>
-                                                                    </div>
-                                                                )}
-                                                            </Droppable>
+                                                                        </div>
+                                                                    )}
+                                                                </Droppable>
+                                                            </AccordionContent>
                                                         </AccordionItem>
                                                     </Accordion>
                                                 </>

@@ -256,40 +256,25 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
         setEditingId(null);
     };
 
-    const parsedNew = React.useMemo(() => parseTaskInput(newTitle + ' !habit'), [newTitle]);
-    const isNewWeekly = parsedNew.daysOfWeek && parsedNew.daysOfWeek.length > 0 && parsedNew.daysOfWeek.length < 7;
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <CheckCircle2 className="w-5 h-5 text-indigo-500" />
-                        Habit Manager
+                        Daily Habits
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="py-4 space-y-4">
-                    <form onSubmit={onCreate} className="flex flex-col gap-2">
-                        <div className="flex gap-2 relative">
-                            <Input 
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                placeholder="e.g. Drink Water, Read 10 Pages..."
-                                className="flex-1 pr-24"
-                            />
-                            {newTitle.trim().length > 0 && (
-                                <div className="absolute right-[88px] top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <span className={cn(
-                                        "text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded",
-                                        isNewWeekly ? "bg-indigo-500/10 text-indigo-500" : "bg-primary/10 text-primary"
-                                    )}>
-                                        {isNewWeekly ? 'Weekly' : 'Daily'}
-                                    </span>
-                                </div>
-                            )}
-                            <Button type="submit" disabled={!newTitle.trim()}>Add</Button>
-                        </div>
+                    <form onSubmit={onCreate} className="flex gap-2">
+                        <Input 
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            placeholder="e.g. Drink Water, Read 10 Pages..."
+                            className="flex-1"
+                        />
+                        <Button type="submit" disabled={!newTitle.trim()}>Add</Button>
                     </form>
 
                     <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 pb-2">
