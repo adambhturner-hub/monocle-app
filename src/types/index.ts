@@ -23,6 +23,7 @@ export interface Task {
     skips: number;
     holds: number;
   };
+  isBlocked?: boolean;
   isFrog?: boolean;
   isAvoidedFrog?: boolean;
   avoidedAt?: number;

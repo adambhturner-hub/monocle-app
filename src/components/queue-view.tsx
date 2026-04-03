@@ -1098,8 +1098,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     {task.priority === 'low' && (
                                                                                                         <AlertCircle className="h-3 w-3 text-blue-500" />
                                                                                                     )}
-                                                                                                    {task.status === 'waiting' && (
+                                                                                                    {task.status === 'waiting' && !task.isBlocked && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500">WAITING</span>
+                                                                                                    )}
+                                                                                                    {task.status === 'waiting' && task.isBlocked && (
+                                                                                                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600">🔗 BLOCKED</span>
                                                                                                     )}
                                                                                                     {task.isDraft && (
                                                                                                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500">IDEA</span>
@@ -1141,6 +1144,9 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 </ContextMenuItem>
                                                                                                 <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}>
                                                                                                     <Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().updateTask(task.id, { status: 'waiting', isBlocked: !task.isBlocked })}>
+                                                                                                    <Hourglass className="mr-2 h-4 w-4" /> {task.isBlocked ? 'Unmark Blocked' : 'Mark as Blocked'}
                                                                                                 </ContextMenuItem>
                                                                                                 <ContextMenuSeparator />
                                                                                                 <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive">
@@ -1756,6 +1762,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}><Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().updateTask(task.id, { status: 'waiting', isBlocked: !task.isBlocked })}><Hourglass className="mr-2 h-4 w-4" /> {task.isBlocked ? 'Unmark Blocked' : 'Mark as Blocked'}</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                                 </ContextMenuContent>
@@ -1880,6 +1887,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}><Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().updateTask(task.id, { status: 'waiting', isBlocked: !task.isBlocked })}><Hourglass className="mr-2 h-4 w-4" /> {task.isBlocked ? 'Unmark Blocked' : 'Mark as Blocked'}</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                                 </ContextMenuContent>

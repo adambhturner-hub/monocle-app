@@ -3,7 +3,7 @@ import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'dat
 
 export interface ParsedToken {
     text: string;
-    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'idea' | 'habit';
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'blocked' | 'idea' | 'habit';
     color?: string;
 }
 
@@ -18,6 +18,7 @@ export interface ParsedTask {
     isFrog?: boolean;
     isLightning?: boolean;
     isWaiting?: boolean;
+    isBlocked?: boolean;
     isIdea?: boolean;
     isHabit?: boolean;
     daysOfWeek?: number[];
@@ -71,12 +72,24 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         }
     }
 
-    const waitRegex = /(?:^|\s)(wait|@wait|!wait|waiting|@waiting|!waiting)(?=\s|$)/i;
+    const waitRegex = /(?:^|\s)(wait|@wait|!wait|\/wait|waiting|@waiting|!waiting)(?=\s|$)/i;
     if (waitRegex.test(cleanTitle)) {
         const match = cleanTitle.match(waitRegex);
         if (match && match[1]) {
             isWaiting = true;
             matchedTokens.push({ text: match[1], type: 'waiting' });
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+        }
+    }
+
+    let isBlocked = false;
+    const blockedRegex = /(?:^|\s)(blocked|@blocked|!blocked|\/blocked|blocking)(?=\s|$)/i;
+    if (blockedRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(blockedRegex);
+        if (match && match[1]) {
+            isBlocked = true;
+            isWaiting = true; // Blocked auto-implies waiting state
+            matchedTokens.push({ text: match[1], type: 'blocked' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
@@ -457,6 +470,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isFrog,
         isLightning,
         isWaiting,
+        isBlocked,
         isIdea,
         isHabit,
         daysOfWeek: habitDaysOfWeek,

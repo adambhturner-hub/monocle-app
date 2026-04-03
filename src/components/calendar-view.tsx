@@ -95,8 +95,11 @@ function TaskRow({ task, handleEdit, handleComplete, handleFocusNow, handleDump,
                             {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
                             {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
                             
-                            {task.status === 'waiting' && (
+                            {task.status === 'waiting' && !task.isBlocked && (
                                 <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500">WAITING</span>
+                            )}
+                            {task.status === 'waiting' && task.isBlocked && (
+                                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600">🔗 BLOCKED</span>
                             )}
                             {!task.isDraft && task.status !== 'waiting' && task.skippedUntil && task.skippedUntil > now && (
                                 <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500">HOLD</span>
@@ -119,6 +122,10 @@ function TaskRow({ task, handleEdit, handleComplete, handleFocusNow, handleDump,
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
                     <FileText className="mr-2 h-4 w-4" /> Duplicate
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem onClick={() => useMonocleStore.getState().updateTask(task.id, { status: 'waiting', isBlocked: !task.isBlocked })}>
+                    <Hourglass className="mr-2 h-4 w-4" /> {task.isBlocked ? 'Unmark Blocked' : 'Mark as Blocked'}
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem onClick={() => handleDump(task.id)}>

@@ -49,6 +49,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'duration': colorClass = "bg-slate-500/30 text-transparent"; break;
                 case 'project': colorClass = "bg-primary/20 text-transparent"; break;
                 case 'waiting': colorClass = "bg-slate-500/20 text-transparent"; break;
+                case 'blocked': colorClass = "bg-orange-500/20 text-orange-600 font-semibold"; break;
                 case 'habit': colorClass = "bg-orange-500/20 text-transparent"; break;
                 case 'idea': colorClass = "bg-purple-500/20 text-transparent"; break;
             }
@@ -364,6 +365,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         let finalProjectId = projectId === 'all' ? undefined : projectId;
         let finalIsFrog = isFrog;
         let finalIsLightning = isLightning;
+        let finalIsBlocked = false;
 
         if (activeParsedData) {
             if (activeParsedData.priority) finalPriority = activeParsedData.priority;
@@ -373,6 +375,12 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             if (activeParsedData.isFrog) finalIsFrog = true;
             if (activeParsedData.isLightning) finalIsLightning = true;
+            if (activeParsedData.isBlocked) finalIsBlocked = true;
+        } else if (isEditMode) {
+            finalPriority = taskToEdit.priority;
+            finalIsFrog = taskToEdit.isFrog || false;
+            finalIsLightning = taskToEdit.isLightning || false;
+            finalIsBlocked = taskToEdit.isBlocked || false;
         }
 
         if (isEditMode && taskToEdit) {
@@ -385,6 +393,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
                 isLightning: finalIsLightning,
                 isFrog: finalIsFrog,
+                isBlocked: finalIsBlocked,
                 isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : (destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft),
                 status: destination === 'archive' ? 'done' : (activeParsedData?.isWaiting ? 'waiting' : taskToEdit.status),
                 attachments: attachments.length > 0 ? attachments : undefined,
@@ -429,6 +438,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : false,
             isFrog: false, // Will be made true securely by toggleFrog if requested
             isLightning: finalIsLightning,
+            isBlocked: finalIsBlocked,
             createdAt: Date.now(),
             attachments: attachments.length > 0 ? attachments : undefined,
         };
@@ -880,7 +890,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting || parsedData?.isIdea) && (
+                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting || parsedData?.isIdea || parsedData?.isBlocked) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.launchDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
@@ -910,9 +920,14 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                                 <Zap className="w-3 h-3" /> Lightning
                             </span>
                         )}
-                        {parsedData.isWaiting && (
+                        {parsedData.isWaiting && !parsedData.isBlocked && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 flex items-center gap-1.5 backdrop-blur-md">
                                 <Hourglass className="w-3 h-3" /> Waiting
+                            </span>
+                        )}
+                        {parsedData.isBlocked && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 flex items-center gap-1.5 backdrop-blur-md">
+                                🔗 Blocked
                             </span>
                         )}
                         {parsedData.isIdea && (
