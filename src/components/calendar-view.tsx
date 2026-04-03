@@ -42,7 +42,7 @@ export function CalendarView() {
 
     const groupedTasks = useMemo(() => {
         // Only active, dated tasks
-        let datedTasks = tasks.filter(t => t.launchDate);
+        let datedTasks = tasks.filter(t => t.launchDate && t.status !== 'done');
 
         if (activeProject) {
             datedTasks = datedTasks.filter(t => t.projectId === activeProject);
