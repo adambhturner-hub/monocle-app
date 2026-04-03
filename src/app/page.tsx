@@ -153,8 +153,13 @@ export default function Home() {
             <CalendarView />
           </div>
         ) : view === 'planner' ? (
-          <div className="w-full h-full flex-1 relative z-0">
-            <PlannerView />
+          <div className="w-full h-full flex-1 relative z-0 flex flex-col lg:flex-row">
+            <div className="hidden lg:flex w-2/5 max-w-[420px] bg-background relative z-10 shadow-[2px_0_10px_rgba(0,0,0,0.05)]">
+               <QueueView variant="sidebar" />
+            </div>
+            <div className="flex-1 w-full relative z-0 border-l border-border/50">
+               <PlannerView />
+            </div>
           </div>
         ) : (
           <QueueView variant="fullscreen" />

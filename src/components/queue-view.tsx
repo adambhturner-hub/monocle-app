@@ -85,10 +85,10 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
 export interface QueueViewProps {
     customTrigger?: ReactNode;
     defaultTab?: 'active' | 'drafts';
-    variant?: 'sheet' | 'fullscreen';
+    variant?: 'sheet' | 'fullscreen' | 'sidebar';
 }
 
-function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active' | 'drafts', variant?: 'sheet' | 'fullscreen' }) {
+function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active' | 'drafts', variant?: 'sheet' | 'fullscreen' | 'sidebar' }) {
     const {
         tasks,
         projects,
