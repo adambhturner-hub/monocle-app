@@ -15,11 +15,12 @@ import { useMonocleStore } from '@/lib/store';
 import { SettingsView } from '@/components/settings-view';
 import { StatsView } from '@/components/stats-view';
 import { AnalyticsView } from '@/components/analytics-view';
+import { CalendarView } from '@/components/calendar-view';
 import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
-import { Plus, Command, ListTodo, Target, PenLine } from 'lucide-react';
+import { Plus, Command, ListTodo, Target, PenLine, CalendarDays } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 import { SyncIndicator } from '@/components/ui/sync-indicator';
 import { cn } from '@/lib/utils';
@@ -146,6 +147,10 @@ export default function Home() {
           <div className="w-full flex-1 pt-12">
             <AnalyticsView />
           </div>
+        ) : view === 'calendar' ? (
+          <div className="w-full flex-1 pt-4 md:pt-8 relative z-0">
+            <CalendarView />
+          </div>
         ) : (
           <QueueView variant="fullscreen" />
         )}
@@ -173,38 +178,49 @@ export default function Home() {
       <OnboardingSlideshow />
 
       {/* Mobile Bottom Navigation */}
-      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-xl border border-border shadow-lg z-[60] flex items-center justify-between px-2 py-2 rounded-full w-[90%] max-w-[320px]">
+      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-xl border border-border shadow-lg z-[60] flex items-center justify-between px-2 py-2 rounded-full w-[95%] max-w-[380px]">
         <button 
           onClick={() => setView('queue')} 
           className={cn(
-            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
             view === 'queue' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
           )}
         >
           <ListTodo className="h-5 w-5" />
-          <span className="text-[9px] font-bold tracking-wider uppercase">Queue</span>
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Queue</span>
         </button>
         
         <button 
           onClick={() => setView('capture')} 
           className={cn(
-            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
             view === 'capture' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
           )}
         >
           <PenLine className="h-5 w-5" />
-          <span className="text-[9px] font-bold tracking-wider uppercase">Capture</span>
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Capture</span>
+        </button>
+        
+        <button 
+          onClick={() => setView('calendar')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
+            view === 'calendar' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <CalendarDays className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Upcoming</span>
         </button>
         
         <button 
           onClick={() => setView('focus')} 
           className={cn(
-            "flex flex-col items-center justify-center gap-1 w-20 h-12 rounded-full transition-colors", 
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
             view === 'focus' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
           )}
         >
           <Target className="h-5 w-5" />
-          <span className="text-[9px] font-bold tracking-wider uppercase">Focus</span>
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Focus</span>
         </button>
       </div>
     </main >

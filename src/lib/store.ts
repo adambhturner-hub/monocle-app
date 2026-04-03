@@ -144,8 +144,8 @@ interface MonocleState {
     draftTaskData: Partial<Task> | null;
     setDraftTaskData: (draft: Partial<Task> | null) => void;
 
-    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics';
-    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics') => void;
+    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar';
+    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar') => void;
 
     // Undo Logic
     lastState: Task[] | null;
