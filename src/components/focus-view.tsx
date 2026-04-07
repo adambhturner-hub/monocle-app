@@ -315,13 +315,13 @@ export function FocusView({ onExit }: FocusViewProps) {
             if (result?.nextTask) {
                 toast("Recurring task completed", {
                     description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
-                    action: { label: "Undo", onClick: () => undo() },
+                    duration: 12000, action: { label: "Undo", onClick: () => undo() },
                     duration: 5000
                 });
             } else {
                 toast("Task completed", {
                     description: activeTask.title,
-                    action: { label: "Undo", onClick: () => undo() },
+                    duration: 12000, action: { label: "Undo", onClick: () => undo() },
                     duration: 5000
                 });
             }
@@ -329,20 +329,20 @@ export function FocusView({ onExit }: FocusViewProps) {
     };
     const handleHold = (durationMinutes: number, label: string) => {
         snoozeTask(durationMinutes);
-        toast("Task Held", { description: `Held until ${label}`, action: { label: "Undo", onClick: () => undo() } });
+        toast("Task Held", { description: `Held until ${label}`, duration: 12000, action: { label: "Undo", onClick: () => undo() } });
     };
     const handleSkip = () => {
         const isFrogSkipping = activeTask?.isFrog;
         skipTask();
         toast("Task passed", {
             description: isFrogSkipping ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
-            action: { label: "Undo", onClick: () => undo() }
+            duration: 12000, action: { label: "Undo", onClick: () => undo() }
         });
     };
     const handleDelete = () => {
         if (!activeTask) return;
         deleteTask(activeTask.id);
-        toast("Task deleted", { description: activeTask.title, action: { label: "Undo", onClick: () => undo() } });
+        toast("Task deleted", { description: activeTask.title, duration: 12000, action: { label: "Undo", onClick: () => undo() } });
     };
     const handleDuplicate = () => {
         if (!activeTask) return;
@@ -352,12 +352,12 @@ export function FocusView({ onExit }: FocusViewProps) {
     const handleConvertToDraft = () => {
         if (!activeTask) return;
         toggleDraft(activeTask.id);
-        toast("Moved to Idea Dump", { action: { label: "Undo", onClick: () => undo() } });
+        toast("Moved to Idea Dump", { duration: 12000, action: { label: "Undo", onClick: () => undo() } });
     };
     const handleArchive = () => {
         if (!activeTask) return;
         archiveTask(activeTask.id);
-        toast("Task archived", { action: { label: "Undo", onClick: () => undo() } });
+        toast("Task archived", { duration: 12000, action: { label: "Undo", onClick: () => undo() } });
     };
 
     return (

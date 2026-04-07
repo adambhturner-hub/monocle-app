@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { FocusView } from '@/components/focus-view';
 import { ProjectSelect } from '@/components/project-select';
 import { QueueView } from '@/components/queue-view';
@@ -26,10 +26,20 @@ import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 import { SyncIndicator } from '@/components/ui/sync-indicator';
 import { cn } from '@/lib/utils';
 
+import { ReviewRitual } from '@/components/review-ritual';
+
 export default function Home() {
-  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated } = useMonocleStore();
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated, tasks } = useMonocleStore();
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  // Check if we need a review (no Frog set or many stale tasks)
+  const needsReviewPulse = useMemo(() => {
+    const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
+    const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
+    return !hasFrog || staleCount > 3;
+  }, [tasks]);
 
   // Initialize and force capture on load, ensuring hydration is complete
   useEffect(() => {
@@ -105,6 +115,19 @@ export default function Home() {
         {/* Right: Actions, View Selector, Project Dropdown */}
         <div className="flex-1 basis-0 min-w-0 flex items-center justify-end gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 relative z-20">
           <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={() => setReviewOpen(true)}
+              size="sm"
+              variant={needsReviewPulse ? "default" : "secondary"}
+              className={cn("hidden md:flex rounded-full shadow-sm px-3 transition-transform active:scale-95 shrink-0 h-8", needsReviewPulse && "animate-pulse")}
+              title="Morning Review"
+            >
+              <Clock className="h-3.5 w-3.5 mr-2" />
+              Review
+            </Button>
+            
+            <ReviewRitual open={reviewOpen} onOpenChange={setReviewOpen} />
+
             <AddTaskModal
               open={activeModal === 'add-task'}
               onOpenChange={(val) => setActiveModal(val ? 'add-task' : null)}
@@ -117,6 +140,7 @@ export default function Home() {
             {/* Add Task Button - Routes to Capture Mode */}
             <Button
               onClick={() => setView('capture')}
+
               size="sm"
               className="rounded-full shadow-sm bg-primary/90 hover:bg-primary px-3 sm:px-4 transition-transform active:scale-95 shrink-0"
             >

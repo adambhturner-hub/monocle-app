@@ -82,6 +82,28 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
     });
 };
 
+function TaskAgingBadges({ task }: { task: Task }) {
+    const badges = [];
+    const now = Date.now();
+    const daysOld = Math.floor((now - task.createdAt) / 86400000);
+    const daysHeld = task.status === 'waiting' ? Math.floor((now - (task.updatedAt || task.createdAt)) / 86400000) : 0;
+    
+    if (task.friction && task.friction.skips >= 3) {
+        badges.push(<span key="skipped" className="flex items-center gap-1 text-orange-500/80 font-semibold bg-orange-500/10 px-1 rounded-sm" title="Skipped repeatedly">Skipped {task.friction.skips}x</span>);
+    }
+    if (task.status === 'waiting' && daysHeld >= 2) {
+        badges.push(<span key="held" className="flex items-center gap-1 text-slate-500/80 font-semibold bg-slate-500/10 px-1 rounded-sm">Held {daysHeld}d</span>);
+    }
+    
+    // Stale: older than 14 days, NOT in waiting, NOT a frog, NO launch date
+    if (task.status === 'todo' && daysOld >= 14 && !task.launchDate && !task.isFrog && (!task.friction || (task.friction.skips === 0 && task.friction.holds === 0))) {
+        badges.push(<span key="stale" className="flex items-center gap-1 text-red-500/80 font-semibold bg-red-500/10 px-1 rounded-sm">Stale</span>);
+    }
+    
+    if (badges.length === 0) return null;
+    return <>{badges}</>;
+}
+
 export interface QueueViewProps {
     customTrigger?: ReactNode;
     defaultTab?: 'active' | 'drafts';
@@ -538,7 +560,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             snoozeTask(durationMinutes, pendingSnoozeTask.id);
             toast("Task on hold", {
                 description: `Held for ${label}`,
-                action: { label: "Undo", onClick: () => undo() }
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
             setPendingSnoozeTask(null);
         }
@@ -677,7 +699,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const handleDump = (taskId: string) => {
         toggleDraft(taskId);
         toast("Moved to Idea Dump", {
-            action: { label: "Undo", onClick: () => undo() }
+            duration: 12000, action: { label: "Undo", onClick: () => undo() }
         });
     };
 
@@ -690,7 +712,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         if (taskToDelete) {
             deleteTask(taskToDelete);
             toast("Task deleted", {
-                action: { label: "Undo", onClick: () => undo() }
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
             setTaskToDelete(null);
             setDeleteConfirmOpen(false);
@@ -703,12 +725,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         if (result?.nextTask) {
             toast("Recurring task archived", {
                 description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
-                action: { label: "Undo", onClick: () => undo() },
-                duration: 5000
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
         } else {
             toast("Task archived", {
-                action: { label: "Undo", onClick: () => undo() }
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
         }
     };
@@ -719,7 +740,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             useMonocleStore.getState().skipTask(taskId);
             toast("Task passed", {
                 description: taskToSkip.isFrog ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
-                action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
+                duration: 12000, action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
             });
         }
     };
@@ -736,12 +757,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         if (result?.nextTask) {
             toast("Recurring task completed", {
                 description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
-                action: { label: "Undo", onClick: () => undo() },
-                duration: 5000
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
         } else {
             toast("Task completed", {
-                action: { label: "Undo", onClick: () => undo() }
+                duration: 12000, action: { label: "Undo", onClick: () => undo() }
             });
         }
     };
@@ -1000,7 +1020,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             useMonocleStore.getState().skipTask(id);
                                                                                             toast("Task passed", {
                                                                                                 description: taskToSkip.isFrog ? "The Frog Will Return...SOON." : "Moved to bottom of Queue",
-                                                                                                action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
+                                                                                                duration: 12000, action: { label: "Undo", onClick: () => useMonocleStore.getState().undo() }
                                                                                             });
                                                                                         }
                                                                                     }}
@@ -1507,7 +1527,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         if (!proj) return null;
                                                                                                         return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
                                                                                                     })()}
-                                                                                    {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                    <TaskAgingBadges task={task} /> {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                     {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
@@ -1646,7 +1666,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                                     </p>
                                                                                                                 )}
                                                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
-                                                                                                                    {task.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                                    <TaskAgingBadges task={task} /> {task.launchDate && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                                     {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/50" />}
                                                                                                                 </div>
@@ -1852,7 +1872,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         if (!proj) return null;
                                                                                                         return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
                                                                                                     })()}
-                                                                                                    {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                    <TaskAgingBadges task={task} /> {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                     {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                     {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
@@ -1999,7 +2019,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                         if (!proj) return null;
                                                                                                         return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
                                                                                                     })()}
-                                                                                                {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                <TaskAgingBadges task={task} /> {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
                                                                                                 {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
                                                                                                 {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
                                                                                                 {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
