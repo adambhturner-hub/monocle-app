@@ -315,13 +315,13 @@ export function FocusView({ onExit }: FocusViewProps) {
             if (result?.nextTask) {
                 toast("Recurring task completed", {
                     description: `Next instance scheduled for ${format(result.nextTask.launchDate || Date.now(), 'MMM d')}`,
-                    duration: 12000, action: { label: "Undo", onClick: () => undo() },
+                    action: { label: "Undo", onClick: () => undo() },
                     duration: 5000
                 });
             } else {
                 toast("Task completed", {
                     description: activeTask.title,
-                    duration: 12000, action: { label: "Undo", onClick: () => undo() },
+                    action: { label: "Undo", onClick: () => undo() },
                     duration: 5000
                 });
             }
@@ -417,7 +417,7 @@ export function FocusView({ onExit }: FocusViewProps) {
 
                         rightAction={() => handleSkip()}
                         rightIcon={Shuffle}
-                        rightLabel="Skip"
+                        rightLabel="Later"
                         rightBgClass="bg-blue-500"
                         rightColorClass="text-blue-600"
                     >
@@ -789,9 +789,9 @@ export function FocusView({ onExit }: FocusViewProps) {
                                         )}
                                     </DropdownMenu>
 
-                                    {/* Skip */}
+                                    {/* Later */}
                                     <Button variant="outline" size="sm" onClick={handleSkip} title="Move to bottom of Queue" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm">
-                                        <Shuffle className="mr-1.5 h-3.5 w-3.5" /> Skip
+                                        <Shuffle className="mr-1.5 h-3.5 w-3.5" /> Later
                                     </Button>
                                 </div>
 

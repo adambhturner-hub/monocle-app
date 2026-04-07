@@ -23,6 +23,7 @@ import { MentionsList, MentionOption } from './mentions-list';
 import { toast } from 'sonner';
 import { uploadTaskAttachment } from '@/lib/storage';
 import { auth } from '@/lib/firebase';
+import { soundEngine } from '@/lib/sound-engine';
 
 import { ParsedToken } from '@/lib/smart-parser';
 
@@ -449,6 +450,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         };
 
         addTask(newTask);
+        soundEngine.playAdd();
 
         if (finalIsFrog) {
             useMonocleStore.getState().toggleFrog(taskId);
@@ -491,10 +493,13 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         } else if (destination === 'focus') {
             setView('focus');
         } else {
+            // Rapid capture mode - stay open and auto-focus
             setTimeout(() => inputRef.current?.focus(), 10);
         }
 
-        if (onComplete) onComplete();
+        if (onComplete && destination !== 'capture' && destination !== 'idea') {
+            onComplete();
+        }
     };
 
     const handlePaste = async (e: React.ClipboardEvent) => {

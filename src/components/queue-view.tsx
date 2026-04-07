@@ -761,6 +761,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     const handleComplete = (taskId: string) => {
         const result = completeTask(taskId);
+        soundEngine.playComplete();
 
         if (result?.nextTask) {
             toast("Recurring task completed", {
@@ -1013,9 +1014,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                         {(provided) => (
                                                             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2 pb-4 min-h-[50px]">
                                                                 {activeTasks.length === 0 && (
-                                                                    <div className="text-center py-10 px-6 text-muted-foreground/60 text-sm border-2 border-dashed rounded-xl flex flex-col items-center gap-2">
-                                                                        <p className="font-medium text-foreground/80">{activeProject ? `No tasks in ${projects.find(p => p.id === activeProject)?.name || 'this project'}.` : "Your queue is clear."}</p>
-                                                                        <p className="text-xs max-w-xs leading-relaxed">{activeProject ? "Add a new task below, or return to the main queue." : "Monocle is a merciless execution engine. Add your first task below to begin."}</p>
+                                                                    <div className="text-center py-12 px-6 text-emerald-500/80 text-sm border-2 border-dashed border-emerald-500/20 bg-emerald-500/5 rounded-xl flex flex-col items-center gap-3 animate-in zoom-in-95 duration-500">
+                                                                        <CheckCircle2 className="h-10 w-10 opacity-50 mb-1" />
+                                                                        <p className="font-bold text-emerald-600 dark:text-emerald-400 text-base">{activeProject ? `Project cleared.` : "Queue cleared. Go live your life."}</p>
+                                                                        <p className="text-xs max-w-xs leading-relaxed opacity-80">{activeProject ? "You've finished everything tracked in this project." : "You have successfully executed everything on the board. Take a rest."}</p>
                                                                     </div>
                                                                 )}
                                                                 {activeTasks.map((task, index) => (
@@ -1046,19 +1048,21 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                         }
                                                                                     }}
                                                                                 >
-                                                                                    <div
-                                                                                        className={cn(
-                                                                                            "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
-                                                                                            task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
-                                                                                            task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "scale-[1.03] shadow-lg shadow-red-500/10 border-red-500/50 ring-red-500/20 my-2 z-20",
-                                                                                            task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
-                                                                                            task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "border-l-4 border-l-primary bg-primary/5 shadow-md scale-[1.02] z-10 my-1",
-                                                                                            task.id === currentActiveTask?.id && task.isFrog && "shadow-md shadow-emerald-500/10 scale-[1.02] z-10 my-1 border-l-emerald-500",
-                                                                                            task.id === currentActiveTask?.id && task.isLightning && !task.isFrog && "shadow-md shadow-yellow-500/10 scale-[1.02] z-10 my-1 border-l-yellow-500",
-                                                                                            snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50",
-                                                                                            (Date.now() - task.createdAt < 2000) && "animate-in fade-in slide-in-from-top-4 duration-500"
-                                                                                        )}
-                                                                                    >
+                                                                                        <div
+                                                                                            className={cn(
+                                                                                                "group bg-card border rounded-lg shadow-sm hover:shadow-md transition-all select-none outline-none flex items-center gap-3 py-2 px-3 relative overflow-hidden",
+                                                                                                task.priority === 'high' && "bg-red-500/5 hover:bg-red-500/10",
+                                                                                                task.launchDate && isToday(task.launchDate) && "border-l-4 border-l-primary",
+                                                                                                task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20",
+                                                                                                task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "scale-[1.03] shadow-lg shadow-red-500/10 border-red-500/50 ring-red-500/20 my-2 z-20",
+                                                                                                task.isLightning && !task.isFrog && "border-l-4 border-l-yellow-500 bg-yellow-500/5 ring-1 ring-yellow-500/20",
+                                                                                                task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "border-l-4 border-l-primary bg-primary/5 shadow-md scale-[1.02] z-10 my-1",
+                                                                                                task.id === currentActiveTask?.id && task.isFrog && "shadow-md shadow-emerald-500/10 scale-[1.02] z-10 my-1 border-l-emerald-500",
+                                                                                                task.id === currentActiveTask?.id && task.isLightning && !task.isFrog && "shadow-md shadow-yellow-500/10 scale-[1.02] z-10 my-1 border-l-yellow-500",
+                                                                                                snapshot.isDragging && "opacity-50 ring-2 ring-primary ring-offset-2 z-50",
+                                                                                                (Date.now() - task.createdAt < 2000) && "animate-in fade-in slide-in-from-top-4 duration-500"
+                                                                                            )}
+                                                                                        >
                                                                                         {/* Frog Glow Background Layer */}
                                                                                         {task.isFrog && (
                                                                                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent pointer-events-none" />
@@ -1507,7 +1511,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                             handleEdit(task);
                                                                         }}
                                                                     >
-                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-80", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isBlocked && "!opacity-100 bg-orange-500/5 border-orange-500/30 ring-1 ring-orange-500/10 hover:bg-orange-500/10")}>
+                                                                        <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all opacity-50 grayscale", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20", task.isBlocked && "!opacity-100 !grayscale-0 bg-orange-500/5 border-orange-500/30 ring-1 ring-orange-500/10 hover:bg-orange-500/10")}>
                                                                             <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
                                                                                 <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
                                                                                     {(() => {
