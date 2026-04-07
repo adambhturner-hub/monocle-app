@@ -27,12 +27,15 @@ import { SyncIndicator } from '@/components/ui/sync-indicator';
 import { cn } from '@/lib/utils';
 
 import { ReviewRitual } from '@/components/review-ritual';
+import { ShutdownRitual } from '@/components/shutdown-ritual';
+import { Moon } from 'lucide-react';
 
 export default function Home() {
   const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated, tasks } = useMonocleStore();
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [shutdownOpen, setShutdownOpen] = useState(false);
 
   // Check if we need a review (no Frog set or many stale tasks)
   const needsReviewPulse = useMemo(() => {
@@ -40,6 +43,12 @@ export default function Home() {
     const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
     return !hasFrog || staleCount > 3;
   }, [tasks]);
+
+  // Check if we should pulse the shutdown routine
+  const needsShutdownPulse = useMemo(() => {
+    const currentHour = new Date().getHours();
+    return currentHour >= 16; // Highlight after 4 PM local time
+  }, []);
 
   // Initialize and force capture on load, ensuring hydration is complete
   useEffect(() => {
@@ -115,6 +124,18 @@ export default function Home() {
         {/* Right: Actions, View Selector, Project Dropdown */}
         <div className="flex-1 basis-0 min-w-0 flex items-center justify-end gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 relative z-20">
           <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={() => setShutdownOpen(true)}
+              size="sm"
+              variant="ghost"
+              className={cn("hidden md:flex rounded-full px-2.5 transition-transform active:scale-95 shrink-0 h-8", needsShutdownPulse && "animate-pulse bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20")}
+              title="Evening Shutdown"
+            >
+              <Moon className="h-4 w-4" />
+            </Button>
+            
+            <ShutdownRitual open={shutdownOpen} onOpenChange={setShutdownOpen} />
+
             <Button
               onClick={() => setReviewOpen(true)}
               size="sm"

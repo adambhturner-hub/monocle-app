@@ -16,7 +16,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw, Image as ImageIcon, Battery, BatteryMedium, Split } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -26,6 +26,7 @@ import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SwipeableTask } from '@/components/ui/swipeable-task';
 import { FormattedText } from './ui/formatted-text';
+import { SubdivideTaskModal } from './subdivide-task-modal';
 import { soundEngine } from '@/lib/sound-engine';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from '@/components/mentions-list';
@@ -135,6 +136,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchActive, setIsSearchActive] = useState(false);
+    const [isLowEnergy, setIsLowEnergy] = useState(false);
     const [quickAddValue, setQuickAddValue] = useState('');
     const [quickAddProjectId, setQuickAddProjectId] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -152,6 +154,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     // Edit State
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [taskToSubdivide, setTaskToSubdivide] = useState<Task | null>(null);
 
     // Determine if this specific QueueView component is actually visible to the user
     // This prevents background variants (like the hidden Sheet) from rendering portals (like Tooltips)
@@ -417,14 +420,19 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const now = Date.now();
     const todayStart = startOfDay(now).getTime();
 
-    let activeTasks = visibleTasks.filter(t => 
-        !t.isDraft && 
-        t.status !== 'done' && 
-        t.status !== 'waiting' && 
-        (!t.skippedUntil || t.skippedUntil <= now) && 
-        (!t.launchDate || startOfDay(t.launchDate).getTime() <= todayStart) &&
-        matchesSearch(t)
-    );
+    let activeTasks = visibleTasks.filter(t => {
+        if (t.isDraft || t.status === 'done' || t.status === 'waiting') return false;
+        if (t.skippedUntil && t.skippedUntil > now) return false;
+        if (t.launchDate && startOfDay(t.launchDate).getTime() > todayStart) return false;
+        if (!matchesSearch(t)) return false;
+        
+        if (isLowEnergy && !t.isFrog) {
+            const isEasy = t.isLightning || t.priority === 'low' || (t.duration && t.duration <= 15);
+            if (!isEasy) return false;
+        }
+        
+        return true;
+    });
 
     let dormantTasks = visibleTasks.filter(t => 
         !t.isDraft && 
@@ -769,6 +777,11 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     return (
         <>
+            <SubdivideTaskModal 
+                open={!!taskToSubdivide} 
+                onOpenChange={(val) => !val && setTaskToSubdivide(null)} 
+                task={taskToSubdivide} 
+            />
             <TooltipProvider>
                 <div
                     className={cn(
@@ -851,7 +864,15 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                             )}
                                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold shrink-0">{activeTasks.length}</span>
                                         </div>
-                                        <div className="flex">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setIsLowEnergy(!isLowEnergy)}
+                                                className={cn("px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1.5 shadow-sm ring-1", isLowEnergy ? "bg-amber-500/10 text-amber-600 ring-amber-500/50" : "bg-background text-foreground ring-black/5 hover:bg-muted")}
+                                                title="Filter to easy wins"
+                                            >
+                                                {isLowEnergy ? <Battery className="h-3.5 w-3.5" /> : <BatteryMedium className="h-3.5 w-3.5" />}
+                                                Brain Fried
+                                            </button>
                                             <button
                                                 onClick={() => {
                                                     let newSortMode: 'manual' | 'date' | 'priority' = 'manual';
@@ -1556,6 +1577,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             <Calendar className="h-3 w-3" />
         </div>
     )}
+                                                                                {task.friction && task.friction.skips >= 3 && <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-orange-500 rounded-full relative text-orange-500/70" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setTaskToSubdivide(task); }} title="Slice Task"><Split className="h-3 w-3" /></Button>}
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-slate-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); useMonocleStore.getState().updateTask(task.id, {status: 'todo'}); toast.success("Restored to Queue"); }} title="Restore to Active Queue"><RefreshCw className="h-3 w-3" /></Button>
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
                                                                                 <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
@@ -1572,6 +1594,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                         <ContextMenuSeparator />
                                                                         <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
                                                                         <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
+<ContextMenuItem onClick={() => setTaskToSubdivide(task)}><Split className="mr-2 h-4 w-4" /> Subdivide</ContextMenuItem>
                                                                         <ContextMenuSeparator />
                                                                         <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                         <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
@@ -1914,6 +1937,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
+<ContextMenuItem onClick={() => setTaskToSubdivide(task)}><Split className="mr-2 h-4 w-4" /> Subdivide</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
@@ -2060,6 +2084,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
+<ContextMenuItem onClick={() => setTaskToSubdivide(task)}><Split className="mr-2 h-4 w-4" /> Subdivide</ContextMenuItem>
                                                                                     <ContextMenuSeparator />
                                                                                     <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next</ContextMenuItem>
                                                                                     <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
