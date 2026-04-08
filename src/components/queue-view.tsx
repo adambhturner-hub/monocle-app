@@ -1523,9 +1523,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     </div>
                                                                                 </div>
                                                                             </ContextMenuTrigger>
-                                                                            <ContextMenuContent>
-                                                                                <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
-                                                                                <ContextMenuSeparator />
+                                                                                <ContextMenuContent>
+                                                                                    <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Mark as Ongoing</ContextMenuItem>
+                                                                                    <ContextMenuSeparator />
                                                                                 <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                             </ContextMenuContent>
                                                                         </ContextMenu>
@@ -1741,6 +1742,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                         <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
                                                                         <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
 <ContextMenuItem onClick={() => setTaskToSubdivide(task)}><Split className="mr-2 h-4 w-4" /> Subdivide</ContextMenuItem>
+                                                                        <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Mark as Ongoing</ContextMenuItem>
                                                                         <ContextMenuSeparator />
                                                                         <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
                                                                         <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
@@ -1873,6 +1875,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                     <ContextMenuItem onClick={() => { useMonocleStore.getState().toggleDraft(task.id); toast.success("Sent to Queue"); }}><CornerUpLeft className="mr-2 h-4 w-4" /> Send to Queue</ContextMenuItem>
                                                                                                     <ContextMenuSeparator />
                                                                                                     <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Mark as Ongoing</ContextMenuItem>
                                                                                                     <ContextMenuSeparator />
                                                                                                     <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
                                                                                                 </ContextMenuContent>

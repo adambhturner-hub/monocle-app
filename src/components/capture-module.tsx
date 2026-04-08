@@ -199,7 +199,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             setIsLightning(taskToEdit.isLightning || false);
             setIsOngoing(taskToEdit.isOngoing || false);
             setAttachments(taskToEdit.attachments || []);
-            if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.launchDate || (taskToEdit.attachments && taskToEdit.attachments.length > 0)) {
+            if (taskToEdit.description || taskToEdit.isOngoing || taskToEdit.recurrence || taskToEdit.launchDate || (taskToEdit.attachments && taskToEdit.attachments.length > 0)) {
                 setAdvancedOpen(true);
             }
         } else {
