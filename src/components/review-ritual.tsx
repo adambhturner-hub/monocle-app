@@ -18,7 +18,7 @@ import { getIconComponent } from '@/lib/icons';
 import { toast } from 'sonner';
 
 export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const { tasks, projects, updateTask, deleteTask, toggleDraft, promoteTask, setLastReviewDate } = useMonocleStore();
+    const { tasks, projects, updateTask, deleteTask, toggleDraft, promoteTask, toggleFrog, setLastReviewDate } = useMonocleStore();
     
     const [step, setStep] = useState<'dormant' | 'stale' | 'ideas'>('dormant');
     const [acknowledgedDormantIds, setAcknowledgedDormantIds] = useState<Set<string>>(new Set());
@@ -50,7 +50,7 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
 
     if (!open) return null;
 
-    const handleAction = (taskId: string, action: 'keep' | 'promote' | 'dump' | 'delete') => {
+    const handleAction = (taskId: string, action: 'keep' | 'promote' | 'dump' | 'delete' | 'make_frog') => {
         if (action === 'keep') {
             if (step === 'dormant') {
                 const targetTask = tasks.find(t => t.id === taskId);
@@ -60,7 +60,23 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                 setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
             }
         } else if (action === 'promote') {
+            if (step === 'dormant') {
+                const targetTask = tasks.find(t => t.id === taskId);
+                if (targetTask?.status === 'waiting') {
+                    updateTask(taskId, { status: 'todo' });
+                }
+                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
+            }
             promoteTask(taskId);
+        } else if (action === 'make_frog') {
+            if (step === 'dormant') {
+                const targetTask = tasks.find(t => t.id === taskId);
+                if (targetTask?.status === 'waiting') {
+                    updateTask(taskId, { status: 'todo' });
+                }
+                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
+            }
+            toggleFrog(taskId);
         } else if (action === 'dump') {
             toggleDraft(taskId);
         } else if (action === 'delete') {
@@ -91,7 +107,7 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                         Morning Review
                     </DialogTitle>
                     <DialogDescription>
-                        {step === 'dormant' && "These tasks hit their launch date while sleeping. Wake them up?"}
+                        {step === 'dormant' && <DialogDescription className="text-base text-center">These tasks woke up today. Prioritize them?</DialogDescription>}
                         {step === 'stale' && "These items have been sitting in your Queue for over 2 weeks."}
                         {step === 'ideas' && "These ideas are getting old. Time to let go?"}
                     </DialogDescription>
@@ -128,9 +144,17 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                                     
                                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/30">
                                         {step === 'dormant' && (
-                                            <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleAction(task.id, 'keep')}>
-                                                Wake Up
-                                            </Button>
+                                            <>
+                                                <Button size="icon" variant="ghost" className="text-emerald-500 hover:text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20" onClick={() => handleAction(task.id, 'make_frog')} title="Make Daily Frog">
+                                                    <Crown className="w-4 h-4" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="text-blue-500 hover:text-blue-600 bg-blue-500/10 hover:bg-blue-500/20" onClick={() => handleAction(task.id, 'promote')} title="Push to Top">
+                                                    <ArrowRight className="w-4 h-4 -rotate-90" />
+                                                </Button>
+                                                <Button size="sm" variant="secondary" className="flex-1 text-xs" onClick={() => handleAction(task.id, 'keep')}>
+                                                    Leave in Queue
+                                                </Button>
+                                            </>
                                         )}
                                         {step === 'stale' && (
                                             <>
