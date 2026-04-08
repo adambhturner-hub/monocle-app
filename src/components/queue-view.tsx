@@ -172,7 +172,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         if (currentHour >= 16) return false; // After 4 PM, no more morning reviews
 
         const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
-        const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
+        const staleCount = tasks.filter(t => t.status === 'todo' && !t.isOngoing && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
         return !hasFrog || staleCount > 3;
     }, [tasks, renderTick, lastReviewDate]); // renderTick safely updates this when hours change
 
@@ -449,7 +449,16 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const now = Date.now();
     const todayStart = startOfDay(now).getTime();
 
+    let ongoingTasks = visibleTasks.filter(t => 
+        t.isOngoing && 
+        !t.isDraft && 
+        t.status !== 'done' && 
+        t.status !== 'waiting' && 
+        matchesSearch(t)
+    );
+
     let activeTasks = visibleTasks.filter(t => {
+        if (t.isOngoing) return false;
         if (t.isDraft || t.status === 'done' || t.status === 'waiting') return false;
         if (t.skippedUntil && t.skippedUntil > now) return false;
         if (t.launchDate && startOfDay(t.launchDate).getTime() > todayStart) return false;
@@ -464,6 +473,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     });
 
     let dormantTasks = visibleTasks.filter(t => 
+        !t.isOngoing &&
         !t.isDraft && 
         t.status !== 'done' && 
         t.status !== 'waiting' && 
@@ -1096,6 +1106,50 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                 </div>
                                             )}
                                             
+                                            {ongoingTasks.length > 0 && (
+                                                <div className="mb-6 space-y-2">
+                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-purple-500/70 ml-1 flex items-center gap-1.5"><span className="text-base leading-none">🌊</span> Ongoing Horizons</h3>
+                                                    {ongoingTasks.map((task) => (
+                                                        <div key={task.id} className="w-full relative group">
+                                                            <SwipeableTask
+                                                                task={task}
+                                                                isMobile={isBelowMd}
+                                                                leftAction={(id) => handleComplete(id)}
+                                                                rightAction={(id) => {}}
+                                                            >
+                                                                <div className="bg-purple-500/5 hover:bg-purple-500/10 border-l-2 border-l-purple-500/50 rounded-lg rounded-l-none py-1.5 px-3 flex items-center gap-3 relative overflow-hidden transition-all shadow-sm">
+                                                                    <ContextMenu>
+                                                                        <ContextMenuTrigger className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center" onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="text-sm font-medium truncate text-purple-800 dark:text-purple-300">
+                                                                                    <FormattedText text={task.title} />
+                                                                                </p>
+                                                                            </div>
+                                                                            {task.description && (
+                                                                                <p className="text-xs text-muted-foreground/60 line-clamp-1 mt-0.5 max-w-[80%]">
+                                                                                    {task.description}
+                                                                                </p>
+                                                                            )}
+                                                                        </ContextMenuTrigger>
+                                                                        <ContextMenuContent>
+                                                                            <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit notes</ContextMenuItem>
+                                                                            <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Remove from Ongoing</ContextMenuItem>
+                                                                            <ContextMenuSeparator />
+                                                                            <ContextMenuItem onClick={() => handleComplete(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Complete</ContextMenuItem>
+                                                                            <ContextMenuItem onClick={() => handleArchive(task.id)}><Archive className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                        </ContextMenuContent>
+                                                                    </ContextMenu>
+                                                                    <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                        <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full" onClick={() => handleComplete(task.id)}><CheckCircle2 className="h-3 w-3" /></Button>
+                                                                        <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full" onClick={() => handleEdit(task)}><Edit2 className="h-3 w-3" /></Button>
+                                                                    </div>
+                                                                </div>
+                                                            </SwipeableTask>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                             {sortMode === 'manual' && !searchQuery ? (
                                                 <>
                                                     <Droppable droppableId="active">
@@ -1267,6 +1321,9 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 <ContextMenuSeparator />
                                                                                                 <ContextMenuItem onClick={() => useMonocleStore.getState().toggleFrog(task.id)}>
                                                                                                     <span className="mr-2 text-sm leading-none">🐸</span> {task.isFrog ? 'Unmark Frog' : 'Mark as Daily Frog'}
+                                                                                                </ContextMenuItem>
+                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}>
+                                                                                                    <span className="mr-2 text-sm leading-none">🌊</span> {task.isOngoing ? 'Remove from Ongoing' : 'Mark as Ongoing'}
                                                                                                 </ContextMenuItem>
                                                                                                 <ContextMenuSeparator />
                                                                                                 <ContextMenuItem onClick={() => handleMakeNext(task.id)}>

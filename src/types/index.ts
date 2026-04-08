@@ -28,6 +28,7 @@ export interface Task {
   isAvoidedFrog?: boolean;
   avoidedAt?: number;
   isLightning?: boolean;
+  isOngoing?: boolean;
   updatedAt?: number;
 }
 

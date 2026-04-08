@@ -200,6 +200,7 @@ interface MonocleState {
     getAutoPickedTask: () => Task | null;
     getCompletedTodayCount: () => number;
     toggleFrog: (id: string) => void;
+    toggleOngoing: (id: string) => void;
     frogDetourActive: boolean;
     activeRandomTaskId: string | null;
 
@@ -677,6 +678,14 @@ export const useMonocleStore = create<MonocleState>()(
                     tasks: state.tasks.map(t =>
                         t.id === taskId
                             ? { ...t, attachments: [...(t.attachments || []), url], updatedAt: Date.now() }
+                            : t
+                    )
+                })),
+
+                toggleOngoing: (id) => set((state) => ({
+                    tasks: state.tasks.map(t => 
+                        t.id === id 
+                            ? { ...t, isOngoing: !t.isOngoing, updatedAt: Date.now() } 
                             : t
                     )
                 })),

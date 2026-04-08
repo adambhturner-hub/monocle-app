@@ -26,7 +26,7 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
     // Derived states for review
     const { dormantTasks, staleTasks, ideas } = useMemo(() => {
         const now = Date.now();
-        const active = tasks.filter(t => t.status === 'todo' && !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt);
+        const active = tasks.filter(t => t.status === 'todo' && !t.isOngoing && !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt);
         const waiting = tasks.filter(t => t.status === 'waiting');
         const draft = tasks.filter(t => t.isDraft && t.status === 'todo');
 

@@ -112,6 +112,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [isFrog, setIsFrog] = useState(false);
     const [isLightning, setIsLightning] = useState(false);
+    const [isOngoing, setIsOngoing] = useState(false);
     const [attachments, setAttachments] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isParsing, setIsParsing] = useState(false);
@@ -196,6 +197,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             setRecurrence(taskToEdit.recurrence?.toString() || 'none');
             setIsFrog(taskToEdit.isFrog || false);
             setIsLightning(taskToEdit.isLightning || false);
+            setIsOngoing(taskToEdit.isOngoing || false);
             setAttachments(taskToEdit.attachments || []);
             if (taskToEdit.description || taskToEdit.recurrence || taskToEdit.launchDate || (taskToEdit.attachments && taskToEdit.attachments.length > 0)) {
                 setAdvancedOpen(true);
@@ -219,6 +221,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 setRecurrence(draftTaskData.recurrence?.toString() || 'none');
                 setIsFrog(draftTaskData.isFrog || false);
                 setIsLightning(draftTaskData.isLightning || false);
+                setIsOngoing(draftTaskData.isOngoing || false);
                 setAttachments(draftTaskData.attachments || []);
                 if (draftTaskData.description || draftTaskData.recurrence || draftTaskData.launchDate || (draftTaskData.attachments && draftTaskData.attachments.length > 0)) {
                     setAdvancedOpen(true);
@@ -365,6 +368,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
         let finalProjectId = projectId === 'all' ? undefined : projectId;
         let finalIsFrog = isFrog;
         let finalIsLightning = isLightning;
+        let finalIsOngoing = isOngoing;
         let finalIsBlocked = false;
 
         if (activeParsedData) {
@@ -376,10 +380,12 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             if (activeParsedData.isFrog) finalIsFrog = true;
             if (activeParsedData.isLightning) finalIsLightning = true;
             if (activeParsedData.isBlocked) finalIsBlocked = true;
+            // No natural language parsing for isOngoing per user request
         } else if (isEditMode) {
             finalPriority = taskToEdit.priority;
             finalIsFrog = taskToEdit.isFrog || false;
             finalIsLightning = taskToEdit.isLightning || false;
+            finalIsOngoing = taskToEdit.isOngoing || false;
             finalIsBlocked = taskToEdit.isBlocked || false;
         }
 
@@ -393,6 +399,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 launchDate: finalDueDate,
                 recurrence: (finalRecurrence === 'none' ? undefined : finalRecurrence) as any,
                 isLightning: finalIsLightning,
+                isOngoing: finalIsOngoing,
                 isFrog: finalIsFrog,
                 isBlocked: finalIsBlocked,
                 isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : (destination === 'queue' || destination === 'focus' ? false : taskToEdit.isDraft),
@@ -439,6 +446,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             isDraft: destination === 'idea' || activeParsedData?.isIdea ? true : false,
             isFrog: false, // Will be made true securely by toggleFrog if requested
             isLightning: finalIsLightning,
+            isOngoing: finalIsOngoing,
             isBlocked: finalIsBlocked,
             createdAt: Date.now(),
             attachments: attachments.length > 0 ? attachments : undefined,
@@ -1075,6 +1083,17 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                                 )}
                             >
                                 <span className="text-sm leading-none mr-1.5">⚡️</span> Quick
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setIsOngoing(!isOngoing); }}
+                                className={cn(
+                                    "flex-1 justify-center px-3 py-1.5 rounded-full border text-xs font-medium flex items-center transition-all bg-card whitespace-nowrap",
+                                    isOngoing ? "bg-purple-500/20 text-purple-500 border-purple-500/30" : "hover:bg-secondary text-muted-foreground border-border/50"
+                                )}
+                            >
+                                <span className="text-sm leading-none mr-1.5">🌊</span> Ongoing
                             </button>
 
                             <div className="relative flex-1">
