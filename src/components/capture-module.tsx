@@ -381,11 +381,9 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             if (activeParsedData.isLightning) finalIsLightning = true;
             if (activeParsedData.isBlocked) finalIsBlocked = true;
             // No natural language parsing for isOngoing per user request
-        } else if (isEditMode) {
-            finalPriority = taskToEdit.priority;
-            finalIsFrog = taskToEdit.isFrog || false;
-            finalIsLightning = taskToEdit.isLightning || false;
-            finalIsOngoing = taskToEdit.isOngoing || false;
+        }
+        
+        if (isEditMode && taskToEdit) {
             finalIsBlocked = taskToEdit.isBlocked || false;
         }
 
