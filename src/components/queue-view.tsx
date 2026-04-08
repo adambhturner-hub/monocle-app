@@ -28,6 +28,9 @@ import { SwipeableTask } from '@/components/ui/swipeable-task';
 import { FormattedText } from './ui/formatted-text';
 import { SubdivideTaskModal } from './subdivide-task-modal';
 import { soundEngine } from '@/lib/sound-engine';
+import { ReviewRitual } from '@/components/review-ritual';
+import { ShutdownRitual } from '@/components/shutdown-ritual';
+import { Clock } from 'lucide-react';
 import { useMentions } from '@/hooks/use-mentions';
 import { MentionsList, MentionOption } from '@/components/mentions-list';
 import { Plus, ArrowUpToLine } from 'lucide-react';
@@ -145,6 +148,21 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     // Multi-task paste state
     const [pendingPaste, setPendingPaste] = useState<string[] | null>(null);
+
+    // Ritual State
+    const [reviewOpen, setReviewOpen] = useState(false);
+    const [shutdownOpen, setShutdownOpen] = useState(false);
+
+    const needsReviewPulse = useMemo(() => {
+        const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
+        const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
+        return !hasFrog || staleCount > 3;
+    }, [tasks]);
+
+    const needsShutdownPulse = useMemo(() => {
+        const currentHour = new Date().getHours();
+        return currentHour >= 16; // Highlight after 4 PM local time
+    }, []);
 
     // Derived state for open/close based on variant
     // If fullscreen/sidebar, we are always "open" in context of this component rendering
@@ -1009,6 +1027,41 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                     <div className="flex-1 min-h-0">
                                         <div className="h-[calc(100vh-180px)] overflow-y-auto overflow-x-hidden pt-1 pb-32 -mx-4 px-4">
                                             <HabitsWidget />
+                                            
+                                            {/* Ritual Inline Banners */}
+                                            <ReviewRitual open={reviewOpen} onOpenChange={setReviewOpen} />
+                                            <ShutdownRitual open={shutdownOpen} onOpenChange={setShutdownOpen} />
+                                            
+                                            {!searchQuery && needsReviewPulse && (
+                                                <div 
+                                                    onClick={() => setReviewOpen(true)}
+                                                    className="mb-4 mt-2 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:from-primary/15 transition-all group animate-in slide-in-from-top-2"
+                                                >
+                                                    <div>
+                                                        <h3 className="font-bold text-primary flex items-center gap-2"><Clock className="w-4 h-4" /> Plan The Day</h3>
+                                                        <p className="text-sm opacity-80 mt-1">You have {activeTasks.length} active tasks on the board. Let's organize them.</p>
+                                                    </div>
+                                                    <Button size="sm" className="shrink-0 shadow-sm" onClick={(e) => { e.stopPropagation(); setReviewOpen(true); }}>
+                                                        Start Review
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {!searchQuery && needsShutdownPulse && !needsReviewPulse && (
+                                                <div 
+                                                    onClick={() => setShutdownOpen(true)}
+                                                    className="mb-4 mt-2 p-4 rounded-xl bg-gradient-to-r from-indigo-500/10 to-transparent border border-indigo-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:from-indigo-500/15 transition-all group animate-in slide-in-from-top-2"
+                                                >
+                                                    <div>
+                                                        <h3 className="font-bold text-indigo-500 flex items-center gap-2"><Moon className="w-4 h-4" /> Evening Shutdown</h3>
+                                                        <p className="text-sm opacity-80 mt-1">The day is ending. Close out your open loops and dump ideas.</p>
+                                                    </div>
+                                                    <Button size="sm" variant="secondary" className="bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 shrink-0 shadow-sm" onClick={(e) => { e.stopPropagation(); setShutdownOpen(true); }}>
+                                                        Run Shutdown
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            
                                             {sortMode === 'manual' && !searchQuery ? (
                                                 <>
                                                     <Droppable droppableId="active">
