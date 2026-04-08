@@ -128,7 +128,7 @@ export default function Home() {
               onClick={() => setShutdownOpen(true)}
               size="sm"
               variant="ghost"
-              className={cn("hidden md:flex rounded-full px-2.5 transition-transform active:scale-95 shrink-0 h-8", needsShutdownPulse && "animate-pulse bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20")}
+              className={cn("flex rounded-full px-2.5 transition-transform active:scale-95 shrink-0 h-8", needsShutdownPulse && "animate-pulse bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20")}
               title="Evening Shutdown"
             >
               <Moon className="h-4 w-4" />
@@ -140,11 +140,11 @@ export default function Home() {
               onClick={() => setReviewOpen(true)}
               size="sm"
               variant={needsReviewPulse ? "default" : "secondary"}
-              className={cn("hidden md:flex rounded-full shadow-sm px-3 transition-transform active:scale-95 shrink-0 h-8", needsReviewPulse && "animate-pulse")}
+              className={cn("flex rounded-full shadow-sm px-2.5 sm:px-3 transition-transform active:scale-95 shrink-0 h-8", needsReviewPulse && "animate-pulse")}
               title="Morning Review"
             >
-              <Clock className="h-3.5 w-3.5 mr-2" />
-              Review
+              <Clock className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Review</span>
             </Button>
             
             <ReviewRitual open={reviewOpen} onOpenChange={setReviewOpen} />
