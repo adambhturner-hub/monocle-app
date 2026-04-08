@@ -13,13 +13,16 @@ import {
 } from '@/components/ui/dialog';
 import { CheckCircle2, Trash2, Archive, Calendar, ArrowRight, CornerUpLeft, Crown, Clock } from 'lucide-react';
 import { FormattedText } from './ui/formatted-text';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { getIconComponent } from '@/lib/icons';
 import { toast } from 'sonner';
 
 export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const { tasks, projects, updateTask, deleteTask, toggleDraft, promoteTask } = useMonocleStore();
+    const { tasks, projects, updateTask, deleteTask, toggleDraft, promoteTask, setLastReviewDate } = useMonocleStore();
     
+    const [step, setStep] = useState<'dormant' | 'stale' | 'ideas'>('dormant');
+    const [acknowledgedDormantIds, setAcknowledgedDormantIds] = useState<Set<string>>(new Set());
+
     // Derived states for review
     const { dormantTasks, staleTasks, ideas } = useMemo(() => {
         const now = Date.now();
@@ -27,14 +30,20 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
         const waiting = tasks.filter(t => t.status === 'waiting');
         const draft = tasks.filter(t => t.isDraft && t.status === 'todo');
 
+        const dueTasks = tasks.filter(t => 
+            (t.status === 'waiting' || t.status === 'todo') && 
+            !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt && 
+            t.launchDate && 
+            startOfDay(t.launchDate).getTime() <= startOfDay(now).getTime() &&
+            !acknowledgedDormantIds.has(t.id)
+        );
+
         return {
-            dormantTasks: waiting.filter(t => t.launchDate && t.launchDate <= now), // Ready to wake up
+            dormantTasks: dueTasks, // Ready to wake up
             staleTasks: active.filter(t => !t.launchDate && Math.floor((now - t.createdAt) / 86400000) >= 14).slice(0, 5), // Max 5 stale queue items
             ideas: draft.filter(t => Math.floor((now - t.createdAt) / 86400000) >= 30).slice(0, 3) // Extremely old ideas
         }
-    }, [tasks]);
-
-    const [step, setStep] = useState<'dormant' | 'stale' | 'ideas'>('dormant');
+    }, [tasks, acknowledgedDormantIds]);
     
     // Auto-advance logic if current step is empty
     const currentQueue = step === 'dormant' ? dormantTasks : step === 'stale' ? staleTasks : ideas;
@@ -43,7 +52,13 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
 
     const handleAction = (taskId: string, action: 'keep' | 'promote' | 'dump' | 'delete') => {
         if (action === 'keep') {
-            if (step === 'dormant') updateTask(taskId, { status: 'todo' });
+            if (step === 'dormant') {
+                const targetTask = tasks.find(t => t.id === taskId);
+                if (targetTask?.status === 'waiting') {
+                    updateTask(taskId, { status: 'todo' });
+                }
+                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
+            }
         } else if (action === 'promote') {
             promoteTask(taskId);
         } else if (action === 'dump') {
@@ -57,7 +72,10 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
     const nextStep = () => {
         if (step === 'dormant') setStep('stale');
         else if (step === 'stale') setStep('ideas');
-        else onOpenChange(false); // Finished
+        else {
+            setLastReviewDate(new Date().toISOString().split('T')[0]);
+            onOpenChange(false); // Finished
+        }
     };
 
     const skipAll = () => {

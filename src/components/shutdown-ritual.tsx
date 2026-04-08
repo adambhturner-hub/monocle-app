@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { soundEngine } from '@/lib/sound-engine';
 
 export function ShutdownRitual({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const { tasks, updateTask, addTask } = useMonocleStore();
+    const { tasks, updateTask, addTask, setLastShutdownDate } = useMonocleStore();
     const [step, setStep] = useState<'celebrate' | 'dump' | 'frog'>('celebrate');
     const [draftInput, setDraftInput] = useState('');
     
@@ -52,6 +52,11 @@ export function ShutdownRitual({ open, onOpenChange }: { open: boolean, onOpenCh
         onOpenChange(newOpen);
     }
 
+    const completeShutdown = () => {
+        setLastShutdownDate(new Date().toISOString().split('T')[0]);
+        handleOpenChange(false);
+    }
+
     if (!open) return null;
 
     const handleDraftSubmit = () => {
@@ -62,9 +67,11 @@ export function ShutdownRitual({ open, onOpenChange }: { open: boolean, onOpenCh
             status: 'todo',
             priority: 'medium',
             isDraft: true,
+            isFrog: false,
             createdAt: Date.now()
         });
         soundEngine.playAdd();
+        toast("Saved to idea dump");
         setDraftInput('');
     };
 
@@ -84,13 +91,13 @@ export function ShutdownRitual({ open, onOpenChange }: { open: boolean, onOpenCh
         updateTask(taskId, { isFrog: true });
         toast.success("Daily Frog set for tomorrow!");
         soundEngine.playComplete();
-        handleOpenChange(false);
+        completeShutdown();
     };
 
     const nextStep = () => {
         if (step === 'celebrate') setStep('dump');
         else if (step === 'dump') setStep('frog');
-        else handleOpenChange(false);
+        else completeShutdown();
     };
 
     return (

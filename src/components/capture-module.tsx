@@ -139,19 +139,18 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             };
 
             recognitionRef.current.onresult = (event: any) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
+                let allChunks = [];
 
                 for (let i = 0; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
+                    // Extract and safely trim each chunk recognized by the speech API
+                    allChunks.push(event.results[i][0].transcript.trim());
                 }
 
-                const prefix = preListenTitleRef.current ? preListenTitleRef.current + (preListenTitleRef.current.endsWith(' ') ? '' : ' ') : '';
-                const fullText = prefix + finalTranscript + interimTranscript;
+                // Force spaces between chunks to circumvent hashtag/natural speech merging bugs
+                const speechStr = allChunks.filter(Boolean).join(' ');
+
+                const base = preListenTitleRef.current ? preListenTitleRef.current.trimEnd() : '';
+                const fullText = base ? `${base} ${speechStr}` : speechStr;
                 
                 const submitRegex = /\b(?:save|add|submit|create)\s*(?:task|it)?\b\.?$/i;
                 if (submitRegex.test(fullText.trim())) {
@@ -400,10 +399,6 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 status: destination === 'archive' ? 'done' : (activeParsedData?.isWaiting ? 'waiting' : taskToEdit.status),
                 attachments: attachments.length > 0 ? attachments : undefined,
             });
-
-            if (finalIsFrog !== wasFrog) {
-                useMonocleStore.getState().toggleFrog(taskToEdit.id);
-            }
 
             if (destination === 'archive') {
                 toast.success("Archived");
@@ -855,6 +850,10 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         value={title}
                         onChange={(e) => {
                             setTitle(e.target.value);
+                            if (isListening) {
+                                recognitionRef.current?.stop();
+                                setIsListening(false);
+                            }
                             onMentionChange();
                         }}
                         onPaste={handlePaste}

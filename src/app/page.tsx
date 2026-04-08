@@ -31,7 +31,7 @@ import { ShutdownRitual } from '@/components/shutdown-ritual';
 import { Moon } from 'lucide-react';
 
 export default function Home() {
-  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated, tasks } = useMonocleStore();
+  const { view, activeSheet, setOpenSheet, activeModal, setActiveModal, setView, getVisibleTasks, isHydrated, tasks, lastReviewDate, lastShutdownDate } = useMonocleStore();
   const [isMounted, setIsMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -39,19 +39,25 @@ export default function Home() {
 
   // Check if we need a review (no Frog set or many stale tasks)
   const needsReviewPulse = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (lastReviewDate === today) return false;
+
     const currentHour = new Date().getHours();
     if (currentHour >= 16) return false;
 
     const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
     const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
     return !hasFrog || staleCount > 3;
-  }, [tasks]);
+  }, [tasks, lastReviewDate]);
 
   // Check if we should pulse the shutdown routine
   const needsShutdownPulse = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (lastShutdownDate === today) return false;
+
     const currentHour = new Date().getHours();
     return currentHour >= 16; // Highlight after 4 PM local time
-  }, []);
+  }, [lastShutdownDate]);
 
   // Initialize and force capture on load, ensuring hydration is complete
   useEffect(() => {

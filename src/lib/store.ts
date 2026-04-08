@@ -204,6 +204,10 @@ interface MonocleState {
     activeRandomTaskId: string | null;
 
     lastActiveDate?: string; // YYYY-MM-DD string to track day rollovers
+    lastReviewDate?: string; // YYYY-MM-DD string to track if morning review was done
+    lastShutdownDate?: string; // YYYY-MM-DD string to track if evening shutdown was done
+    setLastReviewDate: (date: string) => void;
+    setLastShutdownDate: (date: string) => void;
 
     // Command Palette Power Features
     recentCommands: RecentCommand[];
@@ -277,6 +281,10 @@ export const useMonocleStore = create<MonocleState>()(
                 frogDetourActive: false,
                 activeRandomTaskId: null,
                 lastActiveDate: new Date().toISOString().split('T')[0],
+                lastReviewDate: undefined,
+                lastShutdownDate: undefined,
+                setLastReviewDate: (date) => set({ lastReviewDate: date }),
+                setLastShutdownDate: (date) => set({ lastShutdownDate: date }),
 
                 // Settings Defaults
                 settings: {
@@ -463,7 +471,7 @@ export const useMonocleStore = create<MonocleState>()(
                     set((state) => {
                         let newTasks = state.tasks;
                         if (task.isFrog) {
-                            newTasks = newTasks.map(t => t.isFrog ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                            newTasks = newTasks.map(t => t.isFrog && t.status !== 'done' ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
                         }
                         return { tasks: [...newTasks, { ...task, updatedAt: Date.now() }], lastModified: Date.now() };
                     });
@@ -482,7 +490,11 @@ export const useMonocleStore = create<MonocleState>()(
                     set((state) => {
                         let newTasks = state.tasks;
                         if (updates.isFrog) {
-                            newTasks = newTasks.map(t => t.isFrog && t.id !== id ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                            newTasks = newTasks.map(t => t.isFrog && t.id !== id && t.status !== 'done' ? { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() } : t);
+                            
+                            // Enforce constraints on the new frog unconditionally when it's updated manually
+                            updates.priority = 'medium';
+                            updates.launchDate = undefined;
                         }
                         return {
                             tasks: newTasks.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t)), lastModified: Date.now()
@@ -686,7 +698,7 @@ export const useMonocleStore = create<MonocleState>()(
                                 }
                             }
                             // Demote ALL other frogs if we are becoming the frog
-                            if (isBecomingFrog && t.isFrog) {
+                            if (isBecomingFrog && t.isFrog && t.status !== 'done') {
                                 return { ...t, isFrog: false, isAvoidedFrog: true, avoidedAt: Date.now(), launchDate: Date.now(), priority: 'medium' as const, updatedAt: Date.now() };
                             }
                             return t;
@@ -1093,7 +1105,7 @@ export const useMonocleStore = create<MonocleState>()(
 
                         const otherTasks = state.tasks.filter(t => t.id !== id);
                         const updatedTask = { ...task, isDraft: false, updatedAt: Date.now() };
-                        otherTasks.push(updatedTask);
+                        otherTasks.unshift(updatedTask);
                         return { tasks: otherTasks, lastState };
                     }),
 

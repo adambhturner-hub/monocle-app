@@ -133,7 +133,9 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         getAutoPickedTask,
         settings, // Add settings to destructuring
         view,
-        setView
+        setView,
+        lastReviewDate,
+        lastShutdownDate
     } = useMonocleStore();
     const draftsRef = useRef<HTMLDivElement>(null);
 
@@ -163,18 +165,24 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     }, []);
 
     const needsReviewPulse = useMemo(() => {
+        const today = new Date().toISOString().split('T')[0];
+        if (lastReviewDate === today) return false; // Already done today
+
         const currentHour = new Date().getHours();
         if (currentHour >= 16) return false; // After 4 PM, no more morning reviews
 
         const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
         const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
         return !hasFrog || staleCount > 3;
-    }, [tasks, renderTick]); // renderTick safely updates this when hours change
+    }, [tasks, renderTick, lastReviewDate]); // renderTick safely updates this when hours change
 
     const needsShutdownPulse = useMemo(() => {
+        const today = new Date().toISOString().split('T')[0];
+        if (lastShutdownDate === today) return false; // Already done today
+
         const currentHour = new Date().getHours();
         return currentHour >= 16; // Highlight after 4 PM local time
-    }, [renderTick]);
+    }, [renderTick, lastShutdownDate]);
 
     // Derived state for open/close based on variant
     // If fullscreen/sidebar, we are always "open" in context of this component rendering
@@ -470,6 +478,29 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         const frog = activeTasks[activeFrogIndex];
         activeTasks.splice(activeFrogIndex, 1);
         activeTasks.unshift(frog);
+    }
+
+    // Bubbling up Due tasks directly under the Frog (when in manual mode)
+    if (sortMode === 'manual' && !searchQuery) {
+        const dueTasks = [];
+        const normalTasks = [];
+        const hasFrog = activeTasks.length > 0 && activeTasks[0].isFrog;
+        const startIndex = hasFrog ? 1 : 0;
+        const frogArr = hasFrog ? [activeTasks[0]] : [];
+
+        for (let i = startIndex; i < activeTasks.length; i++) {
+            const t = activeTasks[i];
+            // Any active task with a launchDate is by definition "Due" (or overdue) because future tasks are filtered out
+            if (t.launchDate) {
+                dueTasks.push(t);
+            } else {
+                normalTasks.push(t);
+            }
+        }
+        // Due tasks sorted by oldest due date first
+        dueTasks.sort((a, b) => (a.launchDate || 0) - (b.launchDate || 0));
+
+        activeTasks = [...frogArr, ...dueTasks, ...normalTasks];
     }
 
     let snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
@@ -1229,9 +1260,6 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 </ContextMenuItem>
                                                                                                 <ContextMenuItem onClick={() => handleEdit(task)}>
                                                                                                     <Edit2 className="mr-2 h-4 w-4" /> Edit
-                                                                                                </ContextMenuItem>
-                                                                                                <ContextMenuItem onClick={() => useMonocleStore.getState().jumpTaskToTop(task.id)}>
-                                                                                                    <ArrowUpToLine className="mr-2 h-4 w-4" /> Jump to Top
                                                                                                 </ContextMenuItem>
                                                                                                 <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}>
                                                                                                     <FileText className="mr-2 h-4 w-4" /> Duplicate
