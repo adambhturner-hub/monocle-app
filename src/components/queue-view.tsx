@@ -872,7 +872,8 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                 title="Filter to easy wins"
                                             >
                                                 {isLowEnergy ? <Battery className="h-3.5 w-3.5" /> : <BatteryMedium className="h-3.5 w-3.5" />}
-                                                Brain Fried
+                                                <span className="hidden sm:inline">Brain Fried</span>
+                                                <span className="sm:hidden">Fried</span>
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1208,7 +1209,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
                                                                                         {/* Indicators and Actions */}
                                                                                         {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
-                                                                                        <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                        <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -1355,7 +1356,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             )}
                                                                                         </div>
                                                                                     </div>
-                                                                                    <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                    <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -1559,7 +1560,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                            <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -1698,7 +1699,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                                     {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/50" />}
                                                                                                                 </div>
                                                                                                             </div>
-                                                                                                            <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                                            <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -1759,7 +1760,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                     <div className="flex-1 min-w-0">
                                                                         <FormattedText text={task.title} className="text-sm font-medium truncate" />
                                                                     </div>
-                                                                    <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                    <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -1907,7 +1908,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                                 </div>
                                                                                             </div>
                                                                                             {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
-                                                                                            <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                            <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
@@ -2055,7 +2056,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                             </div>
                                                                                         </div>
                                                                                         {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
-                                                                                        <div className="flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                        <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
     {variant === 'sidebar' && (
         <div 
             draggable={true} 
