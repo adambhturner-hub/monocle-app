@@ -1119,8 +1119,18 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                             >
                                                                 <div className="bg-purple-500/5 hover:bg-purple-500/10 border-l-2 border-l-purple-500/50 rounded-lg rounded-l-none py-1.5 px-3 flex items-center gap-3 relative overflow-hidden transition-all shadow-sm">
                                                                     <ContextMenu>
-                                                                        <ContextMenuTrigger className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center" onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
+                                                                        <ContextMenuTrigger className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center gap-0.5" onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
                                                                             <div className="flex items-center gap-2">
+                                                                                {(() => {
+                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                    if (!proj) return null;
+                                                                                    const IconCmp = getIconComponent(proj.icon);
+                                                                                    return (
+                                                                                        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
                                                                                 <p className="text-sm font-medium truncate text-purple-800 dark:text-purple-300">
                                                                                     <FormattedText text={task.title} />
                                                                                 </p>
@@ -1130,6 +1140,18 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                                     {task.description}
                                                                                 </p>
                                                                             )}
+                                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
+                                                                                {(() => {
+                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                    if (!proj) return null;
+                                                                                    return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                })()}
+                                                                                {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500/70 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                {task.recurrence && <span className="flex items-center gap-1 text-orange-500/60" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
+                                                                                {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/60" />}
+                                                                                {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500/60" />}
+                                                                            </div>
                                                                         </ContextMenuTrigger>
                                                                         <ContextMenuContent>
                                                                             <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit notes</ContextMenuItem>

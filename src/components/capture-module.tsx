@@ -53,6 +53,7 @@ const renderHighlightedText = (text: string, matchedTokens: ParsedToken[]) => {
                 case 'blocked': colorClass = "bg-orange-500/20 text-orange-600 font-semibold"; break;
                 case 'habit': colorClass = "bg-orange-500/20 text-transparent"; break;
                 case 'idea': colorClass = "bg-purple-500/20 text-transparent"; break;
+                case 'ongoing': colorClass = "bg-purple-500/20 text-transparent"; break;
             }
 
             return (
@@ -334,7 +335,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                 return;
             }
             const result = parseTaskInput(title, projects);
-            if (result.priority || result.launchDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting || result.isIdea || result.isHabit) {
+            if (result.priority || result.launchDate || result.recurrence || result.projectId || result.isFrog || result.isLightning || result.isWaiting || result.isIdea || result.isHabit || result.isOngoing) {
                 setParsedData(result);
             } else {
                 setParsedData(null);
@@ -380,7 +381,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
             if (activeParsedData.isFrog) finalIsFrog = true;
             if (activeParsedData.isLightning) finalIsLightning = true;
             if (activeParsedData.isBlocked) finalIsBlocked = true;
-            // No natural language parsing for isOngoing per user request
+            if (activeParsedData.isOngoing) finalIsOngoing = true;
         }
         
         if (isEditMode && taskToEdit) {
@@ -905,7 +906,7 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
 
             <div className={cn("w-full px-6 flex flex-col gap-4 z-10 shrink-0", isModal ? "pb-6 pt-0" : "mt-auto pb-8 pt-0")}>
                 {/* NLP Highlights display */}
-                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting || parsedData?.isIdea || parsedData?.isBlocked) && (
+                {(parsedData?.launchDate || parsedData?.priority || parsedData?.projectId || parsedData?.recurrence || parsedData?.isFrog || parsedData?.isLightning || parsedData?.isWaiting || parsedData?.isIdea || parsedData?.isBlocked || parsedData?.isOngoing) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-4 mb-4">
                         {parsedData.launchDate && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center gap-1.5 backdrop-blur-md">
@@ -948,6 +949,11 @@ export function CaptureModule({ taskToEdit, onComplete, isModal = false }: Captu
                         {parsedData.isIdea && (
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5 backdrop-blur-md">
                                 <Lightbulb className="w-3 h-3" /> Idea
+                            </span>
+                        )}
+                        {parsedData.isOngoing && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1.5 backdrop-blur-md">
+                                <span className="leading-none select-none text-[10px]">🌊</span> Ongoing
                             </span>
                         )}
                     </div>

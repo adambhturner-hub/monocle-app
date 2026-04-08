@@ -3,7 +3,7 @@ import { addDays, nextDay, startOfDay, addWeeks, addMonths, addYears } from 'dat
 
 export interface ParsedToken {
     text: string;
-    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'blocked' | 'idea' | 'habit';
+    type: 'frog' | 'lightning' | 'duration' | 'priority' | 'recurrence' | 'project' | 'date' | 'waiting' | 'blocked' | 'idea' | 'habit' | 'ongoing';
     color?: string;
 }
 
@@ -21,6 +21,7 @@ export interface ParsedTask {
     isBlocked?: boolean;
     isIdea?: boolean;
     isHabit?: boolean;
+    isOngoing?: boolean;
     daysOfWeek?: number[];
     matchedTokens: ParsedToken[];
 }
@@ -57,6 +58,17 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         if (match && match[1]) {
             isLightning = true;
             matchedTokens.push({ text: match[1], type: 'lightning' });
+            cleanTitle = cleanTitle.replace(match[0], ' ').trim();
+        }
+    }
+
+    let isOngoing = false;
+    const ongoingRegex = /(?:^|\s)(ongoing|@ongoing|!ongoing|\/ongoing)(?=\s|$)/i;
+    if (ongoingRegex.test(cleanTitle)) {
+        const match = cleanTitle.match(ongoingRegex);
+        if (match && match[1]) {
+            isOngoing = true;
+            matchedTokens.push({ text: match[1], type: 'ongoing' });
             cleanTitle = cleanTitle.replace(match[0], ' ').trim();
         }
     }
@@ -473,6 +485,7 @@ export function parseTaskInput(input: string, projects: Project[] = []): ParsedT
         isBlocked,
         isIdea,
         isHabit,
+        isOngoing,
         daysOfWeek: habitDaysOfWeek,
         matchedTokens
     };
