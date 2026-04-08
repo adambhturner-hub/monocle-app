@@ -153,16 +153,28 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const [reviewOpen, setReviewOpen] = useState(false);
     const [shutdownOpen, setShutdownOpen] = useState(false);
 
+    // Auto-refresh interval so "On Hold" tasks and rituals natively pop back into the list
+    const [renderTick, setRenderTick] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRenderTick(prev => prev + 1);
+        }, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, []);
+
     const needsReviewPulse = useMemo(() => {
+        const currentHour = new Date().getHours();
+        if (currentHour >= 16) return false; // After 4 PM, no more morning reviews
+
         const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
         const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
         return !hasFrog || staleCount > 3;
-    }, [tasks]);
+    }, [tasks, renderTick]); // renderTick safely updates this when hours change
 
     const needsShutdownPulse = useMemo(() => {
         const currentHour = new Date().getHours();
         return currentHour >= 16; // Highlight after 4 PM local time
-    }, []);
+    }, [renderTick]);
 
     // Derived state for open/close based on variant
     // If fullscreen/sidebar, we are always "open" in context of this component rendering
@@ -184,15 +196,6 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
 
     // Snooze Drag State
     const [pendingSnoozeTask, setPendingSnoozeTask] = useState<Task | null>(null);
-
-    // Auto-refresh interval so "On Hold" tasks natively pop back into the list
-    const [renderTick, setRenderTick] = useState(0);
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRenderTick(prev => prev + 1);
-        }, 60000); // Check every minute
-        return () => clearInterval(interval);
-    }, []);
 
     // Media query for mobile detection
     const [isBelowMd, setIsBelowMd] = useState(false);

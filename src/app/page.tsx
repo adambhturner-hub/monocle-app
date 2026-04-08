@@ -39,6 +39,9 @@ export default function Home() {
 
   // Check if we need a review (no Frog set or many stale tasks)
   const needsReviewPulse = useMemo(() => {
+    const currentHour = new Date().getHours();
+    if (currentHour >= 16) return false;
+
     const hasFrog = tasks.some(t => t.isFrog && t.status === 'todo');
     const staleCount = tasks.filter(t => t.status === 'todo' && !t.launchDate && Math.floor((Date.now() - t.createdAt)/86400000) >= 14).length;
     return !hasFrog || staleCount > 3;
