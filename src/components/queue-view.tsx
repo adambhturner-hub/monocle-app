@@ -671,6 +671,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
             duration: parsedResult.duration,
             isFrog: parsedResult.isFrog,
             isLightning: parsedResult.isLightning,
+            isOngoing: parsedResult.isOngoing,
             isDraft: finalIsDraft,
             createdAt: Date.now(),
         };
@@ -715,6 +716,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                 duration: parsedResult.duration,
                 isFrog: parsedResult.isFrog,
                 isLightning: parsedResult.isLightning,
+                isOngoing: parsedResult.isOngoing,
                 isDraft: finalIsDraft,
                 createdAt: Date.now() + count, // offset to maintain order
             };
@@ -1107,69 +1109,80 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                             )}
                                             
                                             {ongoingTasks.length > 0 && (
-                                                <div className="mb-6 space-y-2">
-                                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-purple-500/70 ml-1 flex items-center gap-1.5"><span className="text-base leading-none">🌊</span> Ongoing Horizons</h3>
-                                                    {ongoingTasks.map((task) => (
-                                                        <div key={task.id} className="w-full relative group">
-                                                            <SwipeableTask
-                                                                task={task}
-                                                                isMobile={isBelowMd}
-                                                                leftAction={(id) => handleComplete(id)}
-                                                                rightAction={(id) => {}}
-                                                            >
-                                                                <div className="bg-purple-500/5 hover:bg-purple-500/10 border-l-2 border-l-purple-500/50 rounded-lg rounded-l-none py-1.5 px-3 flex items-center gap-3 relative overflow-hidden transition-all shadow-sm">
-                                                                    <ContextMenu>
-                                                                        <ContextMenuTrigger className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center gap-0.5" onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
-                                                                            <div className="flex items-center gap-2">
-                                                                                {(() => {
-                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                    if (!proj) return null;
-                                                                                    const IconCmp = getIconComponent(proj.icon);
-                                                                                    return (
-                                                                                        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
-                                                                                            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
-                                                                                        </div>
-                                                                                    );
-                                                                                })()}
-                                                                                <p className="text-sm font-medium truncate text-purple-800 dark:text-purple-300">
-                                                                                    <FormattedText text={task.title} />
-                                                                                </p>
+                                                <Accordion type="single" collapsible defaultValue="ongoing" className="mb-6 transition-colors rounded-xl min-h-[50px] border-none">
+                                                    <AccordionItem value="ongoing" className="border-none">
+                                                        <AccordionTrigger className="flex items-center gap-2 px-1 pt-1 mb-2 hover:no-underline py-0">
+                                                            <div className="flex items-center gap-2 flex-1 justify-start">
+                                                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-purple-500/70 flex items-center gap-1.5 m-0">
+                                                                    <span className="text-base leading-none">🌊</span> Ongoing Horizons
+                                                                    <span className="bg-purple-500/10 px-1.5 py-0.5 rounded-full">{ongoingTasks.length}</span>
+                                                                </h3>
+                                                            </div>
+                                                        </AccordionTrigger>
+                                                        <AccordionContent className="space-y-2 pb-2 pt-1">
+                                                            {ongoingTasks.map((task) => (
+                                                                <div key={task.id} className="w-full relative group">
+                                                                    <SwipeableTask
+                                                                        task={task}
+                                                                        isMobile={isBelowMd}
+                                                                        leftAction={(id) => handleComplete(id)}
+                                                                        rightAction={(id) => {}}
+                                                                    >
+                                                                        <div className="bg-purple-500/5 hover:bg-purple-500/10 border-l-2 border-l-purple-500/50 rounded-lg rounded-l-none py-1.5 px-3 flex items-center gap-3 relative overflow-hidden transition-all shadow-sm">
+                                                                            <ContextMenu>
+                                                                                <ContextMenuTrigger className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center gap-0.5" onDoubleClick={(e) => { e.preventDefault(); handleEdit(task); }}>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        {(() => {
+                                                                                            const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                            if (!proj) return null;
+                                                                                            const IconCmp = getIconComponent(proj.icon);
+                                                                                            return (
+                                                                                                <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: proj.color }}>
+                                                                                                    <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+                                                                                                </div>
+                                                                                            );
+                                                                                        })()}
+                                                                                        <p className="text-sm font-medium truncate text-purple-800 dark:text-purple-300">
+                                                                                            <FormattedText text={task.title} />
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    {task.description && (
+                                                                                        <p className="text-xs text-muted-foreground/60 line-clamp-1 mt-0.5 max-w-[80%]">
+                                                                                            {task.description}
+                                                                                        </p>
+                                                                                    )}
+                                                                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
+                                                                                        {(() => {
+                                                                                            const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                            if (!proj) return null;
+                                                                                            return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
+                                                                                        })()}
+                                                                                        {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500/70 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                        {task.recurrence && <span className="flex items-center gap-1 text-orange-500/60" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                        {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
+                                                                                        {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/60" />}
+                                                                                        {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500/60" />}
+                                                                                    </div>
+                                                                                </ContextMenuTrigger>
+                                                                                <ContextMenuContent>
+                                                                                    <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit notes</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Remove from Ongoing</ContextMenuItem>
+                                                                                    <ContextMenuSeparator />
+                                                                                    <ContextMenuItem onClick={() => handleComplete(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Complete</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => handleArchive(task.id)}><Archive className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                                </ContextMenuContent>
+                                                                            </ContextMenu>
+                                                                            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full" onClick={() => handleComplete(task.id)}><CheckCircle2 className="h-3 w-3" /></Button>
+                                                                                <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full" onClick={() => handleEdit(task)}><Edit2 className="h-3 w-3" /></Button>
                                                                             </div>
-                                                                            {task.description && (
-                                                                                <p className="text-xs text-muted-foreground/60 line-clamp-1 mt-0.5 max-w-[80%]">
-                                                                                    {task.description}
-                                                                                </p>
-                                                                            )}
-                                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50 mt-0.5">
-                                                                                {(() => {
-                                                                                    const proj = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                                                                                    if (!proj) return null;
-                                                                                    return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{proj.name}</span>;
-                                                                                })()}
-                                                                                {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500/70 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
-                                                                                {task.recurrence && <span className="flex items-center gap-1 text-orange-500/60" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
-                                                                                {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
-                                                                                {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500/60" />}
-                                                                                {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500/60" />}
-                                                                            </div>
-                                                                        </ContextMenuTrigger>
-                                                                        <ContextMenuContent>
-                                                                            <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit notes</ContextMenuItem>
-                                                                            <ContextMenuItem onClick={() => useMonocleStore.getState().toggleOngoing(task.id)}><span className="mr-2 text-sm leading-none">🌊</span> Remove from Ongoing</ContextMenuItem>
-                                                                            <ContextMenuSeparator />
-                                                                            <ContextMenuItem onClick={() => handleComplete(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Complete</ContextMenuItem>
-                                                                            <ContextMenuItem onClick={() => handleArchive(task.id)}><Archive className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
-                                                                        </ContextMenuContent>
-                                                                    </ContextMenu>
-                                                                    <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-50 shrink-0">
-                                                                        <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full" onClick={() => handleComplete(task.id)}><CheckCircle2 className="h-3 w-3" /></Button>
-                                                                        <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full" onClick={() => handleEdit(task)}><Edit2 className="h-3 w-3" /></Button>
-                                                                    </div>
+                                                                        </div>
+                                                                    </SwipeableTask>
                                                                 </div>
-                                                            </SwipeableTask>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                            ))}
+                                                        </AccordionContent>
+                                                    </AccordionItem>
+                                                </Accordion>
                                             )}
 
                                             {sortMode === 'manual' && !searchQuery ? (
