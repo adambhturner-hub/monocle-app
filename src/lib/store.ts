@@ -789,25 +789,37 @@ export const useMonocleStore = create<MonocleState>()(
                         const newTasks = [...otherTasks, archivedTask];
 
                         if (taskToComplete.recurrence) {
-                            let nextLaunchDate = Date.now();
                             const currentDue = taskToComplete.launchDate || Date.now();
+
+                            let nextLaunchDate = currentDue;
+                            const baseTime = Date.now();
 
                             switch (taskToComplete.recurrence) {
                                 case 'daily':
-                                    nextLaunchDate = addDays(currentDue, 1).getTime();
+                                    do {
+                                        nextLaunchDate = addDays(nextLaunchDate, 1).getTime();
+                                    } while (nextLaunchDate <= baseTime);
                                     break;
                                 case 'weekly':
-                                    nextLaunchDate = addWeeks(currentDue, 1).getTime();
+                                    do {
+                                        nextLaunchDate = addWeeks(nextLaunchDate, 1).getTime();
+                                    } while (nextLaunchDate <= baseTime);
                                     break;
                                 case 'monthly':
-                                    nextLaunchDate = addMonths(currentDue, 1).getTime();
+                                    do {
+                                        nextLaunchDate = addMonths(nextLaunchDate, 1).getTime();
+                                    } while (nextLaunchDate <= baseTime);
                                     break;
                                 case 'yearly':
-                                    nextLaunchDate = addYears(currentDue, 1).getTime();
+                                    do {
+                                        nextLaunchDate = addYears(nextLaunchDate, 1).getTime();
+                                    } while (nextLaunchDate <= baseTime);
                                     break;
                                 default:
                                     if (typeof taskToComplete.recurrence === 'number') {
-                                        nextLaunchDate = addDays(currentDue, taskToComplete.recurrence).getTime();
+                                        do {
+                                            nextLaunchDate = addDays(nextLaunchDate, taskToComplete.recurrence).getTime();
+                                        } while (nextLaunchDate <= baseTime);
                                     }
                             }
 
