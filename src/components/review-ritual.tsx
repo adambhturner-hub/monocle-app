@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { CheckCircle2, Trash2, Archive, Calendar, ArrowRight, CornerUpLeft, Crown, Clock } from 'lucide-react';
 import { FormattedText } from './ui/formatted-text';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, isToday } from 'date-fns';
 import { getIconComponent } from '@/lib/icons';
 import { toast } from 'sonner';
 
@@ -21,7 +21,7 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
     const { tasks, projects, updateTask, deleteTask, toggleDraft, promoteTask, toggleFrog, setLastReviewDate } = useMonocleStore();
     
     const [step, setStep] = useState<'dormant' | 'stale' | 'ideas'>('dormant');
-    const [acknowledgedDormantIds, setAcknowledgedDormantIds] = useState<Set<string>>(new Set());
+    const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
 
     // Derived states for review
     const { dormantTasks, staleTasks, ideas } = useMemo(() => {
@@ -42,16 +42,16 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
             !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt && 
             t.launchDate && 
             startOfDay(t.launchDate).getTime() <= startOfDay(now).getTime() &&
-            !acknowledgedDormantIds.has(t.id) &&
+            !acknowledgedIds.has(t.id) &&
             !isExcluded(t.projectId)
         );
 
         return {
             dormantTasks: dueTasks, // Ready to wake up
-            staleTasks: active.filter(t => !t.launchDate && Math.floor((now - t.createdAt) / 86400000) >= 14).slice(0, 5), // Max 5 stale queue items
-            ideas: draft.filter(t => Math.floor((now - t.createdAt) / 86400000) >= 30).slice(0, 3) // Extremely old ideas
+            staleTasks: active.filter(t => !t.launchDate && !acknowledgedIds.has(t.id) && Math.floor((now - t.createdAt) / 86400000) >= 14).slice(0, 5), // Max 5 stale queue items
+            ideas: draft.filter(t => !acknowledgedIds.has(t.id) && Math.floor((now - t.createdAt) / 86400000) >= 30).slice(0, 3) // Extremely old ideas
         }
-    }, [tasks, projects, acknowledgedDormantIds]);
+    }, [tasks, projects, acknowledgedIds]);
     
     // Auto-advance logic if current step is empty
     const currentQueue = step === 'dormant' ? dormantTasks : step === 'stale' ? staleTasks : ideas;
@@ -59,13 +59,14 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
     if (!open) return null;
 
     const handleAction = (taskId: string, action: 'keep' | 'promote' | 'dump' | 'delete' | 'make_frog') => {
+        setAcknowledgedIds(prev => new Set([...prev, taskId]));
+
         if (action === 'keep') {
             if (step === 'dormant') {
                 const targetTask = tasks.find(t => t.id === taskId);
                 if (targetTask?.status === 'waiting') {
                     updateTask(taskId, { status: 'todo' });
                 }
-                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
             }
         } else if (action === 'promote') {
             if (step === 'dormant') {
@@ -73,7 +74,6 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                 if (targetTask?.status === 'waiting') {
                     updateTask(taskId, { status: 'todo' });
                 }
-                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
             }
             promoteTask(taskId);
         } else if (action === 'make_frog') {
@@ -82,7 +82,6 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                 if (targetTask?.status === 'waiting') {
                     updateTask(taskId, { status: 'todo' });
                 }
-                setAcknowledgedDormantIds(prev => new Set([...prev, taskId]));
             }
             toggleFrog(taskId);
         } else if (action === 'dump') {
@@ -108,20 +107,20 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-primary" />
+            <DialogContent className="sm:max-w-[500px] h-full sm:h-auto max-h-[100dvh] p-0 gap-0 overflow-hidden flex flex-col bg-muted/30">
+                <DialogHeader className="pt-8 pb-4 px-6 bg-background border-b shrink-0 space-y-3">
+                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-primary" /> 
                         Morning Review
                     </DialogTitle>
-                    <DialogDescription>
-                        {step === 'dormant' && <DialogDescription className="text-base text-center">These tasks woke up today. Prioritize them?</DialogDescription>}
+                    <DialogDescription className="text-base">
+                        {step === 'dormant' && "These tasks woke up today. Prioritize them?"}
                         {step === 'stale' && "These items have been sitting in your Queue for over 2 weeks."}
                         {step === 'ideas' && "These ideas are getting old. Time to let go?"}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto px-6">
                     {currentQueue.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                             <CheckCircle2 className="w-12 h-12 mb-4 opacity-20" />
@@ -145,7 +144,11 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
                                                 <FormattedText text={task.title} />
                                             </p>
                                             <p className="text-xs text-muted-foreground mt-1">
-                                                {step === 'dormant' ? `Held until ${task.launchDate ? format(task.launchDate, 'MMM d') : 'now'}` : `Created ${format(task.createdAt, 'MMM d, yyyy')}`}
+                                                {step === 'dormant' ? (
+                                                    task.launchDate ? 
+                                                        (isToday(task.launchDate) ? "Woke up today" : `Woke up ${format(task.launchDate, 'MMM d')}`)
+                                                    : 'Woke up today'
+                                                ) : `Created ${format(task.createdAt, 'MMM d, yyyy')}`}
                                             </p>
                                         </div>
                                     </div>
