@@ -26,16 +26,24 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
     // Derived states for review
     const { dormantTasks, staleTasks, ideas } = useMemo(() => {
         const now = Date.now();
-        const active = tasks.filter(t => t.status === 'todo' && !t.isOngoing && !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt);
-        const waiting = tasks.filter(t => t.status === 'waiting');
-        const draft = tasks.filter(t => t.isDraft && t.status === 'todo');
+        
+        const isExcluded = (projectId?: string) => {
+            if (!projectId) return false;
+            const project = projects.find(p => p.id === projectId);
+            return !!project?.excludeFromQueue;
+        };
+
+        const active = tasks.filter(t => t.status === 'todo' && !t.isOngoing && !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt && !isExcluded(t.projectId));
+        const waiting = tasks.filter(t => t.status === 'waiting' && !isExcluded(t.projectId));
+        const draft = tasks.filter(t => t.isDraft && t.status === 'todo' && !isExcluded(t.projectId));
 
         const dueTasks = tasks.filter(t => 
             (t.status === 'waiting' || t.status === 'todo') && 
             !t.isDraft && !t.isFrog && !t.archivedAt && !t.completedAt && 
             t.launchDate && 
             startOfDay(t.launchDate).getTime() <= startOfDay(now).getTime() &&
-            !acknowledgedDormantIds.has(t.id)
+            !acknowledgedDormantIds.has(t.id) &&
+            !isExcluded(t.projectId)
         );
 
         return {
@@ -43,7 +51,7 @@ export function ReviewRitual({ open, onOpenChange }: { open: boolean, onOpenChan
             staleTasks: active.filter(t => !t.launchDate && Math.floor((now - t.createdAt) / 86400000) >= 14).slice(0, 5), // Max 5 stale queue items
             ideas: draft.filter(t => Math.floor((now - t.createdAt) / 86400000) >= 30).slice(0, 3) // Extremely old ideas
         }
-    }, [tasks, acknowledgedDormantIds]);
+    }, [tasks, projects, acknowledgedDormantIds]);
     
     // Auto-advance logic if current step is empty
     const currentQueue = step === 'dormant' ? dormantTasks : step === 'stale' ? staleTasks : ideas;

@@ -169,9 +169,17 @@ export function CalendarView() {
         let _datedTasks = tasks.filter(t => t.launchDate && t.status !== 'done');
         if (activeProject) {
             _datedTasks = _datedTasks.filter(t => t.projectId === activeProject);
+        } else {
+            _datedTasks = _datedTasks.filter(t => {
+                if (t.projectId) {
+                    const project = projects.find(p => p.id === t.projectId);
+                    if (project?.excludeFromQueue) return false;
+                }
+                return true;
+            });
         }
         return _datedTasks.sort((a, b) => (a.launchDate as number) - (b.launchDate as number));
-    }, [tasks, activeProject]);
+    }, [tasks, projects, activeProject]);
 
     // ---- LIST MODE DATA ----
     const groupedTasks = useMemo(() => {
