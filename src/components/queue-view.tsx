@@ -1109,7 +1109,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                             )}
                                             
                                             {ongoingTasks.length > 0 && (
-                                                <Accordion type="single" collapsible defaultValue="ongoing" className="mb-6 transition-colors rounded-xl min-h-[50px] border-none">
+                                                <Accordion type="single" collapsible className="mb-6 transition-colors rounded-xl min-h-[50px] border-none">
                                                     <AccordionItem value="ongoing" className="border-none">
                                                         <AccordionTrigger className="flex items-center gap-2 px-1 pt-1 mb-2 hover:no-underline py-0">
                                                             <div className="flex items-center gap-2 flex-1 justify-start">
