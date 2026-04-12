@@ -868,49 +868,6 @@ export const useMonocleStore = create<MonocleState>()(
                         const otherTasks = state.tasks.filter(t => t.id !== id);
                         const newTasks = [...otherTasks, archivedTask];
 
-                        // Recurrence Logic (duplicate of completeTask but for specific ID)
-                        if (taskToArchive.recurrence) {
-                            let nextLaunchDate = Date.now();
-                            const currentDue = taskToArchive.launchDate || Date.now();
-
-                            switch (taskToArchive.recurrence) {
-                                case 'daily':
-                                    nextLaunchDate = currentDue + 24 * 60 * 60 * 1000;
-                                    break;
-                                case 'weekly':
-                                    nextLaunchDate = currentDue + 7 * 24 * 60 * 60 * 1000;
-                                    break;
-                                case 'monthly':
-                                    const d = new Date(currentDue);
-                                    d.setMonth(d.getMonth() + 1);
-                                    nextLaunchDate = d.getTime();
-                                    break;
-                                case 'yearly':
-                                    const y = new Date(currentDue);
-                                    y.setFullYear(y.getFullYear() + 1);
-                                    nextLaunchDate = y.getTime();
-                                    break;
-                                default:
-                                    if (typeof taskToArchive.recurrence === 'number') {
-                                        nextLaunchDate = currentDue + taskToArchive.recurrence * 24 * 60 * 60 * 1000;
-                                    }
-                            }
-
-                            const nextTask: Task = {
-                                ...taskToArchive,
-                                id: generateId(),
-                                launchDate: nextLaunchDate,
-                                status: 'todo',
-                                createdAt: Date.now(),
-                                completedAt: undefined,
-                                archivedAt: undefined,
-                                updatedAt: Date.now()
-                            };
-
-                            generatedTask = nextTask;
-                            newTasks.push(nextTask);
-                        }
-
                         return { tasks: newTasks, lastState, frogDetourActive: false, activeRandomTaskId: null };
                     });
                     if (generatedTask) return { nextTask: generatedTask };

@@ -490,28 +490,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
         activeTasks.unshift(frog);
     }
 
-    // Bubbling up Due tasks directly under the Frog (when in manual mode)
-    if (sortMode === 'manual' && !searchQuery) {
-        const dueTasks = [];
-        const normalTasks = [];
-        const hasFrog = activeTasks.length > 0 && activeTasks[0].isFrog;
-        const startIndex = hasFrog ? 1 : 0;
-        const frogArr = hasFrog ? [activeTasks[0]] : [];
 
-        for (let i = startIndex; i < activeTasks.length; i++) {
-            const t = activeTasks[i];
-            // Any active task with a launchDate is by definition "Due" (or overdue) because future tasks are filtered out
-            if (t.launchDate) {
-                dueTasks.push(t);
-            } else {
-                normalTasks.push(t);
-            }
-        }
-        // Due tasks sorted by oldest due date first
-        dueTasks.sort((a, b) => (a.launchDate || 0) - (b.launchDate || 0));
-
-        activeTasks = [...frogArr, ...dueTasks, ...normalTasks];
-    }
 
     let snoozedTasks = visibleTasks.filter(t => !t.isDraft && t.status !== 'done' && t.status !== 'waiting' && (t.skippedUntil && t.skippedUntil > now) && matchesSearch(t));
     let waitingTasks = visibleTasks.filter(t => !t.isDraft && t.status === 'waiting' && matchesSearch(t)).sort((a,b) => {
