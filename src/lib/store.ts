@@ -135,6 +135,8 @@ interface MonocleState {
     updateHabit: (id: string, updates: Partial<Habit>) => void;
     deleteHabit: (id: string) => void;
     toggleHabit: (id: string) => void;
+    reorderHabits: (activeId: string, overId: string) => void;
+    setHabits: (habits: Habit[]) => void;
 
     // Planner Actions
     addTimeBlock: (block: TimeBlock) => void;
@@ -253,7 +255,7 @@ export const useMonocleStore = create<MonocleState>()(
                     if (!partial) return partial as Partial<MonocleState>;
 
                     // Automatically bump lastModified if syncable data changed
-                    const touchedSyncable = ['tasks', 'projects', 'habits', 'timeBlocks', 'deletedIds', 'settings', 'sessionHistory']
+                    const touchedSyncable = ['tasks', 'projects', 'habits', 'timeBlocks', 'deletedIds', 'settings', 'sessionHistory', 'lastReviewDate', 'lastShutdownDate', 'lastActiveDate']
                         .some(key => (partial as any)[key] !== undefined);
 
                     if (touchedSyncable && (partial as any).lastModified === undefined) {
@@ -615,6 +617,21 @@ export const useMonocleStore = create<MonocleState>()(
                         lastModified: Date.now()
                     };
                 }),
+
+                reorderHabits: (activeId, overId) => set((state) => {
+                    const newHabits = Array.from(state.habits || []);
+                    const activeIndex = newHabits.findIndex(h => h.id === activeId);
+                    const overIndex = newHabits.findIndex(h => h.id === overId);
+                    
+                    if (activeIndex !== -1 && overIndex !== -1) {
+                        const [moved] = newHabits.splice(activeIndex, 1);
+                        newHabits.splice(overIndex, 0, moved);
+                        return { habits: newHabits, lastModified: Date.now() };
+                    }
+                    return {};
+                }),
+
+                setHabits: (habits) => set({ habits, lastModified: Date.now() }),
 
                 setActiveProject: (id) => set({ activeProject: id }),
 

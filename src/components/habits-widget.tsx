@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-
 import { parseTaskInput } from '@/lib/smart-parser';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 export function HabitsWidget() {
     const { habits, toggleHabit, addHabit, deleteHabit, addTask } = useMonocleStore();
@@ -259,6 +259,29 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
     const parsedNew = React.useMemo(() => parseTaskInput(newTitle + ' !habit'), [newTitle]);
     const isNewWeekly = parsedNew.daysOfWeek && parsedNew.daysOfWeek.length > 0 && parsedNew.daysOfWeek.length < 7;
 
+    const onDragEnd = (result: DropResult) => {
+        if (!result.destination) return;
+        
+        const { source, destination } = result;
+
+        if (source.droppableId !== destination.droppableId) return;
+        if (source.index === destination.index) return;
+
+        const isDaily = source.droppableId === 'daily';
+        
+        const dailyHabits = habits.filter((h: any) => !h.daysOfWeek || h.daysOfWeek.length === 0 || h.daysOfWeek.length === 7);
+        const weeklyHabits = habits.filter((h: any) => h.daysOfWeek && h.daysOfWeek.length > 0 && h.daysOfWeek.length < 7);
+        
+        const targetList = isDaily ? Array.from(dailyHabits) : Array.from(weeklyHabits);
+        const nonTargetList = isDaily ? weeklyHabits : dailyHabits;
+
+        const [moved] = targetList.splice(source.index, 1);
+        targetList.splice(destination.index, 0, moved);
+
+        const newHabits = isDaily ? [...targetList, ...nonTargetList] : [...nonTargetList, ...targetList];
+        useMonocleStore.getState().setHabits(newHabits as any[]);
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
@@ -292,94 +315,121 @@ function HabitManagerModal({ open, onOpenChange, newTitle, setNewTitle, onCreate
                         <Button type="submit" disabled={!newTitle.trim()}>Add</Button>
                     </form>
 
-                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 pb-2">
-                        {habits.length === 0 ? (
-                            <p className="text-center text-sm text-muted-foreground py-8">No habits tracked yet.</p>
-                        ) : (() => {
-                            const dailyHabits = habits.filter((h: any) => !h.daysOfWeek || h.daysOfWeek.length === 0 || h.daysOfWeek.length === 7);
-                            const weeklyHabits = habits.filter((h: any) => h.daysOfWeek && h.daysOfWeek.length > 0 && h.daysOfWeek.length < 7);
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <div className="max-h-[300px] overflow-y-auto pr-1 pb-2">
+                            {habits.length === 0 ? (
+                                <p className="text-center text-sm text-muted-foreground py-8">No habits tracked yet.</p>
+                            ) : (() => {
+                                const dailyHabits = habits.filter((h: any) => !h.daysOfWeek || h.daysOfWeek.length === 0 || h.daysOfWeek.length === 7);
+                                const weeklyHabits = habits.filter((h: any) => h.daysOfWeek && h.daysOfWeek.length > 0 && h.daysOfWeek.length < 7);
 
-                            const renderHabitRow = (habitCard: any) => (
-                                <div key={habitCard.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                                    {editingId === habitCard.id ? (
-                                        <form className="flex-1 flex items-center gap-2" onSubmit={(e) => handleSaveEdit(e, habitCard.id)}>
-                                            <Input
-                                                value={editTitle}
-                                                onChange={(e) => setEditTitle(e.target.value)}
-                                                autoFocus
-                                                className="h-8 text-sm"
-                                            />
-                                            <Button type="submit" size="sm" className="h-8 shrink-0">Save</Button>
-                                            <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0" onClick={() => setEditingId(null)}>Cancel</Button>
-                                        </form>
-                                    ) : (
-                                        <>
-                                            <div className="flex flex-col min-w-0 pr-2">
-                                                <span className="font-medium text-sm truncate">{habitCard.title}</span>
-                                                <div className="flex items-center gap-3 mt-1">
-                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                        <Flame className="w-3 h-3 text-orange-500 shrink-0" /> {habitCard.streak}
-                                                    </span>
-                                                    {habitCard.daysOfWeek && habitCard.daysOfWeek.length > 0 && habitCard.daysOfWeek.length < 7 && (
-                                                        <span className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">
-                                                            {habitCard.daysOfWeek.map((d: number) => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
-                                                        </span>
-                                                    )}
+                                const renderHabitRow = (habitCard: any, index: number) => (
+                                    <Draggable key={habitCard.id} draggableId={habitCard.id} index={index}>
+                                        {(provided) => (
+                                            <div 
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                className="flex items-center justify-between p-3 rounded-lg border bg-card mb-2"
+                                            >
+                                                <div {...provided.dragHandleProps} className="mr-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground/80 transition-colors">
+                                                    <GripVertical className="w-4 h-4" />
                                                 </div>
+                                                {editingId === habitCard.id ? (
+                                                    <form className="flex-1 flex items-center gap-2 min-w-0" onSubmit={(e) => handleSaveEdit(e, habitCard.id)}>
+                                                        <Input
+                                                            value={editTitle}
+                                                            onChange={(e) => setEditTitle(e.target.value)}
+                                                            autoFocus
+                                                            className="h-8 text-sm"
+                                                        />
+                                                        <Button type="submit" size="sm" className="h-8 shrink-0">Save</Button>
+                                                        <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0" onClick={() => setEditingId(null)}>Cancel</Button>
+                                                    </form>
+                                                ) : (
+                                                    <div className="flex-1 flex items-center justify-between min-w-0 pr-1">
+                                                        <div className="flex flex-col min-w-0 pr-2">
+                                                            <span className="font-medium text-sm truncate">{habitCard.title}</span>
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                    <Flame className="w-3 h-3 text-orange-500 shrink-0" /> {habitCard.streak}
+                                                                </span>
+                                                                {habitCard.daysOfWeek && habitCard.daysOfWeek.length > 0 && habitCard.daysOfWeek.length < 7 && (
+                                                                    <span className="text-[10px] font-bold text-indigo-500/70 uppercase tracking-wider">
+                                                                        {habitCard.daysOfWeek.map((d: number) => ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'][d]).join(', ')}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                                onClick={() => {
+                                                                    const existingDays = habitCard.daysOfWeek 
+                                                                        ? habitCard.daysOfWeek.map((d: number) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(' ') 
+                                                                        : '';
+                                                                    setEditTitle(habitCard.title + (existingDays ? ` ${existingDays}` : ''));
+                                                                    setEditingId(habitCard.id);
+                                                                }}
+                                                            >
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                onClick={() => onDelete(habitCard.id)}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                    onClick={() => {
-                                                        const existingDays = habitCard.daysOfWeek 
-                                                            ? habitCard.daysOfWeek.map((d: number) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(' ') 
-                                                            : '';
-                                                        setEditTitle(habitCard.title + (existingDays ? ` ${existingDays}` : ''));
-                                                        setEditingId(habitCard.id);
-                                                    }}
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </Button>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => onDelete(habitCard.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            );
+                                        )}
+                                    </Draggable>
+                                );
 
-                            return (
-                                <>
-                                    {dailyHabits.length > 0 && (
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Daily</span>
-                                                <div className="h-px bg-border flex-1"></div>
+                                return (
+                                    <>
+                                        {dailyHabits.length > 0 && (
+                                            <div className="mt-2 text-sm">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Daily</span>
+                                                    <div className="h-px bg-border flex-1"></div>
+                                                </div>
+                                                <Droppable droppableId="daily">
+                                                    {(provided) => (
+                                                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                                                            {dailyHabits.map((h: any, i: number) => renderHabitRow(h, i))}
+                                                            {provided.placeholder}
+                                                        </div>
+                                                    )}
+                                                </Droppable>
                                             </div>
-                                            {dailyHabits.map(renderHabitRow)}
-                                        </div>
-                                    )}
-                                    {weeklyHabits.length > 0 && (
-                                        <div className="space-y-2 mt-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Weekly</span>
-                                                <div className="h-px bg-border flex-1"></div>
+                                        )}
+                                        {weeklyHabits.length > 0 && (
+                                            <div className="mt-4 text-sm">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-1">Weekly</span>
+                                                    <div className="h-px bg-border flex-1"></div>
+                                                </div>
+                                                <Droppable droppableId="weekly">
+                                                    {(provided) => (
+                                                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                                                            {weeklyHabits.map((h: any, i: number) => renderHabitRow(h, i))}
+                                                            {provided.placeholder}
+                                                        </div>
+                                                    )}
+                                                </Droppable>
                                             </div>
-                                            {weeklyHabits.map(renderHabitRow)}
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        })()}
-                    </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </DragDropContext>
                 </div>
             </DialogContent>
         </Dialog>

@@ -93,6 +93,9 @@ export function SyncEngine() {
                             sessionHistory: cloudData.sessionHistory || [],
                             habits: cloudData.habits || [],
                             timeBlocks: cloudData.timeBlocks || [],
+                            lastReviewDate: cloudData.lastReviewDate,
+                            lastShutdownDate: cloudData.lastShutdownDate,
+                            lastActiveDate: cloudData.lastActiveDate,
                             lastModified: cloudData.lastModified || 0
                         });
 
@@ -117,6 +120,9 @@ export function SyncEngine() {
                                 sessionHistory: cloudData.sessionHistory || [],
                                 habits: cloudData.habits || [],
                                 timeBlocks: cloudData.timeBlocks || [],
+                                lastReviewDate: cloudData.lastReviewDate,
+                                lastShutdownDate: cloudData.lastShutdownDate,
+                                lastActiveDate: cloudData.lastActiveDate,
                                 lastModified: cloudData.lastModified,
                             });
                             useMonocleStore.getState().setLastSyncTime(Date.now());
@@ -150,6 +156,9 @@ export function SyncEngine() {
                             sessionHistory: state.sessionHistory,
                             habits: state.habits,
                             timeBlocks: state.timeBlocks,
+                            lastReviewDate: state.lastReviewDate,
+                            lastShutdownDate: state.lastShutdownDate,
+                            lastActiveDate: state.lastActiveDate,
                             lastModified: state.lastModified || Date.now()
                         };
 
@@ -172,6 +181,9 @@ export function SyncEngine() {
                             sessionHistory: state.sessionHistory,
                             habits: state.habits,
                             timeBlocks: state.timeBlocks,
+                            lastReviewDate: state.lastReviewDate,
+                            lastShutdownDate: state.lastShutdownDate,
+                            lastActiveDate: state.lastActiveDate,
                             lastModified: state.lastModified || Date.now()
                         });
 
@@ -220,6 +232,9 @@ export function SyncEngine() {
                 state.sessionHistory !== prevState.sessionHistory ||
                 state.habits !== prevState.habits ||
                 state.timeBlocks !== prevState.timeBlocks ||
+                state.lastReviewDate !== prevState.lastReviewDate ||
+                state.lastShutdownDate !== prevState.lastShutdownDate ||
+                state.lastActiveDate !== prevState.lastActiveDate ||
                 state.lastModified !== prevState.lastModified;
 
             // Only push if data changed AND we have already performed our initial pull from the network
@@ -243,6 +258,9 @@ export function SyncEngine() {
                     sessionHistory: state.sessionHistory,
                     habits: state.habits,
                     timeBlocks: state.timeBlocks,
+                    lastReviewDate: state.lastReviewDate,
+                    lastShutdownDate: state.lastShutdownDate,
+                    lastActiveDate: state.lastActiveDate,
                     lastModified: state.lastModified || 0
                 });
 
@@ -285,6 +303,9 @@ export function SyncEngine() {
                     sessionHistory: state.sessionHistory,
                     habits: state.habits,
                     timeBlocks: state.timeBlocks,
+                    lastReviewDate: state.lastReviewDate,
+                    lastShutdownDate: state.lastShutdownDate,
+                    lastActiveDate: state.lastActiveDate,
                     lastModified: state.lastModified || Date.now()
                 };
 
