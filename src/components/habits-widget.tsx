@@ -207,7 +207,7 @@ export function HabitsWidget() {
             {activeDaily.length > 0 && (
                 <div className="w-full">
                     <div className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-2 mb-1">Daily</div>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 px-1 scrollbar-hide snap-x">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 px-1 scrollbar-hide snap-x">
                         {activeDaily.map(renderHabitBubble)}
                     </div>
                 </div>
@@ -216,7 +216,7 @@ export function HabitsWidget() {
             {activeWeekly.length > 0 && (
                 <div className="w-full">
                     <div className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest pl-2 mb-1">Weekly</div>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 px-1 scrollbar-hide snap-x">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-1 px-1 scrollbar-hide snap-x">
                         {activeWeekly.map(renderHabitBubble)}
                     </div>
                 </div>
