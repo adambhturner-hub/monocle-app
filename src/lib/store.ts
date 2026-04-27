@@ -180,7 +180,7 @@ interface MonocleState {
 
     // Settings
     settings: {
-        sortMode: 'manual' | 'date' | 'priority';
+        sortMode: 'manual' | 'date' | 'priority' | 'project';
         archiveRetention: number; // days
         nightShiftSweep: boolean;
         soundEnabled?: boolean;
@@ -368,6 +368,21 @@ export const useMonocleStore = create<MonocleState>()(
                             if (a.launchDate && !b.launchDate) return -1;
                             if (a.launchDate && b.launchDate) return a.launchDate - b.launchDate;
                             return 0;
+                        });
+                        return sorted[0];
+                    }
+
+                    if (settings?.sortMode === 'project') {
+                        const sorted = [...eligible].sort((a, b) => {
+                            const pA = projects.find(p => p.id === a.projectId)?.name.toLowerCase() || 'zzz';
+                            const pB = projects.find(p => p.id === b.projectId)?.name.toLowerCase() || 'zzz';
+                            if (pA < pB) return -1;
+                            if (pA > pB) return 1;
+                            
+                            const priorityWeight: Record<string, number> = { high: 0, medium: 1, low: 2 };
+                            const wA = priorityWeight[a.priority || 'low'] ?? 2;
+                            const wB = priorityWeight[b.priority || 'low'] ?? 2;
+                            return wA - wB;
                         });
                         return sorted[0];
                     }

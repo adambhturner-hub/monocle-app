@@ -16,7 +16,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 // Imports update
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
-import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw, Image as ImageIcon, Battery, BatteryMedium, Split } from 'lucide-react';
+import { Search, CornerUpLeft, ArrowUpCircle, Archive, Trash2, FileText, Edit2, Moon, Lightbulb, CornerDownLeft, AlertCircle, ListFilter, ArrowRightLeft, Eye, EyeOff, Hourglass, RefreshCw, Image as ImageIcon, Battery, BatteryMedium, Split, Folder } from 'lucide-react';
 import { toast } from "sonner";
 import { AddTaskModal } from './add-task-modal';
 import { ProjectSelect } from './project-select';
@@ -146,7 +146,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
     const [quickAddProjectId, setQuickAddProjectId] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     // Initialize sortMode from settings
-    const [sortMode, setSortMode] = useState<'manual' | 'date' | 'priority'>(settings.sortMode);
+    const [sortMode, setSortMode] = useState<'manual' | 'date' | 'priority' | 'project'>(settings.sortMode);
 
     // Multi-task paste state
     const [pendingPaste, setPendingPaste] = useState<string[] | null>(null);
@@ -920,9 +920,10 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    let newSortMode: 'manual' | 'date' | 'priority' = 'manual';
+                                                    let newSortMode: 'manual' | 'date' | 'priority' | 'project' = 'manual';
                                                     if (sortMode === 'manual') newSortMode = 'date';
                                                     else if (sortMode === 'date') newSortMode = 'priority';
+                                                    else if (sortMode === 'priority') newSortMode = 'project';
 
                                                     setSortMode(newSortMode);
                                                     useMonocleStore.getState().updateSettings({ sortMode: newSortMode });
@@ -933,6 +934,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                 {sortMode === 'manual' && <ListFilter className="h-3.5 w-3.5" />}
                                                 {sortMode === 'date' && <Calendar className="h-3.5 w-3.5" />}
                                                 {sortMode === 'priority' && <AlertCircle className="h-3.5 w-3.5" />}
+                                                {sortMode === 'project' && <Folder className="h-3.5 w-3.5" />}
                                                 {sortMode.charAt(0).toUpperCase() + sortMode.slice(1)}
                                                 <div className="h-3 w-[1px] bg-border mx-0.5" />
                                                 <span className="text-[10px] text-muted-foreground">Sort</span>
@@ -2116,7 +2118,7 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                 );
                                                             });
                                                         })()
-                                                    ) : (
+                                                    ) : sortMode === 'priority' ? (
                                                         // Priority Grouping logic
                                                         (() => {
                                                             const groups: Record<string, Task[]> = {
@@ -2263,7 +2265,172 @@ function QueueContent({ defaultTab, variant = 'sheet' }: { defaultTab?: 'active'
                                                                 );
                                                             });
                                                         })()
-                                                    )}
+                                                    ) : sortMode === 'project' ? (
+                                                        // Project Grouping logic
+                                                        (() => {
+                                                            const groups: Record<string, Task[]> = {
+                                                                'Uncategorized': []
+                                                            };
+
+                                                            activeTasks.forEach(t => {
+                                                                if (t.projectId) {
+                                                                    const proj = projects.find(p => p.id === t.projectId);
+                                                                    if (proj) {
+                                                                        if (!groups[proj.name]) groups[proj.name] = [];
+                                                                        groups[proj.name].push(t);
+                                                                    } else {
+                                                                        groups['Uncategorized'].push(t);
+                                                                    }
+                                                                } else {
+                                                                    groups['Uncategorized'].push(t);
+                                                                }
+                                                            });
+
+                                                            const groupNames = Object.keys(groups).sort((a, b) => {
+                                                                if (a === 'Uncategorized') return 1;
+                                                                if (b === 'Uncategorized') return -1;
+                                                                return a.localeCompare(b);
+                                                            });
+
+                                                            return groupNames.map(groupName => {
+                                                                const tasks = groups[groupName];
+                                                                if (tasks.length === 0) return null;
+
+                                                                const proj = projects.find(p => p.name === groupName);
+
+                                                                const sortedTasks = [...tasks].sort((a, b) => {
+                                                                    if (a.isFrog) return -1;
+                                                                    if (b.isFrog) return 1;
+                                                                    if (!a.launchDate) return 1;
+                                                                    if (!b.launchDate) return -1;
+                                                                    return a.launchDate - b.launchDate;
+                                                                });
+
+                                                                return (
+                                                                    <div key={groupName} className="space-y-2">
+                                                                        <h4 className="text-[10px] uppercase font-bold tracking-wider mb-2 flex items-center gap-1.5" style={{ color: proj ? proj.color : undefined }}>
+                                                                            {proj ? (
+                                                                                <>
+                                                                                    {(() => {
+                                                                                        const IconCmp = getIconComponent(proj.icon);
+                                                                                        return <IconCmp className="h-3 w-3" />;
+                                                                                    })()}
+                                                                                    {groupName}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="text-muted-foreground">Uncategorized</span>
+                                                                            )}
+                                                                        </h4>
+
+                                                                        {sortedTasks.map(task => (
+                                                                            <ContextMenu key={task.id}>
+                                                                                <ContextMenuTrigger
+                                                                                    onDoubleClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        handleEdit(task);
+                                                                                    }}
+                                                                                >
+                                                                                    <div className={cn("group bg-card border rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all", task.isFrog && "border-l-4 border-l-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20")}>
+                                                                                        <div className="flex-1 min-w-0 text-left cursor-default self-stretch flex flex-col justify-center">
+                                                                                            <div className="flex items-center gap-2 mb-0.5 overflow-hidden w-full shrink-0">
+                                                                                                {(() => {
+    const projIcon = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+    if (!projIcon) return null;
+    const IconCmp = getIconComponent(projIcon.icon);
+    return (
+        <div className="flex justify-center items-center shrink-0 w-4 h-4 rounded-sm" style={{ backgroundColor: projIcon.color }}>
+            <IconCmp className="h-2.5 w-2.5 text-white drop-shadow-sm" />
+        </div>
+    );
+})()}
+                                                                                                <p className={cn(
+                                                                                                    "text-sm font-medium truncate",
+                                                                                                    task.id === currentActiveTask?.id && !task.isFrog && !task.isLightning && "text-primary font-bold",
+                                                                                                    task.isFrog && "text-emerald-700 dark:text-emerald-400 font-bold",
+                                                                                                    task.isFrog && (Date.now() - task.createdAt > 3 * 24 * 60 * 60 * 1000) && "text-base font-extrabold text-red-600 dark:text-red-400",
+                                                                                                    task.isLightning && !task.isFrog && "text-yellow-700 dark:text-yellow-400 font-bold"
+                                                                                                )}>
+                                                                                                    <FormattedText text={task.title} />
+                                                                                                </p>
+                                                                                                {task.isFrog && <span className="text-sm leading-none shrink-0">🐸</span>}
+                                                                                                {task.isLightning && !task.isFrog && <span className="text-sm leading-none shrink-0">⚡️</span>}
+                                                                                            </div>
+                                                                                            {task.description && (
+                                                                                                <Tooltip>
+                                                                                                    <TooltipTrigger asChild>
+                                                                                                        <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-0.5 max-w-[90%]">
+                                                                                                            {task.description}
+                                                                                                        </p>
+                                                                                                    </TooltipTrigger>
+                                                                                                    <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+                                                                                                        <FormattedText text={task.description} className="text-xs" />
+                                                                                                    </TooltipContent>
+                                                                                                </Tooltip>
+                                                                                            )}
+                                                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                                                                                    {(() => {
+                                                                                                        const projName = task.projectId ? projects.find(p => p.id === task.projectId) : null;
+                                                                                                        if (!projName) return null;
+                                                                                                        return <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 truncate max-w-[120px]">{projName.name}</span>;
+                                                                                                    })()}
+                                                                                                <TaskAgingBadges task={task} /> {task.launchDate && <span className={cn("flex items-center gap-1", isPast(task.launchDate) && !isToday(task.launchDate) && "text-red-500 font-bold")}><Calendar className="h-3 w-3" />{format(task.launchDate, 'MMM d')}</span>}
+                                                                                                {task.recurrence && <span className="flex items-center gap-1 text-orange-500/80" title={`Repeats ${task.recurrence}`}><Repeat className="h-3 w-3" /></span>}
+                                                                                                {task.attachments && task.attachments.length > 0 && <span className="flex items-center gap-1 text-muted-foreground/60" title="Has attachments"><ImageIcon className="h-3 w-3" /></span>}
+                                                                                                {task.priority === 'high' && <AlertCircle className="h-3 w-3 text-red-500" />}
+                                                                                                {task.priority === 'low' && <AlertCircle className="h-3 w-3 text-blue-500" />}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        {task.id === currentActiveTask?.id && <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">Now</span>}
+                                                                                        <div className="hidden md:flex items-center gap-1 opacity-30 group-hover:opacity-100 transition-all z-50 shrink-0">
+    {variant === 'sidebar' && (
+        <div 
+            draggable={true} 
+            onDragStart={(e) => { 
+                e.stopPropagation();
+                e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, title: task.title }));
+                e.dataTransfer.effectAllowed = 'copy';
+                const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+                ghost.style.position = 'absolute';
+                ghost.style.top = '-1000px';
+                ghost.style.opacity = '0';
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
+            }}
+            className="h-6 w-6 hidden md:flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-blue-500 rounded-full cursor-grab active:cursor-grabbing text-muted-foreground mr-1"
+            title="Drag to Planner"
+        >
+            <Calendar className="h-3 w-3" />
+        </div>
+    )}
+                                                                                            <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-emerald-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleComplete(task.id); }} title="Complete Task"><CheckCircle2 className="h-3 w-3" /></Button>
+                                                                                            <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-amber-500 rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleDump(task.id); }} title="Send to Idea Dump"><Lightbulb className="h-3 w-3" /></Button>
+                                                                                            <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleArchive(task.id); }} title="Archive Task"><Archive className="h-3 w-3" /></Button>
+                                                                                            <Button variant="ghost" size="icon-xs" className="h-6 w-6 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:text-primary rounded-full relative" type="button" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleEdit(task); }} title="Edit Task"><Edit2 className="h-3 w-3" /></Button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </ContextMenuTrigger>
+                                                                                <ContextMenuContent>
+                                                                                    <ContextMenuItem onClick={() => handleFocusNow(task.id)}><CornerUpLeft className="mr-2 h-4 w-4" /> Focus Now</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => handleEdit(task)}><Edit2 className="mr-2 h-4 w-4" /> Edit</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().duplicateTask(task.id)}><FileText className="mr-2 h-4 w-4" /> Duplicate</ContextMenuItem>
+<ContextMenuItem onClick={() => setTaskToSubdivide(task)}><Split className="mr-2 h-4 w-4" /> Subdivide</ContextMenuItem>
+                                                                                    <ContextMenuSeparator />
+                                                                                    <ContextMenuItem onClick={() => handleMakeNext(task.id)}><ArrowUpCircle className="mr-2 h-4 w-4" /> Make Next</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => handleDump(task.id)}><Archive className="mr-2 h-4 w-4" /> Send to Idea Dump</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => handleArchive(task.id)}><CheckCircle2 className="mr-2 h-4 w-4" /> Archive</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().waitTask(task.id)}><Hourglass className="mr-2 h-4 w-4" /> Mark as Waiting</ContextMenuItem>
+                                                                                    <ContextMenuItem onClick={() => useMonocleStore.getState().updateTask(task.id, { status: 'waiting', isBlocked: !task.isBlocked })}><Hourglass className="mr-2 h-4 w-4" /> {task.isBlocked ? 'Unmark Blocked' : 'Mark as Blocked'}</ContextMenuItem>
+                                                                                    <ContextMenuSeparator />
+                                                                                    <ContextMenuItem onClick={() => handleDelete(task.id)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</ContextMenuItem>
+                                                                                </ContextMenuContent>
+                                                                            </ContextMenu>
+                                                                        ))}
+                                                                    </div>
+                                                                );
+                                                            });
+                                                        })()
+                                                    ) : null}
                                                 </div>
                                             )}
                                         </div>

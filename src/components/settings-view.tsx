@@ -367,7 +367,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                 </Label>
                                 <Select
                                     value={settings.sortMode}
-                                    onValueChange={(val: 'manual' | 'date') => updateSettings({ sortMode: val })}
+                                    onValueChange={(val: 'manual' | 'date' | 'project') => updateSettings({ sortMode: val })}
                                 >
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Select sort" />
@@ -375,6 +375,7 @@ export function SettingsView({ open, onOpenChange }: SettingsViewProps) {
                                     <SelectContent>
                                         <SelectItem value="manual">Manual (Drag & Drop)</SelectItem>
                                         <SelectItem value="date">Date (Due Date)</SelectItem>
+                                        <SelectItem value="project">Project (Category)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
