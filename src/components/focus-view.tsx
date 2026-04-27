@@ -45,6 +45,8 @@ import { getIconComponent } from '@/lib/icons';
 import { uploadTaskAttachment } from '@/lib/storage';
 import { AnimatedLogo } from './animated-logo';
 import { FormattedText } from './ui/formatted-text';
+import { TaskRouletteModal } from './task-roulette-modal';
+import { CircleDashed } from 'lucide-react';
 
 interface FocusViewProps {
     onExit?: () => void;
@@ -740,6 +742,15 @@ export function FocusView({ onExit }: FocusViewProps) {
                                     <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); randomTask(); }} title="Pick a random task" className="h-9 px-6 rounded-full text-muted-foreground hover:text-foreground border-muted-foreground/20 text-xs shadow-sm flex">
                                         <Dices className="mr-1.5 h-3.5 w-3.5" /> Random
                                     </Button>
+
+                                    {/* Roulette */}
+                                    <TaskRouletteModal>
+                                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); }} title="Spin the Task Roulette" className="h-9 px-6 rounded-full text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 border-indigo-500/20 hover:border-indigo-500/40 hover:bg-indigo-500/10 text-xs shadow-[0_0_10px_rgba(99,102,241,0.1)] flex relative overflow-hidden group">
+                                            <div className="absolute inset-0 bg-indigo-500/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+                                            <CircleDashed className="mr-1.5 h-3.5 w-3.5 animate-[spin_6s_linear_infinite]" />
+                                            Spin
+                                        </Button>
+                                    </TaskRouletteModal>
 
                                     {/* Snooze Dropdown */}
                                     <DropdownMenu>

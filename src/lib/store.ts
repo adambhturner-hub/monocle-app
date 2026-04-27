@@ -205,6 +205,7 @@ interface MonocleState {
     toggleOngoing: (id: string) => void;
     frogDetourActive: boolean;
     activeRandomTaskId: string | null;
+    setActiveRandomTaskId: (id: string | null) => void;
 
     lastActiveDate?: string; // YYYY-MM-DD string to track day rollovers
     lastReviewDate?: string; // YYYY-MM-DD string to track if morning review was done
@@ -1089,6 +1090,8 @@ export const useMonocleStore = create<MonocleState>()(
 
                         return { activeRandomTaskId: randomTask.id };
                     }),
+
+                setActiveRandomTaskId: (id) => set({ activeRandomTaskId: id }),
 
                 promoteTask: (id) =>
                     set((state) => {
