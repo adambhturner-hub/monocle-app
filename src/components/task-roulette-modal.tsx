@@ -187,7 +187,7 @@ export function TaskRouletteModal({ children }: { children: React.ReactNode }) {
                     <div className="absolute bottom-6 w-full px-12 flex justify-center z-20">
                         <Button 
                             size="lg" 
-                            disabled={isSpinning || eligibleTasks.length < 2}
+                            disabled={isSpinning || eligibleTasks.length < 1}
                             onClick={handleSpin}
                             className="w-full max-w-[200px] h-12 rounded-full font-bold text-md tracking-wider bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-indigo-400/30 transition-all hover:scale-105"
                         >
