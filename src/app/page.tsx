@@ -8,6 +8,7 @@ import { ArchiveView } from '@/components/archive-view';
 import { NavMenu } from '@/components/nav-menu';
 import { AddTaskModal } from '@/components/add-task-modal';
 import { ViewSelector } from '@/components/view-selector';
+import { BoardView } from '@/components/board-view';
 import { CaptureView } from '@/components/capture-view';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { GlobalShortcuts } from '@/components/global-shortcuts';
@@ -21,7 +22,7 @@ import { LogoSmall } from '@/components/logo';
 import { ProjectManager } from '@/components/project-manager';
 import { MomentumMeter } from '@/components/momentum-meter';
 import { Button } from '@/components/ui/button';
-import { Plus, Command, ListTodo, Target, PenLine, CalendarDays, Clock } from 'lucide-react';
+import { Plus, Command, ListTodo, Target, PenLine, CalendarDays, Clock, LayoutDashboard } from 'lucide-react';
 import { OnboardingSlideshow } from '@/components/onboarding-slideshow';
 import { SyncIndicator } from '@/components/ui/sync-indicator';
 import { cn } from '@/lib/utils';
@@ -215,6 +216,10 @@ export default function Home() {
                <PlannerView />
             </div>
           </div>
+        ) : view === 'board' ? (
+          <div className="w-full flex-1 relative z-0 h-full">
+            <BoardView />
+          </div>
         ) : (
           <QueueView variant="fullscreen" />
         )}
@@ -285,6 +290,17 @@ export default function Home() {
         >
           <Clock className="h-5 w-5" />
           <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Planner</span>
+        </button>
+
+        <button 
+          onClick={() => setView('board')} 
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-full transition-colors", 
+            view === 'board' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          )}
+        >
+          <LayoutDashboard className="h-5 w-5" />
+          <span className="text-[9px] font-bold tracking-wider uppercase hidden xxs:block">Board</span>
         </button>
         
         <button 

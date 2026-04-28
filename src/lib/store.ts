@@ -152,8 +152,8 @@ interface MonocleState {
     draftTaskData: Partial<Task> | null;
     setDraftTaskData: (draft: Partial<Task> | null) => void;
 
-    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner';
-    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner') => void;
+    view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner' | 'board';
+    setView: (view: 'capture' | 'focus' | 'queue' | 'ideas' | 'analytics' | 'calendar' | 'planner' | 'board') => void;
 
     // Undo Logic
     lastState: Task[] | null;
@@ -463,6 +463,9 @@ export const useMonocleStore = create<MonocleState>()(
                         timeBlocks: cloudState.timeBlocks !== undefined ? mergeById(state.timeBlocks, cloudState.timeBlocks) : state.timeBlocks,
                         settings: cloudState.settings !== undefined ? { ...state.settings, ...cloudState.settings } : state.settings,
                         sessionHistory: cloudState.sessionHistory !== undefined ? mergeById(state.sessionHistory, cloudState.sessionHistory) : state.sessionHistory,
+                        lastReviewDate: cloudState.lastReviewDate !== undefined ? cloudState.lastReviewDate : state.lastReviewDate,
+                        lastShutdownDate: cloudState.lastShutdownDate !== undefined ? cloudState.lastShutdownDate : state.lastShutdownDate,
+                        lastActiveDate: cloudState.lastActiveDate !== undefined ? cloudState.lastActiveDate : state.lastActiveDate,
                         lastModified: cloudState.lastModified !== undefined ? cloudState.lastModified : state.lastModified,
                     };
                 }),
