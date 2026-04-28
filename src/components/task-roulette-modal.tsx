@@ -7,6 +7,7 @@ import { startOfDay } from 'date-fns';
 import confetti from 'canvas-confetti';
 import { Dices, CircleDashed } from 'lucide-react';
 import { FormattedText } from './ui/formatted-text';
+import { soundEngine } from '@/lib/sound-engine';
 
 export function TaskRouletteModal({ children }: { children: React.ReactNode }) {
     const [open, setOpen] = useState(false);
@@ -50,8 +51,21 @@ export function TaskRouletteModal({ children }: { children: React.ReactNode }) {
         try {
             const storeState = useMonocleStore.getState();
             if (storeState.settings?.soundEnabled !== false) {
-                // @ts-ignore
-                if (window.soundEngine?.playDiceRattle) window.soundEngine.playDiceRattle();
+                soundEngine.playDiceRattle(); // initial spin sound
+                
+                // Gradually slowing tick sound to simulate wheel slowing down
+                let ticks = 0;
+                let delay = 50;
+                const playSpinTick = () => {
+                    if (!isSpinning && ticks > 25) return;
+                    if (ticks > 30) return; // cap at 30 ticks
+                    soundEngine.playTick();
+                    ticks++;
+                    delay = Math.min(300, delay * 1.15); // exponentially slow down
+                    setTimeout(playSpinTick, delay);
+                };
+                playSpinTick();
+                
                 // @ts-ignore
                 if (window.navigator?.vibrate) window.navigator.vibrate(50);
             }
@@ -68,8 +82,7 @@ export function TaskRouletteModal({ children }: { children: React.ReactNode }) {
         try {
             const storeState = useMonocleStore.getState();
             if (storeState.settings?.soundEnabled !== false) {
-                 // @ts-ignore
-                if (window.soundEngine?.playComplete) window.soundEngine.playComplete();
+                soundEngine.playComplete();
                  // @ts-ignore
                 if (window.navigator?.vibrate) window.navigator.vibrate([100, 50, 100]);
             }
